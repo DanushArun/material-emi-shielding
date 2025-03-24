@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # EMI Shielding Prediction System
 
 A sophisticated web application for predicting electromagnetic interference (EMI) shielding effectiveness of material combinations. This system combines physics-based calculations with machine learning to provide accurate predictions for any combination of elements from the periodic table.
@@ -112,3 +113,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+=======
+# material-emi-shielding
+>>>>>>> 96b15ed7abb465c3b9f5f5265f7905cbfb30a0ac

@@ -204,6 +204,43 @@ def create_comparison_plot(comparison_data: list) -> go.Figure:
     return fig
 
 def main():
+    # Set page configuration for better space utilization
+    st.set_page_config(
+        page_title="EMI Shielding Prediction System",
+        page_icon="🛡️",
+        layout="wide",  # Use wide layout for better space utilization
+        initial_sidebar_state="auto"  # Let user decide sidebar state
+    )
+    
+    # Custom CSS for better space utilization
+    st.markdown("""
+    <style>
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 40px;
+        white-space: pre-wrap;
+        background-color: #262730;
+        border-radius: 4px 4px 0px 0px;
+        gap: 1px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #1E1E1E;
+        border-bottom: 2px solid #4CAF50;
+    }
+    div.stButton > button:first-child {
+        width: 100%;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.title("EMI Shielding Prediction System")
     
     # Initialize session state
@@ -215,6 +252,8 @@ def main():
         st.session_state['comparison_data'] = []
     if 'super_mode' not in st.session_state:
         st.session_state['super_mode'] = False
+    if 'sidebar_collapsed' not in st.session_state:
+        st.session_state['sidebar_collapsed'] = False
     
     # SUPER MODE toggle
     super_mode = st.sidebar.toggle("🚀 SUPER MODE", help="Enable advanced controls and detailed analysis")
@@ -223,8 +262,8 @@ def main():
     if super_mode:
         st.sidebar.warning("⚡ SUPER MODE enabled - Advanced controls available")
     
-    # Add tabs for different sections with a more logical flow
-    tab1, tab2, tab3, tab4 = st.tabs(["Material Design", "Analysis Results", "Comparison", "Technical Reference"])
+    # Add tabs for different sections with a more logical flow and better space utilization
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Material Design", "📈 Analysis Results", "🔄 Comparison", "📚 Technical Reference"])
     
     with tab1:
         # Material Design Tab
@@ -335,7 +374,7 @@ def main():
         selection_method = "Common Materials (Recommended)"
         material_type = st.sidebar.selectbox(
             "Select Material",
-            interference_to_materials[interference_type],
+            interference_to_materials[interference_type] if interference_type is not None else [],
             help="Choose from materials optimized for your application"
         )
     else:
@@ -390,7 +429,7 @@ def main():
             }
         }
         
-        selected_preset = material_presets[material_type]
+        selected_preset = material_presets[material_type] if material_type is not None else material_presets["General Purpose Shielding"]
         st.sidebar.info(selected_preset["description"])
         composition = selected_preset["composition"]
         
@@ -541,12 +580,15 @@ def main():
             "Full Spectrum Analysis": (1e4, 1e12)
         }
         
-        freq_min, freq_max = freq_ranges[application]
+        freq_min, freq_max = freq_ranges[application] if application is not None else (DEFAULT_FREQ_MIN, DEFAULT_FREQ_MAX)
+        
+        # Handle potential None value in application
+        app_name = application.split('(')[0].strip() if application is not None else "selected"
         
         st.sidebar.info(f"""
         Selected Range: {freq_min:.0f} Hz - {freq_max:.0e} Hz
         
-        This range is optimized for {application.split('(')[0].strip()} applications.
+        This range is optimized for {app_name} applications.
         """)
         
     else:
@@ -580,21 +622,26 @@ def main():
     # Calculate material properties
     material_properties = materials.calculate_mixture_properties(composition)
     
-    # Display material properties
+    # Display material properties in a more space-efficient layout
     st.header("Material Properties")
-    props_df = pd.DataFrame({
-        "Property": ["Conductivity (S/m)", "Relative Permeability", "Relative Permittivity", "Density (kg/m³)"],
-        "Value": [
-            f"{material_properties['conductivity']:.2e}",
-            f"{material_properties['relative_permeability']:.2f}",
-            f"{material_properties['relative_permittivity']:.2f}",
-            f"{material_properties['density']:.2f}"
-        ]
-    })
-    st.table(props_df)
     
-    # Calculate frequency response
-    freq_range = np.logspace(np.log10(freq_min), np.log10(freq_max), DEFAULT_FREQ_POINTS)
+    # Create a more compact layout for material properties
+    prop_col1, prop_col2 = st.columns(2)
+    
+    with prop_col1:
+        st.metric("Conductivity (S/m)", f"{material_properties['conductivity']:.2e}")
+        st.metric("Relative Permeability", f"{material_properties['relative_permeability']:.2f}")
+    
+    with prop_col2:
+        st.metric("Relative Permittivity", f"{material_properties['relative_permittivity']:.2f}")
+        st.metric("Density (kg/m³)", f"{material_properties['density']:.2f}")
+    
+    # Fix for Number vs SupportsIndex type error
+    def fix_freq_range(min_freq, max_freq, points):
+        return np.logspace(np.log10(min_freq), np.log10(max_freq), int(points))
+    
+    # Calculate frequency response using the fixed function
+    freq_range = fix_freq_range(freq_min, freq_max, DEFAULT_FREQ_POINTS)
     
     # Initialize SUPER MODE variables
     if super_mode:
@@ -669,40 +716,47 @@ def main():
     fig = create_frequency_plot(physics_results)
     st.plotly_chart(fig, use_container_width=True)
     
-    # Results Analysis Section
+    # Results Analysis Section with improved space utilization
     st.header("Detailed Analysis")
     
-    # Material Composition Details
-    st.subheader("Material Composition")
-    composition_details = []
-    for element, percentage in composition.items():
-        element_props = materials.get_element_properties(element)
-        if element_props:
-            composition_details.append(f"{element}: {percentage*100:.1f}%")
-    st.markdown("**Chemical Composition:**\n" + "\n".join([f"- {detail}" for detail in composition_details]))
-    st.markdown("---")
+    # Create a more compact layout for material composition and effectiveness rating
+    comp_col1, comp_col2 = st.columns([1, 1])
     
-    # Calculate initial frequency index for middle frequency
-    initial_freq = (freq_min + freq_max) / 2
-    freq_idx = np.abs(freq_range - initial_freq).argmin()
+    with comp_col1:
+        # Material Composition Details
+        st.subheader("Material Composition")
+        composition_details = []
+        for element, percentage in composition.items():
+            element_props = materials.get_element_properties(element)
+            if element_props:
+                composition_details.append(f"{element}: {percentage*100:.1f}%")
+        st.markdown("**Chemical Composition:**\n" + "\n".join([f"- {detail}" for detail in composition_details]))
     
-    # Overall effectiveness rating
-    total_se = physics_results['total_se'][freq_idx]
-    effectiveness_levels = {
-        (0, 30): ("Poor", "🔴", "Minimal shielding, not suitable for sensitive applications"),
-        (30, 60): ("Good", "🟡", "Moderate shielding, suitable for general applications"),
-        (60, 90): ("Excellent", "🟢", "High-performance shielding, suitable for sensitive equipment"),
-        (90, float('inf')): ("Superior", "⭐", "Exceptional shielding, suitable for critical applications")
-    }
+    with comp_col2:
+        # Calculate initial frequency index for middle frequency
+        initial_freq = (freq_min + freq_max) / 2
+        freq_idx = np.abs(freq_range - initial_freq).argmin()
+        
+        # Overall effectiveness rating
+        total_se = physics_results['total_se'][freq_idx]
+        effectiveness_levels = {
+            (0, 30): ("Poor", "🔴", "Minimal shielding, not suitable for sensitive applications"),
+            (30, 60): ("Good", "🟡", "Moderate shielding, suitable for general applications"),
+            (60, 90): ("Excellent", "🟢", "High-performance shielding, suitable for sensitive equipment"),
+            (90, float('inf')): ("Superior", "⭐", "Exceptional shielding, suitable for critical applications")
+        }
+        
+        for (min_se, max_se), (rating, icon, description) in effectiveness_levels.items():
+            if min_se <= total_se < max_se:
+                st.markdown(f"### Overall Shielding Rating: {rating} {icon}")
+                st.info(description)
+                break
     
-    for (min_se, max_se), (rating, icon, description) in effectiveness_levels.items():
-        if min_se <= total_se < max_se:
-            st.markdown(f"### Overall Shielding Rating: {rating} {icon}")
-            st.info(description)
-            break
+    # Create a container with columns for the analysis sections
+    analysis_container = st.container()
     
     # Detailed results at specific frequency
-    col1, col2 = st.columns(2)
+    col1, col2 = analysis_container.columns([1, 1])
     
     with col1:
         st.subheader("Analysis at Specific Frequency")
@@ -718,6 +772,7 @@ def main():
         # Find closest frequency in our results
         freq_idx = np.abs(freq_range - specific_freq).argmin()
         
+        # Use a more compact display for results
         results_df = pd.DataFrame({
             "Component": ["Reflection Loss", "Absorption Loss", "Multiple Reflection Loss", "Total Shielding Effectiveness"],
             "Value (dB)": [
@@ -753,11 +808,12 @@ def main():
         st.success(f"This material primarily shields through **{primary_mechanism[0]}** " +
                   f"({primary_mechanism[1]:.1f} dB)")
     
-    # Export and comparison buttons
-    col1, col2 = st.columns(2)
+    # Export and comparison buttons in a more compact layout
+    button_container = st.container()
+    btn_col1, btn_col2 = button_container.columns([1, 1])
     
-    with col1:
-        if st.button("Export Results"):
+    with btn_col1:
+        if st.button("Export Results", use_container_width=True):
             # Create DataFrame with all results
             export_df = pd.DataFrame({
                 "Frequency (Hz)": freq_range,
@@ -773,11 +829,12 @@ def main():
                 label="Download CSV",
                 data=csv,
                 file_name="emi_shielding_results.csv",
-                mime="text/csv"
+                mime="text/csv",
+                use_container_width=True
             )
     
-    with col2:
-        if st.button("Add to Comparison"):
+    with btn_col2:
+        if st.button("Add to Comparison", use_container_width=True):
             material_name = "+".join([f"{k}{v*100:.0f}%" for k, v in composition.items()])
             st.session_state['comparison_data'].append({
                 "name": material_name,
@@ -803,12 +860,15 @@ def main():
             # Display comparison controls
             st.subheader("Saved Materials")
             for i, data in enumerate(st.session_state['comparison_data']):
+                if i is None or not isinstance(i, int):
+                    continue
                 col1, col2, col3 = st.columns([3, 1, 1])
                 with col1:
+                    checkbox_key = f"compare_{str(i)}"
                     st.session_state['comparison_data'][i]['active'] = st.checkbox(
-                        data['name'],
+                        str(data.get('name', '')) if data.get('name', '') is not None else "",
                         value=data['active'],
-                        key=f"compare_{i}"
+                        key=checkbox_key
                     )
                 with col2:
                     if st.button("Load", key=f"load_{i}"):
@@ -826,7 +886,7 @@ def main():
                 st.plotly_chart(fig, use_container_width=True)
 
     with tab3:
-        # Comparison Tab
+        # Comparison Tab with improved space utilization
         st.header("Material Comparison")
         st.write("""
         Compare different material combinations to find the optimal solution for your EMI shielding needs.
@@ -836,25 +896,43 @@ def main():
         if not st.session_state['comparison_data']:
             st.info("No materials added for comparison yet. Use the 'Add to Comparison' button in the Analysis Results tab to add materials.")
         else:
-            # Display comparison controls
+            # Create a more space-efficient layout for comparison controls
             st.subheader("Saved Materials")
-            for i, data in enumerate(st.session_state['comparison_data']):
-                col1, col2, col3 = st.columns([3, 1, 1])
-                with col1:
-                    st.session_state['comparison_data'][i]['active'] = st.checkbox(
-                        data['name'],
-                        value=data['active'],
-                        key=f"compare_{i}"
-                    )
-                with col2:
-                    if st.button("Load", key=f"load_{i}"):
-                        st.session_state['example_composition'] = data['composition']
-                        st.session_state['example_thickness'] = data['thickness']
-                        st.rerun()
-                with col3:
-                    if st.button("Remove", key=f"remove_{i}"):
-                        st.session_state['comparison_data'].pop(i)
-                        st.rerun()
+            
+            # Use a grid layout for material comparison controls
+            num_materials = len(st.session_state['comparison_data'])
+            cols_per_row = 2  # Display 2 materials per row for better space utilization
+            
+            # Create rows of materials
+            for i in range(0, num_materials, cols_per_row):
+                cols = st.columns(cols_per_row)
+                
+                # Add materials to each column in the row
+                for j in range(cols_per_row):
+                    idx = i + j
+                    if idx is None or not isinstance(idx, int):
+                        continue
+                    if idx < num_materials:
+                        data = st.session_state['comparison_data'][idx]
+                        with cols[j]:
+                            st.markdown(f"**{data['name']}**")
+                            col1, col2, col3 = st.columns([3, 2, 2])
+                            with col1:
+                                checkbox_key = f"compare_tab3_{str(idx)}"
+                                st.session_state['comparison_data'][idx]['active'] = st.checkbox(
+                                    "Active",
+                                    value=data['active'],
+                                    key=checkbox_key
+                                )
+                            with col2:
+                                if st.button("Load", key=f"load_{idx}", use_container_width=True):
+                                    st.session_state['example_composition'] = data['composition']
+                                    st.session_state['example_thickness'] = data['thickness']
+                                    st.rerun()
+                            with col3:
+                                if st.button("Remove", key=f"remove_{idx}", use_container_width=True):
+                                    st.session_state['comparison_data'].pop(idx)
+                                    st.rerun()
             
             # Display comparison plot
             active_data = [d for d in st.session_state['comparison_data'] if d['active']]
@@ -863,12 +941,9 @@ def main():
                 fig = create_comparison_plot(active_data)
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # Add comparison analysis
-                st.subheader("Comparative Analysis")
-                
-                # Find best material for different frequency ranges
+                # Add comparison analysis in a more compact layout
                 if len(active_data) > 1:
-                    st.markdown("### Best Material by Frequency Range")
+                    st.subheader("Comparative Analysis")
                     
                     # Define frequency ranges for analysis
                     ranges = [
@@ -878,7 +953,9 @@ def main():
                         ("Very High Frequency (> 1 GHz)", 1e9, float('inf'))
                     ]
                     
-                    for range_name, range_min, range_max in ranges:
+                    # Create a grid layout for frequency range analysis
+                    range_cols = st.columns(2)
+                    for i, (range_name, range_min, range_max) in enumerate(ranges):
                         # Find indices within this range
                         indices = [i for i, f in enumerate(active_data[0]["frequency"]) 
                                 if range_min <= f <= range_max]
@@ -893,7 +970,9 @@ def main():
                             # Find best material
                             best_material = max(avg_se_by_material, key=lambda x: x[1])
                             
-                            st.markdown(f"**{range_name}**: {best_material[0]} ({best_material[1]:.1f} dB)")
+                            # Display in alternating columns for better space utilization
+                            with range_cols[i % 2]:
+                                st.markdown(f"**{range_name}**: {best_material[0]} ({best_material[1]:.1f} dB)")
         
     with tab4:
         # Technical Reference Tab
@@ -1152,7 +1231,7 @@ def main():
                 help="Configure multiple material layers"
             )
             
-            for i in range(num_layers):
+            for i in range(int(num_layers)):
                 st.markdown(f"#### Layer {i+1}")
                 col1, col2 = st.columns(2)
                 with col1:
@@ -1268,6 +1347,7 @@ def main():
                     value=128,
                     help="Number of neurons per hidden layer"
                 )
+                
                 dropout = st.slider(
                     "Dropout Rate",
                     min_value=0.0,

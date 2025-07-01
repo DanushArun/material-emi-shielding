@@ -43,14 +43,27 @@ st.markdown("""
     /* Import modern fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
     
-    /* Dark theme root variables */
+    /* Dark theme root variables - 8px grid system */
     :root {
+        /* Spacing scale (8px grid) */
+        --space-1: 8px;
+        --space-2: 16px;
+        --space-3: 24px;
+        --space-4: 32px;
+        --space-5: 40px;
+        --space-6: 48px;
+        --space-8: 64px;
+        --space-10: 80px;
+        --space-12: 96px;
+        
+        /* Colors */
         --bg-primary: #0f0f0f;
         --bg-secondary: #1a1a1a;
         --bg-tertiary: #2d2d2d;
         --bg-card: #1e1e1e;
         --border-color: #404040;
-        --text-primary: #f0f0f0;
+        --border-light: #555555;
+        --text-primary: #ffffff;
         --text-secondary: #b0b0b0;
         --text-muted: #707070;
         --accent-blue: #00d4ff;
@@ -61,6 +74,23 @@ st.markdown("""
         --shadow-glow: rgba(0, 212, 255, 0.15);
         --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #8b5cf6 100%);
         --gradient-secondary: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        
+        /* Typography scale */
+        --font-xs: 0.75rem;
+        --font-sm: 0.875rem;
+        --font-base: 1rem;
+        --font-lg: 1.125rem;
+        --font-xl: 1.25rem;
+        --font-2xl: 1.5rem;
+        --font-3xl: 1.875rem;
+        --font-4xl: 2.25rem;
+        
+        /* Border radius */
+        --radius-sm: 6px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+        --radius-full: 50px;
     }
     
     /* Main app styling */
@@ -68,12 +98,43 @@ st.markdown("""
         background: var(--bg-primary);
         color: var(--text-primary);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
     }
     
     /* Hide Streamlit branding */
     #MainMenu, footer, header, .stDeployButton {
         visibility: hidden;
     }
+    
+    /* Main container */
+    .main-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: var(--space-4);
+    }
+    
+    /* Section headers */
+    .section-header {
+        margin: var(--space-6) 0 var(--space-4) 0;
+        padding-bottom: var(--space-2);
+        border-bottom: 2px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: 600;
+        line-height: 1.2;
+        margin: 0;
+    }
+    
+    h1 { font-size: var(--font-4xl); }
+    h2 { font-size: var(--font-3xl); }
+    h3 { font-size: var(--font-2xl); }
+    h4 { font-size: var(--font-xl); }
+    h5 { font-size: var(--font-lg); }
+    h6 { font-size: var(--font-base); }
     
     /* Main header */
     .main-header {
@@ -106,22 +167,43 @@ st.markdown("""
         font-weight: 400;
     }
     
-    /* Dark cards */
-    .dark-card {
+    /* Card components */
+    .card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(10px);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
+        margin-bottom: var(--space-4);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
     }
     
-    .dark-card:hover {
-        border-color: var(--accent-blue);
-        box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+    .card:hover {
+        border-color: var(--border-light);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         transform: translateY(-2px);
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-bottom: var(--space-3);
+        padding-bottom: var(--space-2);
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .card-title {
+        font-size: var(--font-lg);
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .card-subtitle {
+        font-size: var(--font-sm);
+        color: var(--text-secondary);
+        margin: 0;
     }
     
     /* Glassmorphism effect */
@@ -129,95 +211,166 @@ st.markdown("""
         background: rgba(30, 30, 30, 0.7);
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 2rem;
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
     
-    /* Element buttons */
+    /* Element grid system */
+    .element-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-2);
+        margin: var(--space-4) 0;
+    }
+    
     .element-btn {
         background: var(--bg-tertiary);
-        border: 2px solid var(--border-color);
-        border-radius: 12px;
-        padding: 1rem;
-        margin: 0.25rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: var(--space-2);
         color: var(--text-primary);
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
+        font-weight: 500;
+        font-size: var(--font-xs);
+        transition: all 0.2s ease;
         cursor: pointer;
-        min-height: 70px;
+        min-height: 60px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         position: relative;
-        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .element-btn:hover {
         border-color: var(--accent-blue);
         background: rgba(0, 212, 255, 0.1);
-        transform: scale(1.05);
-        box-shadow: 0 4px 16px rgba(0, 212, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+    }
+    
+    .element-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
     }
     
     .element-btn.selected {
         background: var(--gradient-primary);
         border-color: var(--accent-blue);
         color: white;
-        box-shadow: 0 0 20px var(--shadow-glow);
+        box-shadow: 0 0 16px var(--shadow-glow);
+        transform: translateY(-2px);
     }
     
-    /* Periodic table groups */
-    .alkali { border-left: 4px solid #ff6b6b; }
-    .alkaline { border-left: 4px solid #feca57; }
-    .transition { border-left: 4px solid #48dbfb; }
-    .metalloid { border-left: 4px solid #ff9ff3; }
-    .nonmetal { border-left: 4px solid #54a0ff; }
-    .halogen { border-left: 4px solid #5f27cd; }
-    .noble { border-left: 4px solid #00d2d3; }
+    .element-symbol {
+        font-size: var(--font-base);
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+    
+    .element-name {
+        font-size: 10px;
+        opacity: 0.7;
+        text-align: center;
+        line-height: 1.1;
+        font-weight: 400;
+    }
+    
+    /* Periodic table categories */
+    .category-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin: var(--space-4) 0 var(--space-2) 0;
+        font-size: var(--font-sm);
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .category-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    
+    /* Element category colors */
+    .alkali { border-left: 3px solid #ff6b6b; }
+    .alkali .category-indicator { background: #ff6b6b; }
+    
+    .alkaline { border-left: 3px solid #feca57; }
+    .alkaline .category-indicator { background: #feca57; }
+    
+    .transition { border-left: 3px solid #48dbfb; }
+    .transition .category-indicator { background: #48dbfb; }
+    
+    .metalloid { border-left: 3px solid #ff9ff3; }
+    .metalloid .category-indicator { background: #ff9ff3; }
+    
+    .nonmetal { border-left: 3px solid #54a0ff; }
+    .nonmetal .category-indicator { background: #54a0ff; }
+    
+    .halogen { border-left: 3px solid #5f27cd; }
+    .halogen .category-indicator { background: #5f27cd; }
+    
+    .noble { border-left: 3px solid #00d2d3; }
+    .noble .category-indicator { background: #00d2d3; }
     
     /* Molecule display */
     .molecule-display {
         background: var(--bg-secondary);
         border: 2px dashed var(--border-color);
-        border-radius: 12px;
-        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+        padding: var(--space-6);
         text-align: center;
-        min-height: 100px;
+        min-height: 120px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-family: 'JetBrains Mono', monospace;
-        font-size: 1.5rem;
+        font-size: var(--font-2xl);
         font-weight: 600;
-        color: var(--accent-blue);
+        color: var(--text-secondary);
+        transition: all 0.3s ease;
+        margin: var(--space-4) 0;
     }
     
     .molecule-display.has-content {
         border-color: var(--accent-blue);
         background: rgba(0, 212, 255, 0.05);
         box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+        color: var(--accent-blue);
+        border-style: solid;
+    }
+    
+    .molecule-display .placeholder {
+        color: var(--text-muted);
+        font-size: var(--font-base);
+        font-weight: 400;
     }
     
     /* Reaction equation */
     .reaction-equation {
         background: var(--bg-card);
         border: 2px solid var(--border-color);
-        border-radius: 16px;
-        padding: 2rem;
+        border-radius: var(--radius-lg);
+        padding: var(--space-6);
         font-family: 'JetBrains Mono', monospace;
-        font-size: 1.3rem;
+        font-size: var(--font-xl);
         font-weight: 500;
         color: var(--text-primary);
         text-align: center;
-        min-height: 80px;
+        min-height: 100px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-wrap: wrap;
-        gap: 1rem;
+        gap: var(--space-3);
+        margin: var(--space-4) 0;
+        transition: all 0.3s ease;
     }
     
     .reaction-equation.active {
@@ -226,21 +379,170 @@ st.markdown("""
         box-shadow: 0 0 30px rgba(139, 92, 246, 0.2);
     }
     
+    .reaction-equation .molecule {
+        background: var(--bg-tertiary);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+        color: var(--accent-blue);
+    }
+    
+    /* Buttons */
+    .btn {
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-md);
+        font-weight: 500;
+        font-size: var(--font-sm);
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        text-decoration: none;
+    }
+    
+    .btn-primary {
+        background: var(--gradient-primary);
+        border: none;
+        color: white;
+        box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+    }
+    
+    .btn-primary:hover {
+        box-shadow: 0 4px 16px rgba(0, 212, 255, 0.4);
+        transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+    
+    .btn-secondary:hover {
+        background: var(--bg-card);
+        border-color: var(--border-light);
+    }
+    
     /* React button */
     .react-button {
         background: var(--gradient-primary);
         border: none;
-        border-radius: 50px;
-        padding: 1.5rem 3rem;
-        font-size: 1.5rem;
+        border-radius: var(--radius-full);
+        padding: var(--space-4) var(--space-8);
+        font-size: var(--font-2xl);
         font-weight: 700;
         color: white;
         cursor: pointer;
         transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin: var(--space-6) auto;
+        width: fit-content;
         box-shadow: 0 8px 32px var(--shadow-glow);
         text-transform: uppercase;
         letter-spacing: 2px;
         position: relative;
+    }
+    
+    .react-button:hover {
+        box-shadow: 0 12px 48px rgba(0, 212, 255, 0.5);
+        transform: translateY(-4px) scale(1.02);
+    }
+    
+    .react-button:active {
+        transform: translateY(-2px) scale(1.0);
+    }
+    
+    /* Improved spacing */
+    .stColumn > div {
+        padding: var(--space-2);
+    }
+    
+    /* Preset card hover effects */
+    .preset-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        border-color: var(--border-light);
+    }
+    
+    /* Loading states */
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        div[data-testid="column"] button[kind="secondary"] {
+            min-height: 50px !important;
+            font-size: 10px !important;
+        }
+        
+        .react-button {
+            font-size: var(--font-lg);
+            padding: var(--space-3) var(--space-6);
+        }
+        
+        h1 { font-size: var(--font-3xl); }
+        h2 { font-size: var(--font-2xl); }
+        h3 { font-size: var(--font-xl); }
+    }
+    
+    /* Style element buttons */
+    div[data-testid="column"] button[kind="secondary"] {
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius-md) !important;
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
+        font-size: var(--font-xs) !important;
+        min-height: 60px !important;
+        padding: var(--space-2) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        transition: all 0.2s ease !important;
+        white-space: pre-line !important;
+        line-height: 1.2 !important;
+    }
+    
+    /* Style the main REACT button */
+    button[key="react_button"] {
+        background: var(--gradient-primary) !important;
+        border: none !important;
+        border-radius: var(--radius-full) !important;
+        color: white !important;
+        font-size: var(--font-2xl) !important;
+        font-weight: 700 !important;
+        padding: var(--space-4) var(--space-8) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        box-shadow: 0 8px 32px var(--shadow-glow) !important;
+        transition: all 0.3s ease !important;
+        min-height: 80px !important;
+    }
+    
+    button[key="react_button"]:hover {
+        box-shadow: 0 12px 48px rgba(0, 212, 255, 0.5) !important;
+        transform: translateY(-4px) scale(1.02) !important;
+    }
+    
+    div[data-testid="column"] button[kind="secondary"]:hover {
+        border-color: var(--accent-blue) !important;
+        background: rgba(0, 212, 255, 0.1) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2) !important;
+    }
+    
+    /* Selected element styling */
+    .stButton > button:focus {
+        border-color: var(--accent-blue) !important;
+        background: var(--gradient-primary) !important;
+        color: white !important;
+        box-shadow: 0 0 16px var(--shadow-glow) !important;
+        transform: translateY(-2px) !important;
         overflow: hidden;
     }
     
@@ -778,26 +1080,53 @@ def format_number(num: float, precision: int = 2) -> str:
 # MAIN APP LAYOUT
 # ================================
 
-# Header
+
+# Main header with title
 st.markdown("""
-<div class="main-header fade-in">
-    <h1>🔬 EMI SHIELDER</h1>
-    <p></p>
+<div style="text-align: center; margin-bottom: var(--space-6);">
+    <h1 style="
+        font-size: var(--font-4xl);
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        letter-spacing: 2px;
+    ">🔬 EMI SHIELDER</h1>
 </div>
 """, unsafe_allow_html=True)
 
-# Main layout
-left_col, right_col = st.columns([1.2, 1.8])
+# HOW TO USE section at the top
+st.markdown("""
+<div class="card" style="margin-bottom: var(--space-6);">
+    <div class="card-header">
+        <h3 class="card-title">📋 How To Use</h3>
+    </div>
+    <div style="padding: var(--space-3);">
+        <p style="margin: 0 0 var(--space-2) 0;">1. Select elements from the list below to build molecules</p>
+        <p style="margin: 0 0 var(--space-2) 0;">2. Add molecules to create a chemical reaction</p>
+        <p style="margin: 0 0 var(--space-2) 0;">3. Set shield thickness and frequency parameters</p>
+        <p style="margin: 0 0 var(--space-2) 0;">4. Click ⚛️ REACT to analyze EMI shielding</p>
+        <p style="margin: 0;">5. View step-by-step calculations and results</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# ================================
-# LEFT COLUMN - MOLECULAR BUILDER
-# ================================
 
-with left_col:
-    st.markdown('<div class="slide-up">', unsafe_allow_html=True)
-    
-    # Current molecule builder
-    st.markdown("### ⚛️ Molecule Builder")
+# Single column layout for better flow
+main_container = st.container()
+
+with main_container:
+    # BUILD YOUR MOLECULE section
+    st.markdown("""
+    <div style="margin: var(--space-6) 0 var(--space-4) 0;">
+        <h3 style="
+            font-size: var(--font-2xl);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 var(--space-4) 0;
+            text-align: center;
+        ">⚛️ Molecule</h3>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Display current molecule
     current_formula = ChemicalParser.format_formula(st.session_state.current_molecule)
@@ -810,53 +1139,18 @@ with left_col:
     else:
         st.markdown("""
         <div class="molecule-display">
-            Build your molecule by selecting elements below
+            <span class="placeholder">Build your molecule by selecting elements below</span>
         </div>
         """, unsafe_allow_html=True)
     
-    # Element selection grid
-    st.markdown("**Select Elements:**")
-    
-    # Most common EMI shielding elements
-    elements = [
-        ['H', 'Li', 'C', 'N'],
-        ['O', 'F', 'Na', 'Mg'],
-        ['Al', 'Si', 'P', 'S'],
-        ['Cl', 'K', 'Ca', 'Ti'],
-        ['Cr', 'Mn', 'Fe', 'Co'],
-        ['Ni', 'Cu', 'Zn', 'Ag'],
-        ['Sn', 'Au', 'Pb', 'Mo']
-    ]
-    
-    for row in elements:
-        cols = st.columns(4)
-        for i, element in enumerate(row):
-            with cols[i]:
-                elem_data = material_db.get_material(element)
-                if elem_data:
-                    category = get_element_category(element)
-                    is_selected = element in st.session_state.current_molecule
-                    
-                    button_class = f"element-btn {category}"
-                    if is_selected:
-                        button_class += " selected"
-                    
-                    if st.button(
-                        f"{element}\n{elem_data.get('name', '')[:6]}",
-                        key=f"elem_{element}",
-                        help=f"{elem_data.get('name', '')} - Atomic Number: {elem_data.get('atomic_number', 'N/A')}"
-                    ):
-                        if is_selected:
-                            # Remove element
-                            del st.session_state.current_molecule[element]
-                        else:
-                            # Add element with quantity 1
-                            st.session_state.current_molecule[element] = 1
-                        st.rerun()
-    
-    # Quantity adjustments for selected elements
+    # Quantity adjustments for selected elements (moved to be under molecule display)
     if st.session_state.current_molecule:
-        st.markdown("**Adjust Quantities:**")
+        st.markdown("""
+        <div class="category-header">
+            <div class="category-indicator" style="background: var(--accent-green);"></div>
+            <span>Adjust Quantities</span>
+        </div>
+        """, unsafe_allow_html=True)
         
         for element, quantity in list(st.session_state.current_molecule.items()):
             col1, col2, col3 = st.columns([2, 2, 1])
@@ -898,9 +1192,115 @@ with left_col:
                 st.session_state.current_molecule = {}
                 st.rerun()
     
-    # Molecular presets
+    # ELEMENT LIST section
+    st.markdown("""
+    <div style="margin: var(--space-6) 0 var(--space-4) 0;">
+        <h3 style="
+            font-size: var(--font-2xl);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 var(--space-4) 0;
+            text-align: center;
+        ">🧪 Element List</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Categorized elements for better organization
+    element_categories = {
+        "Common Metals": {
+            "elements": ['Fe', 'Cu', 'Al', 'Ni'],
+            "color": "#48dbfb",
+            "description": "Most used in EMI shielding"
+        },
+        "Transition Metals": {
+            "elements": ['Cr', 'Mn', 'Co', 'Zn'],
+            "color": "#00d2d3", 
+            "description": "High conductivity metals"
+        },
+        "Noble Metals": {
+            "elements": ['Ag', 'Au', 'Pb', 'Sn'],
+            "color": "#feca57",
+            "description": "Corrosion resistant"
+        },
+        "Light Elements": {
+            "elements": ['H', 'Li', 'C', 'N'],
+            "color": "#54a0ff",
+            "description": "Low density options"
+        },
+        "Nonmetals": {
+            "elements": ['O', 'F', 'P', 'S'],
+            "color": "#ff9ff3",
+            "description": "Dielectric materials"
+        },
+        "Other": {
+            "elements": ['Na', 'Mg', 'Si', 'Cl', 'K', 'Ca', 'Ti', 'Mo'],
+            "color": "#5f27cd",
+            "description": "Specialized applications"
+        }
+    }
+    
+    for category_name, category_data in element_categories.items():
+        if category_data["elements"]:
+            # Category header
+            st.markdown(f"""
+            <div class="category-header">
+                <div class="category-indicator" style="background: {category_data['color']};"></div>
+                <span>{category_name}</span>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Element grid for this category - show more elements per row
+            num_cols = min(6, len(category_data["elements"]))
+            cols = st.columns(num_cols)
+            for i, element in enumerate(category_data["elements"]):
+                with cols[i % num_cols]:
+                    elem_data = material_db.get_material(element)
+                    if elem_data:
+                        is_selected = element in st.session_state.current_molecule
+                        
+                        # Create clickable element button
+                        selected_class = "selected" if is_selected else ""
+                        element_name = elem_data.get('name', element)[:8]
+                        
+                        # Use streamlit button with custom styling
+                        button_label = f"{element}\n{element_name}"
+                        
+                        # Add custom CSS for this specific element
+                        st.markdown(f"""
+                        <style>
+                        button[key="elem_{element}"] {{
+                            border-left: 3px solid {category_data['color']} !important;
+                        }}
+                        </style>
+                        """, unsafe_allow_html=True)
+                        
+                        if st.button(
+                            button_label,
+                            key=f"elem_{element}",
+                            help=f"{element_name} - Click to {'remove' if is_selected else 'add'}",
+                            use_container_width=True
+                        ):
+                            if is_selected:
+                                # Remove element
+                                del st.session_state.current_molecule[element]
+                            else:
+                                # Add element with quantity 1
+                                st.session_state.current_molecule[element] = 1
+                            st.rerun()
+    
+    # Molecular presets section
     if MOLECULAR_PRESETS:
-        st.markdown("**Quick Molecules:**")
+        st.markdown("""
+        <div style="margin: var(--space-6) 0 var(--space-4) 0;">
+            <h3 style="
+                font-size: var(--font-2xl);
+                font-weight: 600;
+                color: var(--text-primary);
+                margin: 0 0 var(--space-4) 0;
+                text-align: center;
+            ">🧪 Quick Molecules</h3>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Group presets by category
         categories = {}
@@ -910,34 +1310,99 @@ with left_col:
                 categories[category] = []
             categories[category].append((name, preset))
         
-        # Display preset buttons by category
+        # Display preset cards by category
         for category, presets in categories.items():
             with st.expander(f"🧪 {category}", expanded=False):
-                preset_cols = st.columns(2)
-                for i, (name, preset) in enumerate(presets):
-                    with preset_cols[i % 2]:
-                        if st.button(
-                            f"{preset['formula']}\n{name}",
-                            key=f"preset_{name}",
-                            help=preset.get('description', ''),
-                            use_container_width=True
-                        ):
-                            st.session_state.current_molecule = preset['composition'].copy()
-                            st.rerun()
+                # Create grid layout for preset cards
+                for i in range(0, len(presets), 2):
+                    cols = st.columns(2)
+                    for j, col in enumerate(cols):
+                        if i + j < len(presets):
+                            name, preset = presets[i + j]
+                            with col:
+                                # Create preset card
+                                st.markdown(f"""
+                                <div class="preset-card" style="
+                                    background: var(--bg-tertiary);
+                                    border: 1px solid var(--border-color);
+                                    border-radius: var(--radius-md);
+                                    padding: var(--space-3);
+                                    margin-bottom: var(--space-2);
+                                    cursor: pointer;
+                                    transition: all 0.2s ease;
+                                ">
+                                    <div style="
+                                        font-family: 'JetBrains Mono', monospace;
+                                        font-size: var(--font-lg);
+                                        font-weight: 600;
+                                        color: var(--accent-purple);
+                                        margin-bottom: var(--space-1);
+                                    ">{preset['formula']}</div>
+                                    <div style="
+                                        font-size: var(--font-sm);
+                                        color: var(--text-primary);
+                                        font-weight: 500;
+                                        margin-bottom: var(--space-1);
+                                    ">{name}</div>
+                                    <div style="
+                                        font-size: var(--font-xs);
+                                        color: var(--text-secondary);
+                                        line-height: 1.3;
+                                    ">{preset.get('description', '')}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                if st.button(
+                                    f"Add {name}",
+                                    key=f"preset_{name}",
+                                    help=f"Add {preset['formula']} directly to reaction - {preset.get('description', '')}",
+                                    use_container_width=True
+                                ):
+                                    # Add directly to reaction instead of current molecule
+                                    formula = preset['formula']
+                                    st.session_state.reaction_engine.add_molecule(formula, 1)
+                                    st.rerun()
     
-    # Reaction equation display
-    st.markdown("### 🧪 Reaction Equation")
+    # COMPLETE REACTION section
+    st.markdown("""
+    <div style="margin: var(--space-8) 0 var(--space-4) 0;">
+        <h3 style="
+            font-size: var(--font-2xl);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 var(--space-4) 0;
+            text-align: center;
+        ">⚗️ Complete Reaction</h3>
+    </div>
+    """, unsafe_allow_html=True)
     
     reaction_eq = st.session_state.reaction_engine.get_reaction_equation()
     if len(st.session_state.reaction_engine.molecules) > 0:
+        # Parse reaction to highlight individual molecules
+        molecules = reaction_eq.split(' + ')
+        molecule_html = []
+        for mol in molecules:
+            molecule_html.append(f'<span class="molecule">{mol.strip()}</span>')
+        
         st.markdown(f"""
         <div class="reaction-equation active">
-            {reaction_eq}
+            {' + '.join(molecule_html)}
         </div>
         """, unsafe_allow_html=True)
         
-        # Manage reaction molecules
-        st.markdown("**Reaction Components:**")
+        # REACTION COMPONENTS section
+        st.markdown("""
+        <div style="margin: var(--space-6) 0 var(--space-4) 0;">
+            <h4 style="
+                font-size: var(--font-xl);
+                font-weight: 600;
+                color: var(--text-primary);
+                margin: 0 0 var(--space-3) 0;
+                text-align: center;
+            ">→ Reaction Components</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
         for i, mol in enumerate(st.session_state.reaction_engine.molecules):
             col1, col2, col3 = st.columns([3, 1, 1])
             
@@ -1030,15 +1495,32 @@ with left_col:
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ================================
-# RIGHT COLUMN - CALCULATIONS & RESULTS
-# ================================
-
-with right_col:
-    st.markdown('<div class="slide-up">', unsafe_allow_html=True)
-    
-    # React button
+    # Big REACT button section
     if len(st.session_state.reaction_engine.molecules) > 0:
+        st.markdown("""
+        <div style="margin: var(--space-8) 0; text-align: center;">
+            <div style="
+                background: var(--bg-card);
+                border: 2px solid var(--border-color);
+                border-radius: var(--radius-lg);
+                padding: var(--space-6);
+                margin: var(--space-4) auto;
+                max-width: 400px;
+            ">
+                <h4 style="
+                    font-size: var(--font-xl);
+                    color: var(--text-primary);
+                    margin: 0 0 var(--space-4) 0;
+                ">Ready to Analyze!</h4>
+                <p style="
+                    color: var(--text-secondary);
+                    margin: 0 0 var(--space-4) 0;
+                    font-size: var(--font-sm);
+                ">Click below to start EMI shielding analysis</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button("⚛️ REACT", key="react_button", use_container_width=True):
@@ -1062,9 +1544,27 @@ with right_col:
         
         st.markdown("---")
     
-    # Step-by-step calculations
+    # RESULTS section
     if st.session_state.show_results and len(st.session_state.reaction_engine.molecules) > 0:
-        st.markdown("### 📊 Step-by-Step Analysis")
+        st.markdown("""
+        <div style="margin: var(--space-8) 0 var(--space-6) 0;">
+            <h2 style="
+                font-size: var(--font-3xl);
+                font-weight: 700;
+                color: var(--text-primary);
+                margin: 0 0 var(--space-2) 0;
+                text-align: center;
+                border-bottom: 3px solid var(--accent-green);
+                padding-bottom: var(--space-3);
+            ">📊 RESULTS</h2>
+            <p style="
+                text-align: center;
+                color: var(--text-secondary);
+                font-size: var(--font-lg);
+                margin: var(--space-3) 0 0 0;
+            ">Step-by-step EMI shielding analysis</p>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Step 1: Molecular Analysis
         with st.expander("🔬 Step 1: Molecular Analysis", expanded=True):
@@ -1370,41 +1870,5 @@ with right_col:
                 
                 st.plotly_chart(fig_freq, use_container_width=True)
     
-    else:
-        # Welcome screen
-        st.markdown("""
-        <div style='text-align: center; padding: 80px 20px; color: var(--text-secondary);'>
-            <div style='font-size: 5rem; margin-bottom: 2rem; opacity: 0.7;'>⚛️</div>
-            <h2 style='color: var(--text-primary); font-weight: 600; margin-bottom: 1rem;'>
-                Chemical Reaction EMI Designer
-            </h2>
-            <p style='font-size: 1.2rem; margin: 1.5rem 0; line-height: 1.6;'>
-                Build molecular compounds and analyze their electromagnetic shielding properties
-                through advanced chemical composition calculations.
-            </p>
-            <div style='background: var(--bg-card); padding: 2rem; border-radius: 16px; 
-                       margin-top: 3rem; border: 1px solid var(--border-color);'>
-                <h3 style='color: var(--accent-blue); margin-bottom: 1.5rem;'>How to Use</h3>
-                <div style='text-align: left; max-width: 400px; margin: 0 auto; line-height: 1.8;'>
-                    <p><strong>1.</strong> Select elements and set quantities to build molecules</p>
-                    <p><strong>2.</strong> Add molecules to create a chemical reaction</p>
-                    <p><strong>3.</strong> Set shield thickness and frequency parameters</p>
-                    <p><strong>4.</strong> Click <strong>⚛️ REACT</strong> to analyze EMI shielding</p>
-                    <p><strong>5.</strong> View step-by-step calculations and results</p>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
-
-# Footer
-st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 2rem;'>
-        🔬 Chemical EMI Designer v2.0 | Advanced Molecular Analysis for Electromagnetic Shielding
-    </div>
-    """,
-    unsafe_allow_html=True
-)

@@ -1,32 +1,25 @@
-<<<<<<< HEAD
-# EMI Shielding Prediction System
+# Chemical EMI Designer
 
-A sophisticated web application for predicting electromagnetic interference (EMI) shielding effectiveness of material combinations. This system combines physics-based calculations with machine learning to provide accurate predictions for any combination of elements from the periodic table.
+A Chemical Reaction EMI Shield Designer that allows users to build molecular compounds and analyze their electromagnetic interference (EMI) shielding effectiveness.
 
 ## Features
 
-- Dynamic element selection from the periodic table with adjustable percentages
-- Physics-based EMI shielding calculations with real-time visualization
-- Application-specific material recommendations for different interference types
-- Material comparison tools for optimizing shielding designs
-- Advanced SUPER MODE with:
-  - Direct material property manipulation
-  - Environmental effects simulation (temperature, humidity, aging)
-  - Multi-layer shielding configuration
-  - Advanced visualization options
-  - Machine learning model customization
-- Export results to CSV format for further analysis
-- Comprehensive technical reference and documentation
+- **Molecular Builder**: Select elements with adjustable quantities to form molecules (e.g., Fe₂O₃, C₁₄H₇Mo₄)
+- **Chemical Reactions**: Combine multiple molecules to create chemical reactions
+- **EMI Shielding Analysis**: Click "⚛️ REACT" to perform step-by-step EMI shielding calculations
+- **Real-time Results**: View calculations and final results with performance ratings
+- **Molecular Presets**: 25 pre-configured molecules across 6 categories
+- **Reaction Presets**: 5 common reaction combinations for quick testing
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/emi-shielding.git
-cd emi-shielding
+git clone <your-repository-url>
+cd EMI-shielding
 ```
 
-2. Create and activate a virtual environment:
+2. Create a virtual environment:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -39,80 +32,67 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Start the Streamlit application:
+1. Start the application:
 ```bash
-streamlit run app.py
+streamlit run streamlit_app/app.py
 ```
 
-2. Open your web browser and navigate to the URL shown in the terminal (typically http://localhost:8501)
+2. Open your browser to the displayed URL (typically http://localhost:8501)
 
-3. Use the sidebar to:
-   - Select materials from the periodic table
-   - Set composition ratios
-   - Adjust material thickness
-   - Configure frequency range
+3. Build molecules:
+   - Select elements from the periodic table
+   - Adjust quantities to form compounds
+   - Add molecules to create reactions
 
-4. View results:
-   - Material properties table
-   - Interactive shielding effectiveness plots
-   - Detailed numerical results at specific frequencies
-   - Export data to CSV
+4. Analyze shielding:
+   - Click "⚛️ REACT" to calculate EMI effectiveness
+   - View step-by-step calculations
+   - Check final performance rating
 
 ## Project Structure
 
 ```
-emi-shielding/
+EMI-shielding/
+├── streamlit_app/
+│   ├── app.py                    # Main application
+│   └── molecular_presets.py      # Pre-configured molecules and reactions
 ├── src/
-│   ├── physics/
-│   │   └── emi_calculations.py    # EMI shielding physics calculations
 │   ├── materials/
-│   │   └── material_properties.py # Material property handling
-│   ├── ml/
-│   │   └── emi_model.py          # Machine learning models
-│   └── config.py                 # Configuration settings
-├── data/                         # Data storage
-├── models/                       # Trained model storage
-├── results/                      # Results output
-├── app.py                        # Main Streamlit application
-├── requirements.txt              # Python dependencies
-└── README.md                     # Project documentation
+│   │   ├── material_properties.py   # Material property calculations
+│   │   └── periodic_table.json      # Element data
+│   ├── physics/
+│   │   ├── emi_calculations.py      # EMI shielding physics
+│   │   └── shielding_theory.py      # Theoretical calculations
+│   └── utils/
+│       └── constants.py             # Physical constants
+└── requirements.txt
 ```
 
 ## Technical Details
 
-### Physics-Based Calculations
+### Chemical Formula Parsing
+- Supports complex chemical formulas with subscripts
+- Validates molecular compositions
+- Calculates molecular weights and properties
 
-The system implements fundamental electromagnetic theory including:
-- Reflection loss calculation
-- Absorption loss calculation
-- Multiple reflection loss calculation
-- Skin depth effects
+### EMI Shielding Physics
+- Reflection loss calculations
+- Absorption loss analysis
+- Multiple reflection effects
 - Frequency-dependent material properties
 
-### Machine Learning Model
-
-Uses a physics-informed neural network (PINN) that:
-- Incorporates physical constraints in the architecture
-- Ensures predictions follow electromagnetic theory
-- Provides uncertainty quantification
-- Combines data-driven learning with physical principles
-
 ### Material Properties
+- Weighted average calculations for mixtures
+- Conductivity, permeability, and permittivity
+- Safety validation for diamagnetic materials
 
-Includes comprehensive material data:
-- Electrical conductivity
-- Magnetic permeability
-- Dielectric properties
-- Density and other physical properties
-- Frequency-dependent behavior
+## Dependencies
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- **streamlit**: Web interface framework
+- **numpy**: Numerical calculations
+- **pandas**: Data manipulation
+- **plotly**: Interactive visualizations
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-=======
-# material-emi-shielding
->>>>>>> 96b15ed7abb465c3b9f5f5265f7905cbfb30a0ac
+This project is for educational and research purposes.

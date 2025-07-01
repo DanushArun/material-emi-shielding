@@ -1,180 +1,408 @@
 """
-Core physics calculations for EMI shielding prediction.
+Core EMI shielding calculations based on electromagnetic theory.
 """
 
 import numpy as np
-from scipy import constants
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, Tuple, Optional
+try:
+    from ..utils.constants import (
+        MU_0, EPSILON_0, Z_0, C,
+        validate_conductivity, validate_permeability, 
+        validate_permittivity, validate_frequency, validate_thickness
+    )
+except ImportError:
+    # Fallback for when running from streamlit app
+    import sys
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+    from src.utils.constants import (
+        MU_0, EPSILON_0, Z_0, C,
+        validate_conductivity, validate_permeability, 
+        validate_permittivity, validate_frequency, validate_thickness
+    )
 
-class EMIShieldingCalculator:
+class EMICalculator:
+    """Performs electromagnetic interference shielding calculations."""
+    
     def __init__(self):
-        self.epsilon_0 = constants.epsilon_0  # Vacuum permittivity
-        self.mu_0 = constants.mu_0  # Vacuum permeability
-        self.c = constants.c  # Speed of light
-
-    def calculate_skin_depth(self, frequency: float, conductivity: float, 
-                           relative_permeability: float) -> float:
+        """Initialize the EMI calculator."""
+        pass
+    
+    def calculate_skin_depth(self, conductivity: float, permeability: float, 
+                           frequency: float) -> float:
         """
-        Calculate the skin depth of a material.
+        Calculate the skin depth of electromagnetic waves in a material.
         
         Args:
-            frequency (float): Frequency in Hz
-            conductivity (float): Electrical conductivity in S/m
-            relative_permeability (float): Relative magnetic permeability
+            conductivity: Electrical conductivity (S/m)
+            permeability: Absolute permeability (H/m)
+            frequency: Frequency (Hz)
             
         Returns:
-            float: Skin depth in meters
+            Skin depth (m)
+        """
+        validate_conductivity(conductivity)
+        validate_frequency(frequency)
+        
+        if conductivity == 0:
+            return float('inf')
+        
+        omega = 2 * np.pi * frequency
+        delta = np.sqrt(2 / (omega * permeability * conductivity))
+        
+        return delta
+    
+    def calculate_intrinsic_impedance(self, conductivity: float, 
+                                    relative_permeability: float,
+                                    relative_permittivity: float,
+                                    frequency: float) -> complex:
+        """
+        Calculate the intrinsic impedance of a material.
+        
+        Args:
+            conductivity: Electrical conductivity (S/m)
+            relative_permeability: Relative permeability
+            relative_permittivity: Relative permittivity
+            frequency: Frequency (Hz)
+            
+        Returns:
+            Complex intrinsic impedance (Ω)
+        """
+        validate_conductivity(conductivity)
+        validate_permeability(relative_permeability)
+        validate_permittivity(relative_permittivity)
+        validate_frequency(frequency)
+        
+        omega = 2 * np.pi * frequency
+        
+        # Absolute values
+        mu = relative_permeability * MU_0
+        epsilon = relative_permittivity * EPSILON_0
+        
+        # Complex permittivity
+        epsilon_complex = epsilon - 1j * (conductivity / omega)
+        
+        # Intrinsic impedance
+        eta = np.sqrt(mu / epsilon_complex)
+        
+        return eta
+    
+    def calculate_propagation_constant(self, conductivity: float,
+                                     relative_permeability: float,
+                                     relative_permittivity: float,
+                                     frequency: float) -> complex:
+        """
+        Calculate the propagation constant.
+        
+        Args:
+            conductivity: Electrical conductivity (S/m)
+            relative_permeability: Relative permeability
+            relative_permittivity: Relative permittivity
+            frequency: Frequency (Hz)
+            
+        Returns:
+            Complex propagation constant (1/m)
         """
         omega = 2 * np.pi * frequency
-        mu = self.mu_0 * relative_permeability
-        return np.sqrt(2 / (omega * mu * conductivity))
-
-    def calculate_wave_impedance(self, frequency: float, relative_permittivity: float,
-                               relative_permeability: float) -> float:
+        
+        # Absolute values
+        mu = relative_permeability * MU_0
+        epsilon = relative_permittivity * EPSILON_0
+        
+        # Complex permittivity
+        epsilon_complex = epsilon - 1j * (conductivity / omega)
+        
+        # Propagation constant
+        gamma = 1j * omega * np.sqrt(mu * epsilon_complex)
+        
+        return gamma
+    
+    def calculate_reflection_loss(self, intrinsic_impedance: complex) -> float:
         """
-        Calculate the wave impedance in a material.
+        Calculate reflection loss at the air-material interface.
         
         Args:
-            frequency (float): Frequency in Hz
-            relative_permittivity (float): Relative permittivity
-            relative_permeability (float): Relative magnetic permeability
+            intrinsic_impedance: Complex intrinsic impedance of material (Ω)
             
         Returns:
-            float: Wave impedance in ohms
+            Reflection loss (dB)
         """
-        return np.sqrt((self.mu_0 * relative_permeability) / 
-                      (self.epsilon_0 * relative_permittivity))
-
-    def calculate_reflection_loss(self, frequency: float, conductivity: float,
-                                relative_permeability: float) -> float:
+        # Reflection coefficient at air-material interface
+        gamma_1 = (intrinsic_impedance - Z_0) / (intrinsic_impedance + Z_0)
+        
+        # Reflection coefficient at material-air interface
+        gamma_2 = (Z_0 - intrinsic_impedance) / (Z_0 + intrinsic_impedance)
+        
+        # Power reflection coefficient
+        R = abs(gamma_1) ** 2
+        
+        # Reflection loss in dB
+        if R < 1:
+            reflection_loss = -10 * np.log10(1 - R)
+        else:
+            reflection_loss = 0
+        
+        return reflection_loss
+    
+    def calculate_absorption_loss(self, thickness: float, 
+                                propagation_constant: complex) -> float:
         """
-        Calculate reflection loss at normal incidence.
+        Calculate absorption loss through the material.
         
         Args:
-            frequency (float): Frequency in Hz
-            conductivity (float): Electrical conductivity in S/m
-            relative_permeability (float): Relative magnetic permeability
+            thickness: Material thickness (m)
+            propagation_constant: Complex propagation constant (1/m)
             
         Returns:
-            float: Reflection loss in dB
+            Absorption loss (dB)
         """
-        omega = 2 * np.pi * frequency
-        mu = self.mu_0 * relative_permeability
-        sigma = conductivity
+        validate_thickness(thickness)
         
-        # Wave impedance of free space
-        z0 = np.sqrt(self.mu_0 / self.epsilon_0)
+        # Attenuation constant (real part of propagation constant)
+        alpha = propagation_constant.real
         
-        # Wave impedance in the material
-        zm = np.sqrt(1j * omega * mu / sigma)
+        # Absorption loss in dB
+        absorption_loss = 8.686 * alpha * thickness
         
-        # Reflection coefficient
-        gamma = (zm - z0) / (zm + z0)
-        
-        # Reflection loss
-        return -20 * np.log10(np.abs(gamma))
-
-    def calculate_absorption_loss(self, frequency: float, conductivity: float,
-                                relative_permeability: float, thickness: float) -> float:
-        """
-        Calculate absorption loss.
-        
-        Args:
-            frequency (float): Frequency in Hz
-            conductivity (float): Electrical conductivity in S/m
-            relative_permeability (float): Relative magnetic permeability
-            thickness (float): Material thickness in meters
-            
-        Returns:
-            float: Absorption loss in dB
-        """
-        skin_depth = self.calculate_skin_depth(frequency, conductivity, relative_permeability)
-        return 20 * (thickness / skin_depth) * np.log10(np.e)
-
-    def calculate_multiple_reflection_loss(self, frequency: float, conductivity: float,
-                                        relative_permeability: float, thickness: float) -> float:
+        return absorption_loss
+    
+    def calculate_multiple_reflection_loss(self, intrinsic_impedance: complex,
+                                         thickness: float,
+                                         propagation_constant: complex) -> float:
         """
         Calculate multiple reflection loss.
         
         Args:
-            frequency (float): Frequency in Hz
-            conductivity (float): Electrical conductivity in S/m
-            relative_permeability (float): Relative magnetic permeability
-            thickness (float): Material thickness in meters
+            intrinsic_impedance: Complex intrinsic impedance (Ω)
+            thickness: Material thickness (m)
+            propagation_constant: Complex propagation constant (1/m)
             
         Returns:
-            float: Multiple reflection loss in dB
+            Multiple reflection loss (dB)
         """
-        skin_depth = self.calculate_skin_depth(frequency, conductivity, relative_permeability)
-        if thickness / skin_depth > 1.3:
-            return 0  # Negligible for thick shields
+        # Reflection coefficients
+        gamma_1 = (intrinsic_impedance - Z_0) / (intrinsic_impedance + Z_0)
+        gamma_2 = (Z_0 - intrinsic_impedance) / (Z_0 + intrinsic_impedance)
         
-        # Simplified model for multiple reflections
-        return -20 * np.log10(1 - np.exp(-2 * thickness / skin_depth))
-
-    def calculate_total_shielding_effectiveness(self, frequency: float, conductivity: float,
-                                             relative_permeability: float, relative_permittivity: float,
-                                             thickness: float) -> Dict[str, float]:
+        # Transmission through material
+        exp_term = np.exp(-2 * propagation_constant * thickness)
+        
+        # Multiple reflection factor
+        K = (1 - gamma_1 * gamma_2 * exp_term) / (1 + gamma_1 * gamma_2 * exp_term)
+        
+        # Multiple reflection loss in dB
+        multiple_reflection_loss = -20 * np.log10(abs(K))
+        
+        # Only significant for thin materials or low absorption
+        absorption_loss = self.calculate_absorption_loss(thickness, propagation_constant)
+        if absorption_loss > 15:
+            multiple_reflection_loss = 0
+        
+        return multiple_reflection_loss
+    
+    def calculate_shielding_effectiveness(self, conductivity: float,
+                                        relative_permeability: float,
+                                        relative_permittivity: float,
+                                        thickness: float,
+                                        frequency: float) -> Dict[str, float]:
         """
         Calculate total shielding effectiveness and its components.
         
         Args:
-            frequency (float): Frequency in Hz
-            conductivity (float): Electrical conductivity in S/m
-            relative_permeability (float): Relative magnetic permeability
-            relative_permittivity (float): Relative permittivity
-            thickness (float): Material thickness in meters
+            conductivity: Electrical conductivity (S/m)
+            relative_permeability: Relative permeability
+            relative_permittivity: Relative permittivity
+            thickness: Material thickness (m)
+            frequency: Frequency (Hz)
             
         Returns:
-            Dict[str, float]: Dictionary containing reflection loss, absorption loss,
-                            multiple reflection loss, and total shielding effectiveness
+            Dictionary with SE components and total SE (dB)
         """
-        r_loss = self.calculate_reflection_loss(frequency, conductivity, relative_permeability)
-        a_loss = self.calculate_absorption_loss(frequency, conductivity, relative_permeability, thickness)
-        m_loss = self.calculate_multiple_reflection_loss(frequency, conductivity, relative_permeability, thickness)
+        # Calculate electromagnetic properties
+        eta = self.calculate_intrinsic_impedance(
+            conductivity, relative_permeability, relative_permittivity, frequency
+        )
         
-        total_se = r_loss + a_loss + m_loss
+        gamma = self.calculate_propagation_constant(
+            conductivity, relative_permeability, relative_permittivity, frequency
+        )
+        
+        # Calculate SE components
+        reflection_loss = self.calculate_reflection_loss(eta)
+        absorption_loss = self.calculate_absorption_loss(thickness, gamma)
+        multiple_reflection_loss = self.calculate_multiple_reflection_loss(
+            eta, thickness, gamma
+        )
+        
+        # Total shielding effectiveness
+        total_se = reflection_loss + absorption_loss + multiple_reflection_loss
+        
+        # Calculate skin depth for reference
+        mu = relative_permeability * MU_0
+        skin_depth = self.calculate_skin_depth(conductivity, mu, frequency)
         
         return {
-            "reflection_loss": r_loss,
-            "absorption_loss": a_loss,
-            "multiple_reflection_loss": m_loss,
-            "total_se": total_se
+            'reflection_loss': reflection_loss,
+            'absorption_loss': absorption_loss,
+            'multiple_reflection_loss': multiple_reflection_loss,
+            'total_se': total_se,
+            'skin_depth': skin_depth,
+            'intrinsic_impedance_real': eta.real,
+            'intrinsic_impedance_imag': eta.imag,
+            'propagation_constant_real': gamma.real,
+            'propagation_constant_imag': gamma.imag
         }
-
-    def calculate_frequency_response(self, freq_range: np.ndarray, material_params: Dict) -> Dict[str, np.ndarray]:
+    
+    def calculate_near_field_shielding(self, conductivity: float,
+                                     relative_permeability: float,
+                                     thickness: float,
+                                     frequency: float,
+                                     source_distance: float,
+                                     source_type: str = 'electric') -> float:
         """
-        Calculate shielding effectiveness across a frequency range.
+        Calculate shielding effectiveness in the near field.
         
         Args:
-            freq_range (np.ndarray): Array of frequencies in Hz
-            material_params (Dict): Dictionary containing material parameters
-                                 (conductivity, relative_permeability, relative_permittivity, thickness)
+            conductivity: Electrical conductivity (S/m)
+            relative_permeability: Relative permeability
+            thickness: Material thickness (m)
+            frequency: Frequency (Hz)
+            source_distance: Distance from source (m)
+            source_type: 'electric' or 'magnetic'
             
         Returns:
-            Dict[str, np.ndarray]: Dictionary containing arrays of reflection loss, absorption loss,
-                                 multiple reflection loss, and total SE for each frequency
+            Near field shielding effectiveness (dB)
         """
-        results = {
-            "frequency": freq_range,
-            "reflection_loss": np.zeros_like(freq_range),
-            "absorption_loss": np.zeros_like(freq_range),
-            "multiple_reflection_loss": np.zeros_like(freq_range),
-            "total_se": np.zeros_like(freq_range)
-        }
+        wavelength = C / frequency
         
-        for i, freq in enumerate(freq_range):
-            se_results = self.calculate_total_shielding_effectiveness(
-                freq,
-                material_params["conductivity"],
-                material_params["relative_permeability"],
-                material_params["relative_permittivity"],
-                material_params["thickness"]
+        # Check if in near field (r < λ/2π)
+        near_field_boundary = wavelength / (2 * np.pi)
+        
+        if source_distance > near_field_boundary:
+            # Use far field calculations
+            return self.calculate_shielding_effectiveness(
+                conductivity, relative_permeability, 1, thickness, frequency
+            )['total_se']
+        
+        # Near field corrections
+        mu = relative_permeability * MU_0
+        skin_depth = self.calculate_skin_depth(conductivity, mu, frequency)
+        
+        if source_type == 'electric':
+            # Electric field dominant
+            k = 3 / (2 * np.pi * frequency * source_distance)
+            se_correction = 20 * np.log10(1 + k)
+        else:
+            # Magnetic field dominant
+            k = 1 / (2 * np.pi * frequency * mu * source_distance)
+            se_correction = -20 * np.log10(1 + k)
+        
+        # Base SE
+        base_se = 8.686 * thickness / skin_depth
+        
+        return base_se + se_correction
+    
+    def optimize_thickness(self, conductivity: float,
+                         relative_permeability: float,
+                         relative_permittivity: float,
+                         frequency: float,
+                         target_se: float,
+                         max_thickness: float = 0.01) -> Dict[str, float]:
+        """
+        Optimize material thickness for target shielding effectiveness.
+        
+        Args:
+            conductivity: Electrical conductivity (S/m)
+            relative_permeability: Relative permeability
+            relative_permittivity: Relative permittivity
+            frequency: Frequency (Hz)
+            target_se: Target shielding effectiveness (dB)
+            max_thickness: Maximum allowed thickness (m)
+            
+        Returns:
+            Dictionary with optimal thickness and achieved SE
+        """
+        # Binary search for optimal thickness
+        min_t = 0
+        max_t = max_thickness
+        tolerance = 1e-6
+        
+        while (max_t - min_t) > tolerance:
+            mid_t = (min_t + max_t) / 2
+            
+            result = self.calculate_shielding_effectiveness(
+                conductivity, relative_permeability, relative_permittivity,
+                mid_t, frequency
             )
             
-            results["reflection_loss"][i] = se_results["reflection_loss"]
-            results["absorption_loss"][i] = se_results["absorption_loss"]
-            results["multiple_reflection_loss"][i] = se_results["multiple_reflection_loss"]
-            results["total_se"][i] = se_results["total_se"]
+            if result['total_se'] < target_se:
+                min_t = mid_t
+            else:
+                max_t = mid_t
+        
+        optimal_thickness = max_t
+        
+        # Calculate final SE
+        final_result = self.calculate_shielding_effectiveness(
+            conductivity, relative_permeability, relative_permittivity,
+            optimal_thickness, frequency
+        )
+        
+        return {
+            'optimal_thickness': optimal_thickness,
+            'achieved_se': final_result['total_se'],
+            'reflection_loss': final_result['reflection_loss'],
+            'absorption_loss': final_result['absorption_loss'],
+            'skin_depths': optimal_thickness / final_result['skin_depth']
+        }
+    
+    def frequency_sweep(self, conductivity: float,
+                       relative_permeability: float,
+                       relative_permittivity: float,
+                       thickness: float,
+                       freq_start: float = 1e6,
+                       freq_end: float = 10e9,
+                       num_points: int = 100) -> Dict[str, np.ndarray]:
+        """
+        Calculate SE across a frequency range.
+        
+        Args:
+            conductivity: Electrical conductivity (S/m)
+            relative_permeability: Relative permeability
+            relative_permittivity: Relative permittivity
+            thickness: Material thickness (m)
+            freq_start: Start frequency (Hz)
+            freq_end: End frequency (Hz)
+            num_points: Number of frequency points
             
-        return results
+        Returns:
+            Dictionary with frequency array and SE components
+        """
+        frequencies = np.logspace(np.log10(freq_start), np.log10(freq_end), num_points)
+        
+        reflection_losses = np.zeros(num_points)
+        absorption_losses = np.zeros(num_points)
+        total_ses = np.zeros(num_points)
+        skin_depths = np.zeros(num_points)
+        
+        for i, freq in enumerate(frequencies):
+            result = self.calculate_shielding_effectiveness(
+                conductivity, relative_permeability, relative_permittivity,
+                thickness, freq
+            )
+            
+            reflection_losses[i] = result['reflection_loss']
+            absorption_losses[i] = result['absorption_loss']
+            total_ses[i] = result['total_se']
+            skin_depths[i] = result['skin_depth']
+        
+        return {
+            'frequencies': frequencies,
+            'reflection_losses': reflection_losses,
+            'absorption_losses': absorption_losses,
+            'total_ses': total_ses,
+            'skin_depths': skin_depths
+        }
+
+# Create global instance
+emi_calculator = EMICalculator()

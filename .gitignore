@@ -31,3 +31,11 @@ models/*.h5
 # System Files
 .DS_Store
 Thumbs.db
+
+# Credentials
+service-account.json
+**/service-account.json
+credentials/
+**/credentials/
+*.pem
+*.key

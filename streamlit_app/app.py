@@ -1,0 +1,1410 @@
+"""
+🔬 Chemical Reaction EMI Shield Designer
+Dark Mode Chemistry Interface for EMI Shielding Analysis
+"""
+
+import streamlit as st
+import plotly.graph_objects as go
+import numpy as np
+import pandas as pd
+import re
+from pathlib import Path
+import sys
+from typing import Dict
+import time
+
+# Add parent directory
+sys.path.append(str(Path(__file__).parent.parent))
+
+from src.physics.emi_calculations import emi_calculator
+from src.materials.material_properties import material_db
+
+# Import molecular presets
+try:
+    from molecular_presets import MOLECULAR_PRESETS, REACTION_PRESETS
+except ImportError:
+    MOLECULAR_PRESETS = {}
+    REACTION_PRESETS = {}
+
+# Page configuration
+st.set_page_config(
+    page_title="🔬 Chemical EMI Designer",
+    page_icon="⚛️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# ================================
+# DARK MODE THEME & STYLING
+# ================================
+
+st.markdown("""
+<style>
+    /* Import modern fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    
+    /* Dark theme root variables */
+    :root {
+        --bg-primary: #0f0f0f;
+        --bg-secondary: #1a1a1a;
+        --bg-tertiary: #2d2d2d;
+        --bg-card: #1e1e1e;
+        --border-color: #404040;
+        --text-primary: #f0f0f0;
+        --text-secondary: #b0b0b0;
+        --text-muted: #707070;
+        --accent-blue: #00d4ff;
+        --accent-purple: #8b5cf6;
+        --accent-green: #10b981;
+        --accent-red: #f87171;
+        --accent-yellow: #fbbf24;
+        --shadow-glow: rgba(0, 212, 255, 0.15);
+        --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #8b5cf6 100%);
+        --gradient-secondary: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    }
+    
+    /* Main app styling */
+    .stApp {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    /* Hide Streamlit branding */
+    #MainMenu, footer, header, .stDeployButton {
+        visibility: hidden;
+    }
+    
+    /* Main header */
+    .main-header {
+        background: var(--gradient-primary);
+        padding: 2.5rem 2rem;
+        border-radius: 20px;
+        text-align: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px var(--shadow-glow);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .main-header h1 {
+        margin: 0;
+        font-size: 3rem;
+        font-weight: 700;
+        letter-spacing: -2px;
+        background: linear-gradient(45deg, #ffffff, #e0e7ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+    }
+    
+    .main-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+        font-size: 1.2rem;
+        font-weight: 400;
+    }
+    
+    /* Dark cards */
+    .dark-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .dark-card:hover {
+        border-color: var(--accent-blue);
+        box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    /* Glassmorphism effect */
+    .glass-card {
+        background: rgba(30, 30, 30, 0.7);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Element buttons */
+    .element-btn {
+        background: var(--bg-tertiary);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 0.25rem;
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 70px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .element-btn:hover {
+        border-color: var(--accent-blue);
+        background: rgba(0, 212, 255, 0.1);
+        transform: scale(1.05);
+        box-shadow: 0 4px 16px rgba(0, 212, 255, 0.2);
+    }
+    
+    .element-btn.selected {
+        background: var(--gradient-primary);
+        border-color: var(--accent-blue);
+        color: white;
+        box-shadow: 0 0 20px var(--shadow-glow);
+    }
+    
+    /* Periodic table groups */
+    .alkali { border-left: 4px solid #ff6b6b; }
+    .alkaline { border-left: 4px solid #feca57; }
+    .transition { border-left: 4px solid #48dbfb; }
+    .metalloid { border-left: 4px solid #ff9ff3; }
+    .nonmetal { border-left: 4px solid #54a0ff; }
+    .halogen { border-left: 4px solid #5f27cd; }
+    .noble { border-left: 4px solid #00d2d3; }
+    
+    /* Molecule display */
+    .molecule-display {
+        background: var(--bg-secondary);
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--accent-blue);
+    }
+    
+    .molecule-display.has-content {
+        border-color: var(--accent-blue);
+        background: rgba(0, 212, 255, 0.05);
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+    }
+    
+    /* Reaction equation */
+    .reaction-equation {
+        background: var(--bg-card);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.3rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        text-align: center;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .reaction-equation.active {
+        border-color: var(--accent-purple);
+        background: rgba(139, 92, 246, 0.05);
+        box-shadow: 0 0 30px rgba(139, 92, 246, 0.2);
+    }
+    
+    /* React button */
+    .react-button {
+        background: var(--gradient-primary);
+        border: none;
+        border-radius: 50px;
+        padding: 1.5rem 3rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 32px var(--shadow-glow);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .react-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 12px 48px var(--shadow-glow);
+    }
+    
+    .react-button:active {
+        transform: scale(0.98);
+    }
+    
+    .react-button.loading {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 8px 32px var(--shadow-glow); }
+        50% { box-shadow: 0 12px 48px rgba(0, 212, 255, 0.4); }
+        100% { box-shadow: 0 8px 32px var(--shadow-glow); }
+    }
+    
+    /* Calculation steps */
+    .calc-step {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .calc-step.active {
+        border-color: var(--accent-green);
+        background: rgba(16, 185, 129, 0.05);
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.1);
+    }
+    
+    .calc-step h4 {
+        color: var(--accent-blue);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .calc-step .formula {
+        font-family: 'JetBrains Mono', monospace;
+        background: var(--bg-secondary);
+        padding: 0.8rem;
+        border-radius: 8px;
+        border-left: 4px solid var(--accent-blue);
+        margin: 1rem 0;
+        font-size: 0.9rem;
+    }
+    
+    /* Results hero section */
+    .results-hero {
+        background: var(--gradient-primary);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 20px;
+        text-align: center;
+        margin: 2rem 0;
+        box-shadow: 0 12px 48px var(--shadow-glow);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .results-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    .results-value {
+        font-size: 4rem;
+        font-weight: 900;
+        margin: 1rem 0;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(45deg, #ffffff, #e0e7ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Metric cards */
+    .metric-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card:hover {
+        border-color: var(--accent-blue);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 32px rgba(0, 212, 255, 0.15);
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+    }
+    
+    .metric-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .metric-value {
+        color: var(--text-primary);
+        font-size: 1.8rem;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* Streamlit component overrides */
+    .stButton > button {
+        background: var(--bg-tertiary) !important;
+        color: var(--text-primary) !important;
+        border: 2px solid var(--border-color) !important;
+        border-radius: 12px !important;
+        padding: 0.8rem 1.5rem !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton > button:hover {
+        border-color: var(--accent-blue) !important;
+        background: rgba(0, 212, 255, 0.1) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 16px rgba(0, 212, 255, 0.2) !important;
+    }
+    
+    .stButton > button[kind="primary"] {
+        background: var(--gradient-primary) !important;
+        border-color: var(--accent-blue) !important;
+        color: white !important;
+    }
+    
+    .stSelectbox > div > div {
+        background: var(--bg-tertiary) !important;
+        border: 2px solid var(--border-color) !important;
+        border-radius: 12px !important;
+        color: var(--text-primary) !important;
+    }
+    
+    .stNumberInput > div > div > input {
+        background: var(--bg-tertiary) !important;
+        border: 2px solid var(--border-color) !important;
+        border-radius: 12px !important;
+        color: var(--text-primary) !important;
+    }
+    
+    .stNumberInput > div > div > input:focus {
+        border-color: var(--accent-blue) !important;
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1) !important;
+    }
+    
+    /* Progress bar */
+    .stProgress > div > div {
+        background: var(--gradient-primary) !important;
+        border-radius: 10px !important;
+    }
+    
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-blue);
+    }
+    
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 12px !important;
+        color: var(--text-primary) !important;
+    }
+    
+    .streamlit-expanderContent {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-top: none !important;
+        border-radius: 0 0 12px 12px !important;
+    }
+    
+    /* Animation classes */
+    .fade-in {
+        animation: fadeIn 0.6s ease-in;
+    }
+    
+    .slide-up {
+        animation: slideUp 0.8s ease-out;
+    }
+    
+    .scale-in {
+        animation: scaleIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes scaleIn {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Chemical formula styling */
+    .chemical-formula {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .chemical-formula sub {
+        font-size: 0.7em;
+        vertical-align: sub;
+        color: var(--accent-blue);
+    }
+    
+    .chemical-formula sup {
+        font-size: 0.7em;
+        vertical-align: super;
+        color: var(--accent-red);
+    }
+    
+    /* Loading animation */
+    .loading-dots {
+        display: inline-block;
+    }
+    
+    .loading-dots:after {
+        content: '';
+        animation: dots 1.5s steps(5, end) infinite;
+    }
+    
+    @keyframes dots {
+        0%, 20% { content: ''; }
+        40% { content: '.'; }
+        60% { content: '..'; }
+        80%, 100% { content: '...'; }
+    }
+    
+    /* Molecular orbital animation */
+    .orbital-animation {
+        animation: orbit 3s linear infinite;
+    }
+    
+    @keyframes orbit {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Glow effects */
+    .glow-blue {
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        animation: glow-pulse 2s ease-in-out infinite alternate;
+    }
+    
+    .glow-purple {
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        animation: glow-pulse 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes glow-pulse {
+        from { box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+        to { box-shadow: 0 0 30px rgba(0, 212, 255, 0.6); }
+    }
+    
+    /* Floating particles effect */
+    .particles {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .particles::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(2px 2px at 20px 30px, rgba(0, 212, 255, 0.3), transparent),
+                    radial-gradient(2px 2px at 40px 70px, rgba(139, 92, 246, 0.3), transparent),
+                    radial-gradient(1px 1px at 90px 40px, rgba(16, 185, 129, 0.3), transparent),
+                    radial-gradient(1px 1px at 130px 80px, rgba(251, 191, 36, 0.3), transparent);
+        animation: particle-float 20s linear infinite;
+    }
+    
+    @keyframes particle-float {
+        0% { transform: translateY(100%); }
+        100% { transform: translateY(-100%); }
+    }
+    
+    /* Notification styles */
+    .notification {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-left: 4px solid var(--accent-green);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+        color: var(--text-primary);
+    }
+    
+    .notification.warning {
+        border-left-color: var(--accent-yellow);
+    }
+    
+    .notification.error {
+        border-left-color: var(--accent-red);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ================================
+# CHEMICAL PARSER & ENGINE
+# ================================
+
+class ChemicalParser:
+    """Parse and validate chemical formulas and reactions."""
+    
+    @staticmethod
+    def parse_formula(formula: str) -> Dict[str, int]:
+        """Parse a chemical formula into element counts."""
+        # Remove spaces and handle subscripts
+        formula = formula.replace(" ", "")
+        
+        # Pattern to match element and count
+        pattern = r'([A-Z][a-z]?)(\d*)'
+        matches = re.findall(pattern, formula)
+        
+        composition = {}
+        for element, count in matches:
+            count = int(count) if count else 1
+            composition[element] = composition.get(element, 0) + count
+        
+        return composition
+    
+    @staticmethod
+    def format_formula(composition: Dict[str, int]) -> str:
+        """Format element composition back to chemical formula."""
+        if not composition:
+            return ""
+        
+        formula_parts = []
+        for element, count in sorted(composition.items()):
+            if count == 1:
+                formula_parts.append(element)
+            else:
+                formula_parts.append(f"{element}<sub>{count}</sub>")
+        
+        return "".join(formula_parts)
+    
+    @staticmethod
+    def calculate_molecular_weight(composition: Dict[str, int]) -> float:
+        """Calculate molecular weight from composition."""
+        total_weight = 0
+        for element, count in composition.items():
+            elem_data = material_db.get_material(element)
+            if elem_data and 'atomic_weight' in elem_data:
+                total_weight += elem_data['atomic_weight'] * count
+            else:
+                # Fallback weights for common elements
+                weights = {
+                    'H': 1.008, 'C': 12.011, 'N': 14.007, 'O': 15.999,
+                    'F': 18.998, 'Na': 22.990, 'Mg': 24.305, 'Al': 26.982,
+                    'Si': 28.085, 'P': 30.974, 'S': 32.06, 'Cl': 35.45,
+                    'K': 39.098, 'Ca': 40.078, 'Fe': 55.845, 'Cu': 63.546,
+                    'Zn': 65.38, 'Ag': 107.868, 'Au': 196.967, 'Pb': 207.2
+                }
+                total_weight += weights.get(element, 50.0) * count
+        
+        return total_weight
+
+class ReactionEngine:
+    """Handle chemical reactions and composition calculations."""
+    
+    def __init__(self):
+        self.molecules = []
+        self.coefficients = []
+    
+    def add_molecule(self, formula: str, coefficient: int = 1):
+        """Add a molecule to the reaction."""
+        composition = ChemicalParser.parse_formula(formula)
+        if composition:
+            self.molecules.append({
+                'formula': formula,
+                'composition': composition,
+                'coefficient': coefficient,
+                'molecular_weight': ChemicalParser.calculate_molecular_weight(composition)
+            })
+    
+    def remove_molecule(self, index: int):
+        """Remove a molecule from the reaction."""
+        if 0 <= index < len(self.molecules):
+            self.molecules.pop(index)
+    
+    def get_total_composition(self) -> Dict[str, float]:
+        """Calculate total elemental composition by mass percentage."""
+        if not self.molecules:
+            return {}
+        
+        # Calculate total mass for each element
+        element_masses = {}
+        total_mass = 0
+        
+        for mol in self.molecules:
+            mol_mass = mol['molecular_weight'] * mol['coefficient']
+            total_mass += mol_mass
+            
+            for element, count in mol['composition'].items():
+                elem_data = material_db.get_material(element)
+                if elem_data and 'atomic_weight' in elem_data:
+                    atomic_weight = elem_data['atomic_weight']
+                else:
+                    # Fallback weights
+                    weights = {
+                        'H': 1.008, 'C': 12.011, 'N': 14.007, 'O': 15.999,
+                        'F': 18.998, 'Na': 22.990, 'Mg': 24.305, 'Al': 26.982,
+                        'Si': 28.085, 'P': 30.974, 'S': 32.06, 'Cl': 35.45,
+                        'K': 39.098, 'Ca': 40.078, 'Fe': 55.845, 'Cu': 63.546,
+                        'Zn': 65.38, 'Ag': 107.868, 'Au': 196.967, 'Pb': 207.2
+                    }
+                    atomic_weight = weights.get(element, 50.0)
+                
+                element_mass = atomic_weight * count * mol['coefficient']
+                element_masses[element] = element_masses.get(element, 0) + element_mass
+        
+        # Convert to percentages
+        if total_mass > 0:
+            return {element: (mass / total_mass) * 100 
+                   for element, mass in element_masses.items()}
+        return {}
+    
+    def get_reaction_equation(self) -> str:
+        """Get the formatted reaction equation."""
+        if not self.molecules:
+            return "No reaction defined"
+        
+        equation_parts = []
+        for mol in self.molecules:
+            coeff = f"{mol['coefficient']}" if mol['coefficient'] > 1 else ""
+            formula = ChemicalParser.format_formula(mol['composition'])
+            equation_parts.append(f"{coeff}{formula}")
+        
+        return " + ".join(equation_parts)
+
+# ================================
+# SESSION STATE INITIALIZATION
+# ================================
+
+if 'reaction_engine' not in st.session_state:
+    st.session_state.reaction_engine = ReactionEngine()
+
+if 'current_molecule' not in st.session_state:
+    st.session_state.current_molecule = {}
+
+if 'calculation_steps' not in st.session_state:
+    st.session_state.calculation_steps = []
+
+if 'show_results' not in st.session_state:
+    st.session_state.show_results = False
+
+if 'shield_thickness' not in st.session_state:
+    st.session_state.shield_thickness = 1.0
+
+if 'shield_frequency' not in st.session_state:
+    st.session_state.shield_frequency = 100.0
+
+# ================================
+# HELPER FUNCTIONS
+# ================================
+
+def get_element_category(symbol: str) -> str:
+    """Get the periodic table category for styling."""
+    categories = {
+        'H': 'nonmetal', 'He': 'noble',
+        'Li': 'alkali', 'Be': 'alkaline', 'B': 'metalloid', 'C': 'nonmetal', 'N': 'nonmetal', 'O': 'nonmetal', 'F': 'halogen', 'Ne': 'noble',
+        'Na': 'alkali', 'Mg': 'alkaline', 'Al': 'metalloid', 'Si': 'metalloid', 'P': 'nonmetal', 'S': 'nonmetal', 'Cl': 'halogen', 'Ar': 'noble',
+        'K': 'alkali', 'Ca': 'alkaline', 'Sc': 'transition', 'Ti': 'transition', 'V': 'transition', 'Cr': 'transition', 'Mn': 'transition', 'Fe': 'transition', 'Co': 'transition', 'Ni': 'transition', 'Cu': 'transition', 'Zn': 'transition', 'Ga': 'metalloid', 'Ge': 'metalloid', 'As': 'metalloid', 'Se': 'nonmetal', 'Br': 'halogen', 'Kr': 'noble',
+        'Rb': 'alkali', 'Sr': 'alkaline', 'Y': 'transition', 'Zr': 'transition', 'Nb': 'transition', 'Mo': 'transition', 'Tc': 'transition', 'Ru': 'transition', 'Rh': 'transition', 'Pd': 'transition', 'Ag': 'transition', 'Cd': 'transition', 'In': 'metalloid', 'Sn': 'metalloid', 'Sb': 'metalloid', 'Te': 'metalloid', 'I': 'halogen', 'Xe': 'noble',
+        'Cs': 'alkali', 'Ba': 'alkaline', 'Au': 'transition', 'Hg': 'transition', 'Tl': 'metalloid', 'Pb': 'metalloid', 'Bi': 'metalloid'
+    }
+    return categories.get(symbol, 'transition')
+
+def format_number(num: float, precision: int = 2) -> str:
+    """Format number with appropriate precision."""
+    if num >= 1000:
+        return f"{num:.{precision}e}"
+    elif num >= 1:
+        return f"{num:.{precision}f}"
+    else:
+        return f"{num:.{precision}e}"
+
+# ================================
+# MAIN APP LAYOUT
+# ================================
+
+# Header
+st.markdown("""
+<div class="main-header fade-in">
+    <h1>🔬 EMI SHIELDER</h1>
+    <p></p>
+</div>
+""", unsafe_allow_html=True)
+
+# Main layout
+left_col, right_col = st.columns([1.2, 1.8])
+
+# ================================
+# LEFT COLUMN - MOLECULAR BUILDER
+# ================================
+
+with left_col:
+    st.markdown('<div class="slide-up">', unsafe_allow_html=True)
+    
+    # Current molecule builder
+    st.markdown("### ⚛️ Molecule Builder")
+    
+    # Display current molecule
+    current_formula = ChemicalParser.format_formula(st.session_state.current_molecule)
+    if current_formula:
+        st.markdown(f"""
+        <div class="molecule-display has-content">
+            <span class="chemical-formula">{current_formula}</span>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div class="molecule-display">
+            Build your molecule by selecting elements below
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Element selection grid
+    st.markdown("**Select Elements:**")
+    
+    # Most common EMI shielding elements
+    elements = [
+        ['H', 'Li', 'C', 'N'],
+        ['O', 'F', 'Na', 'Mg'],
+        ['Al', 'Si', 'P', 'S'],
+        ['Cl', 'K', 'Ca', 'Ti'],
+        ['Cr', 'Mn', 'Fe', 'Co'],
+        ['Ni', 'Cu', 'Zn', 'Ag'],
+        ['Sn', 'Au', 'Pb', 'Mo']
+    ]
+    
+    for row in elements:
+        cols = st.columns(4)
+        for i, element in enumerate(row):
+            with cols[i]:
+                elem_data = material_db.get_material(element)
+                if elem_data:
+                    category = get_element_category(element)
+                    is_selected = element in st.session_state.current_molecule
+                    
+                    button_class = f"element-btn {category}"
+                    if is_selected:
+                        button_class += " selected"
+                    
+                    if st.button(
+                        f"{element}\n{elem_data.get('name', '')[:6]}",
+                        key=f"elem_{element}",
+                        help=f"{elem_data.get('name', '')} - Atomic Number: {elem_data.get('atomic_number', 'N/A')}"
+                    ):
+                        if is_selected:
+                            # Remove element
+                            del st.session_state.current_molecule[element]
+                        else:
+                            # Add element with quantity 1
+                            st.session_state.current_molecule[element] = 1
+                        st.rerun()
+    
+    # Quantity adjustments for selected elements
+    if st.session_state.current_molecule:
+        st.markdown("**Adjust Quantities:**")
+        
+        for element, quantity in list(st.session_state.current_molecule.items()):
+            col1, col2, col3 = st.columns([2, 2, 1])
+            
+            with col1:
+                st.markdown(f"**{element}**")
+            
+            with col2:
+                new_quantity = st.number_input(
+                    f"Quantity for {element}",
+                    min_value=1,
+                    max_value=999,
+                    value=quantity,
+                    key=f"qty_{element}",
+                    label_visibility="collapsed"
+                )
+                st.session_state.current_molecule[element] = new_quantity
+            
+            with col3:
+                if st.button("🗑️", key=f"del_{element}", help="Remove element"):
+                    del st.session_state.current_molecule[element]
+                    st.rerun()
+        
+        # Add molecule to reaction
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("➕ Add to Reaction", type="primary", use_container_width=True):
+                if st.session_state.current_molecule:
+                    formula = ChemicalParser.format_formula(st.session_state.current_molecule)
+                    st.session_state.reaction_engine.add_molecule(
+                        formula.replace('<sub>', '').replace('</sub>', ''),
+                        1
+                    )
+                    st.session_state.current_molecule = {}
+                    st.rerun()
+        
+        with col2:
+            if st.button("🔄 Clear", use_container_width=True):
+                st.session_state.current_molecule = {}
+                st.rerun()
+    
+    # Molecular presets
+    if MOLECULAR_PRESETS:
+        st.markdown("**Quick Molecules:**")
+        
+        # Group presets by category
+        categories = {}
+        for name, preset in MOLECULAR_PRESETS.items():
+            category = preset.get('category', 'Other')
+            if category not in categories:
+                categories[category] = []
+            categories[category].append((name, preset))
+        
+        # Display preset buttons by category
+        for category, presets in categories.items():
+            with st.expander(f"🧪 {category}", expanded=False):
+                preset_cols = st.columns(2)
+                for i, (name, preset) in enumerate(presets):
+                    with preset_cols[i % 2]:
+                        if st.button(
+                            f"{preset['formula']}\n{name}",
+                            key=f"preset_{name}",
+                            help=preset.get('description', ''),
+                            use_container_width=True
+                        ):
+                            st.session_state.current_molecule = preset['composition'].copy()
+                            st.rerun()
+    
+    # Reaction equation display
+    st.markdown("### 🧪 Reaction Equation")
+    
+    reaction_eq = st.session_state.reaction_engine.get_reaction_equation()
+    if len(st.session_state.reaction_engine.molecules) > 0:
+        st.markdown(f"""
+        <div class="reaction-equation active">
+            {reaction_eq}
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Manage reaction molecules
+        st.markdown("**Reaction Components:**")
+        for i, mol in enumerate(st.session_state.reaction_engine.molecules):
+            col1, col2, col3 = st.columns([3, 1, 1])
+            
+            with col1:
+                formula = ChemicalParser.format_formula(mol['composition'])
+                st.markdown(f"<span class='chemical-formula'>{formula}</span>", unsafe_allow_html=True)
+            
+            with col2:
+                new_coeff = st.number_input(
+                    f"Coefficient {i}",
+                    min_value=1,
+                    value=mol['coefficient'],
+                    key=f"coeff_{i}",
+                    label_visibility="collapsed"
+                )
+                st.session_state.reaction_engine.molecules[i]['coefficient'] = new_coeff
+            
+            with col3:
+                if st.button("🗑️", key=f"del_mol_{i}"):
+                    st.session_state.reaction_engine.remove_molecule(i)
+                    st.rerun()
+        
+        # Clear reaction
+        if st.button("🔄 Clear Reaction", use_container_width=True):
+            st.session_state.reaction_engine = ReactionEngine()
+            st.session_state.calculation_steps = []
+            st.session_state.show_results = False
+            st.rerun()
+        
+        # Reaction presets
+        if REACTION_PRESETS:
+            st.markdown("**Preset Reactions:**")
+            
+            preset_reaction = st.selectbox(
+                "Choose a preset reaction",
+                options=["Custom"] + list(REACTION_PRESETS.keys()),
+                help="Load a predefined reaction"
+            )
+            
+            if preset_reaction != "Custom" and preset_reaction in REACTION_PRESETS:
+                if st.button(f"Load {preset_reaction}", use_container_width=True):
+                    # Clear current reaction
+                    st.session_state.reaction_engine = ReactionEngine()
+                    
+                    # Load preset
+                    preset = REACTION_PRESETS[preset_reaction]
+                    for mol in preset['molecules']:
+                        st.session_state.reaction_engine.add_molecule(
+                            mol['formula'],
+                            mol['coefficient']
+                        )
+                    
+                    st.session_state.calculation_steps = []
+                    st.session_state.show_results = False
+                    st.rerun()
+                
+                # Show description
+                if preset_reaction in REACTION_PRESETS:
+                    description = REACTION_PRESETS[preset_reaction].get('description', '')
+                    if description:
+                        st.markdown(f"*{description}*")
+    else:
+        st.markdown("""
+        <div class="reaction-equation">
+            Add molecules to build your reaction
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Shield parameters
+    st.markdown("### ⚙️ Shield Parameters")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.session_state.shield_thickness = st.number_input(
+            "Thickness (mm)",
+            min_value=0.01,
+            max_value=100.0,
+            value=st.session_state.shield_thickness,
+            step=0.1
+        )
+    
+    with col2:
+        st.session_state.shield_frequency = st.number_input(
+            "Frequency (MHz)",
+            min_value=0.1,
+            max_value=10000.0,
+            value=st.session_state.shield_frequency,
+            step=10.0
+        )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ================================
+# RIGHT COLUMN - CALCULATIONS & RESULTS
+# ================================
+
+with right_col:
+    st.markdown('<div class="slide-up">', unsafe_allow_html=True)
+    
+    # React button
+    if len(st.session_state.reaction_engine.molecules) > 0:
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("⚛️ REACT", key="react_button", use_container_width=True):
+                # Show loading animation
+                with st.spinner("🔬 Analyzing molecular structure..."):
+                    time.sleep(0.5)
+                
+                with st.spinner("⚗️ Calculating material properties..."):
+                    time.sleep(0.8)
+                
+                with st.spinner("🛡️ Computing EMI shielding..."):
+                    time.sleep(0.7)
+                
+                st.session_state.show_results = True
+                st.session_state.calculation_steps = []
+                
+                # Show success message
+                st.success("✨ Reaction complete! View results below.")
+                time.sleep(1)
+                st.rerun()
+        
+        st.markdown("---")
+    
+    # Step-by-step calculations
+    if st.session_state.show_results and len(st.session_state.reaction_engine.molecules) > 0:
+        st.markdown("### 📊 Step-by-Step Analysis")
+        
+        # Step 1: Molecular Analysis
+        with st.expander("🔬 Step 1: Molecular Analysis", expanded=True):
+            st.markdown("**Reaction Components:**")
+            
+            for i, mol in enumerate(st.session_state.reaction_engine.molecules):
+                formula = ChemicalParser.format_formula(mol['composition'])
+                st.markdown(f"""
+                <div class="calc-step">
+                    <strong>Molecule {i+1}:</strong> {formula}<br>
+                    <strong>Coefficient:</strong> {mol['coefficient']}<br>
+                    <strong>Molecular Weight:</strong> {mol['molecular_weight']:.2f} g/mol
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Total composition
+            total_comp = st.session_state.reaction_engine.get_total_composition()
+            
+            st.markdown("**Total Elemental Composition (by mass %):**")
+            comp_df = pd.DataFrame([
+                {'Element': elem, 'Percentage': f"{perc:.2f}%"}
+                for elem, perc in total_comp.items()
+            ])
+            st.dataframe(comp_df, use_container_width=True, hide_index=True)
+        
+        # Step 2: Material Properties
+        with st.expander("⚗️ Step 2: Material Properties Calculation", expanded=True):
+            if total_comp:
+                conductivity = 0
+                permeability = 1.0
+                permittivity = 1.0
+                density = 0
+                
+                st.markdown("**Property Calculations:**")
+                
+                for element, percentage in total_comp.items():
+                    elem_data = material_db.get_material(element)
+                    if elem_data:
+                        weight = percentage / 100.0
+                        
+                        # Conductivity calculation
+                        elem_conductivity = elem_data.get('electrical_conductivity', 1e6)
+                        conductivity += elem_conductivity * weight
+                        
+                        # Permeability calculation (geometric mean)
+                        elem_permeability = elem_data.get('relative_permeability', 1.0)
+                        # Ensure permeability is at least 0.999 for diamagnetic materials
+                        elem_permeability = max(elem_permeability, 0.999)
+                        permeability *= elem_permeability ** weight
+                        
+                        # Permittivity calculation (geometric mean)
+                        elem_permittivity = elem_data.get('relative_permittivity', 1.0)
+                        # Ensure permittivity is at least 1.0
+                        elem_permittivity = max(elem_permittivity, 1.0)
+                        permittivity *= elem_permittivity ** weight
+                        
+                        # Density calculation
+                        elem_density = elem_data.get('density', 1000)
+                        density += elem_density * weight
+                        
+                        st.markdown(f"""
+                        <div class="calc-step">
+                            <strong>{element} ({percentage:.1f}%):</strong><br>
+                            σ = {format_number(elem_conductivity)} S/m<br>
+                            μᵣ = {elem_permeability:.3f}<br>
+                            εᵣ = {elem_permittivity:.3f}<br>
+                            ρ = {elem_density:.0f} kg/m³
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                # Display composite properties
+                st.markdown("**Composite Material Properties:**")
+                st.markdown(f"""
+                <div class="calc-step active">
+                    <div class="formula">
+                        Effective Conductivity: σₑff = {format_number(conductivity)} S/m<br>
+                        Effective Permeability: μᵣ,ₑff = {permeability:.3f}<br>
+                        Effective Permittivity: εᵣ,ₑff = {permittivity:.3f}<br>
+                        Effective Density: ρₑff = {density:.0f} kg/m³
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # Step 3: EMI Calculations
+        with st.expander("🛡️ Step 3: EMI Shielding Physics", expanded=True):
+            if total_comp:
+                try:
+                    # Ensure values are within valid ranges
+                    conductivity = max(conductivity, 1e-10)  # Minimum conductivity
+                    permeability = max(permeability, 0.999)  # Minimum permeability
+                    permittivity = max(permittivity, 1.0)    # Minimum permittivity
+                    
+                    # Perform EMI calculation
+                    result = emi_calculator.calculate_shielding_effectiveness(
+                        conductivity,
+                        permeability,
+                        permittivity,
+                        st.session_state.shield_thickness / 1000,  # Convert mm to m
+                        st.session_state.shield_frequency * 1e6    # Convert MHz to Hz
+                    )
+                    
+                    # Display calculation steps
+                    st.markdown("**Electromagnetic Analysis:**")
+                    
+                    # Skin depth
+                    st.markdown(f"""
+                    <div class="calc-step">
+                        <h4>Skin Depth Calculation</h4>
+                        <div class="formula">
+                            δ = √(2 / (ωμσ))<br>
+                            δ = {result['skin_depth']*1000:.3f} mm
+                        </div>
+                        <em>Penetration depth of electromagnetic waves</em>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Intrinsic impedance
+                    impedance_mag = abs(complex(result['intrinsic_impedance_real'], result['intrinsic_impedance_imag']))
+                    st.markdown(f"""
+                    <div class="calc-step">
+                        <h4>Intrinsic Impedance</h4>
+                        <div class="formula">
+                            η = √(μ / ε*)<br>
+                            |η| = {impedance_mag:.2f} Ω
+                        </div>
+                        <em>Material's resistance to electromagnetic wave propagation</em>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Shielding components
+                    st.markdown(f"""
+                    <div class="calc-step">
+                        <h4>Shielding Components</h4>
+                        <div class="formula">
+                            Reflection Loss: {result['reflection_loss']:.1f} dB<br>
+                            Absorption Loss: {result['absorption_loss']:.1f} dB<br>
+                            Multiple Reflection: {result['multiple_reflection_loss']:.1f} dB
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Store result for final display
+                    st.session_state.final_result = result
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    st.error(f"⚠️ **Calculation Error**: {error_msg}")
+                    
+                    # Provide helpful suggestions
+                    if "permeability" in error_msg.lower():
+                        st.info("""
+                        💡 **Tip**: Some elements like Fluorine have diamagnetic properties. 
+                        Try using more common EMI shielding materials like:
+                        - **Metals**: Fe, Cu, Al, Ni, Ag
+                        - **Metal Oxides**: Fe₂O₃, Al₂O₃
+                        - **Conductors**: Carbon structures
+                        """)
+                    elif "conductivity" in error_msg.lower():
+                        st.info("💡 **Tip**: Add more conductive elements like Cu, Ag, Al, or Fe to your reaction.")
+                    else:
+                        st.info("💡 **Tip**: Try using preset reactions or common EMI shielding materials.")
+                    
+                    st.session_state.final_result = None
+        
+        # Step 4: Final Results
+        if hasattr(st.session_state, 'final_result') and st.session_state.final_result:
+            result = st.session_state.final_result
+            
+            st.markdown("---")
+            st.markdown("### 🎯 Final Results")
+            
+            # Hero result
+            st.markdown(f"""
+            <div class="results-hero">
+                <div style="font-size: 1.3rem; opacity: 0.9; margin-bottom: 0.5rem;">
+                    Total Shielding Effectiveness
+                </div>
+                <div class="results-value">{result['total_se']:.1f} dB</div>
+                <div style="opacity: 0.8; font-size: 1.1rem;">
+                    @ {st.session_state.shield_frequency} MHz • {st.session_state.shield_thickness} mm thickness
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Metrics
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-label">Reflection Loss</div>
+                    <div class="metric-value">{result['reflection_loss']:.1f} dB</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-label">Absorption Loss</div>
+                    <div class="metric-value">{result['absorption_loss']:.1f} dB</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-label">Skin Depth</div>
+                    <div class="metric-value">{result['skin_depth']*1000:.3f} mm</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Performance rating
+            effectiveness = (
+                "Excellent" if result['total_se'] > 80 else
+                "Very Good" if result['total_se'] > 60 else
+                "Good" if result['total_se'] > 40 else
+                "Moderate" if result['total_se'] > 20 else
+                "Poor"
+            )
+            
+            rating_colors = {
+                "Excellent": "var(--accent-green)",
+                "Very Good": "var(--accent-blue)",
+                "Good": "var(--accent-yellow)",
+                "Moderate": "var(--accent-yellow)",
+                "Poor": "var(--accent-red)"
+            }
+            
+            st.markdown(f"""
+            <div class="notification" style="border-left-color: {rating_colors[effectiveness]};">
+                <strong>Shield Performance Rating: {effectiveness}</strong><br>
+                Your reaction produces a {effectiveness.lower()} EMI shield.
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Visualizations
+            with st.expander("📈 Detailed Analysis", expanded=False):
+                # Shielding breakdown pie chart
+                fig_pie = go.Figure(data=[go.Pie(
+                    labels=['Reflection', 'Absorption', 'Multiple Reflection'],
+                    values=[
+                        max(0, result['reflection_loss']),
+                        max(0, result['absorption_loss']),
+                        max(0, result['multiple_reflection_loss'])
+                    ],
+                    hole=0.4,
+                    marker_colors=['#00d4ff', '#8b5cf6', '#10b981']
+                )])
+                
+                fig_pie.update_layout(
+                    title="Shielding Mechanism Breakdown",
+                    font=dict(color='#f0f0f0'),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    height=400
+                )
+                
+                st.plotly_chart(fig_pie, use_container_width=True)
+                
+                # Frequency response
+                frequencies = np.logspace(5, 10, 50)
+                se_values = []
+                
+                for freq in frequencies:
+                    res = emi_calculator.calculate_shielding_effectiveness(
+                        conductivity, permeability, permittivity,
+                        st.session_state.shield_thickness / 1000, freq
+                    )
+                    se_values.append(res['total_se'])
+                
+                fig_freq = go.Figure()
+                
+                fig_freq.add_trace(go.Scatter(
+                    x=frequencies / 1e6,
+                    y=se_values,
+                    mode='lines',
+                    name='SE',
+                    line=dict(color='#00d4ff', width=3),
+                    fill='tozeroy',
+                    fillcolor='rgba(0, 212, 255, 0.1)'
+                ))
+                
+                # Current point
+                fig_freq.add_trace(go.Scatter(
+                    x=[st.session_state.shield_frequency],
+                    y=[result['total_se']],
+                    mode='markers',
+                    name='Current',
+                    marker=dict(size=12, color='#f87171')
+                ))
+                
+                fig_freq.update_layout(
+                    title="Frequency Response",
+                    xaxis_title="Frequency (MHz)",
+                    yaxis_title="Shielding Effectiveness (dB)",
+                    xaxis_type="log",
+                    font=dict(color='#f0f0f0'),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    height=400,
+                    showlegend=False
+                )
+                
+                st.plotly_chart(fig_freq, use_container_width=True)
+    
+    else:
+        # Welcome screen
+        st.markdown("""
+        <div style='text-align: center; padding: 80px 20px; color: var(--text-secondary);'>
+            <div style='font-size: 5rem; margin-bottom: 2rem; opacity: 0.7;'>⚛️</div>
+            <h2 style='color: var(--text-primary); font-weight: 600; margin-bottom: 1rem;'>
+                Chemical Reaction EMI Designer
+            </h2>
+            <p style='font-size: 1.2rem; margin: 1.5rem 0; line-height: 1.6;'>
+                Build molecular compounds and analyze their electromagnetic shielding properties
+                through advanced chemical composition calculations.
+            </p>
+            <div style='background: var(--bg-card); padding: 2rem; border-radius: 16px; 
+                       margin-top: 3rem; border: 1px solid var(--border-color);'>
+                <h3 style='color: var(--accent-blue); margin-bottom: 1.5rem;'>How to Use</h3>
+                <div style='text-align: left; max-width: 400px; margin: 0 auto; line-height: 1.8;'>
+                    <p><strong>1.</strong> Select elements and set quantities to build molecules</p>
+                    <p><strong>2.</strong> Add molecules to create a chemical reaction</p>
+                    <p><strong>3.</strong> Set shield thickness and frequency parameters</p>
+                    <p><strong>4.</strong> Click <strong>⚛️ REACT</strong> to analyze EMI shielding</p>
+                    <p><strong>5.</strong> View step-by-step calculations and results</p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Footer
+st.markdown("---")
+st.markdown(
+    """
+    <div style='text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 2rem;'>
+        🔬 Chemical EMI Designer v2.0 | Advanced Molecular Analysis for Electromagnetic Shielding
+    </div>
+    """,
+    unsafe_allow_html=True
+)

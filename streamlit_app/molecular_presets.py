@@ -1,5 +1,4 @@
 """
-Molecular Presets for Chemical EMI Designer
 Common molecules and compounds for quick selection
 """
 

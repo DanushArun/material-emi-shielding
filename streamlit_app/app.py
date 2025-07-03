@@ -476,11 +476,6 @@ st.markdown("""
     
     /* Responsive adjustments */
     @media (max-width: 768px) {
-        div[data-testid="column"] button[kind="secondary"] {
-            min-height: 50px !important;
-            font-size: 10px !important;
-        }
-        
         .react-button {
             font-size: var(--font-lg);
             padding: var(--space-3) var(--space-6);
@@ -491,22 +486,7 @@ st.markdown("""
         h3 { font-size: var(--font-xl); }
     }
     
-    /* Style element buttons */
-    div[data-testid="column"] button[kind="secondary"] {
-        background: var(--bg-tertiary) !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: var(--radius-md) !important;
-        color: var(--text-primary) !important;
-        font-weight: 500 !important;
-        font-size: var(--font-xs) !important;
-        min-height: 60px !important;
-        padding: var(--space-2) !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        transition: all 0.2s ease !important;
-        white-space: pre-line !important;
-        line-height: 1.2 !important;
-    }
+    /* Element buttons are now individually styled */
     
     /* Style the main REACT button */
     button[key="react_button"] {
@@ -529,12 +509,6 @@ st.markdown("""
         transform: translateY(-4px) scale(1.02) !important;
     }
     
-    div[data-testid="column"] button[kind="secondary"]:hover {
-        border-color: var(--accent-blue) !important;
-        background: rgba(0, 212, 255, 0.1) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2) !important;
-    }
     
     /* Selected element styling */
     .stButton > button:focus {
@@ -1205,88 +1179,277 @@ with main_container:
     </div>
     """, unsafe_allow_html=True)
     
-    # Categorized elements for better organization
-    element_categories = {
-        "Common Metals": {
-            "elements": ['Fe', 'Cu', 'Al', 'Ni'],
-            "color": "#48dbfb",
-            "description": "Most used in EMI shielding"
-        },
-        "Transition Metals": {
-            "elements": ['Cr', 'Mn', 'Co', 'Zn'],
-            "color": "#00d2d3", 
-            "description": "High conductivity metals"
-        },
-        "Noble Metals": {
-            "elements": ['Ag', 'Au', 'Pb', 'Sn'],
-            "color": "#feca57",
-            "description": "Corrosion resistant"
-        },
-        "Light Elements": {
-            "elements": ['H', 'Li', 'C', 'N'],
-            "color": "#54a0ff",
-            "description": "Low density options"
-        },
-        "Nonmetals": {
-            "elements": ['O', 'F', 'P', 'S'],
-            "color": "#ff9ff3",
-            "description": "Dielectric materials"
-        },
-        "Other": {
-            "elements": ['Na', 'Mg', 'Si', 'Cl', 'K', 'Ca', 'Ti', 'Mo'],
-            "color": "#5f27cd",
-            "description": "Specialized applications"
-        }
+    # Complete periodic table layout with all 118 elements
+    periodic_table = [
+        # Period 1
+        ["H", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "He"],
+        # Period 2  
+        ["Li", "Be", "", "", "", "", "", "", "", "", "", "", "B", "C", "N", "O", "F", "Ne"],
+        # Period 3
+        ["Na", "Mg", "", "", "", "", "", "", "", "", "", "", "Al", "Si", "P", "S", "Cl", "Ar"],
+        # Period 4
+        ["K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr"],
+        # Period 5
+        ["Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe"],
+        # Period 6
+        ["Cs", "Ba", "La", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn"],
+        # Period 7
+        ["Fr", "Ra", "Ac", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"],
+        # Spacer
+        ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+        # Lanthanides
+        ["", "", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "", ""],
+        # Actinides  
+        ["", "", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", "", ""]
+    ]
+    
+    # Element categories for color coding (darker shades for better text readability)
+    element_colors = {
+        # Alkali metals (darker coral/salmon)
+        "Li": "#dc2626", "Na": "#dc2626", "K": "#dc2626", "Rb": "#dc2626", "Cs": "#dc2626", "Fr": "#dc2626",
+        # Alkaline earth metals (darker golden yellow)
+        "Be": "#ca8a04", "Mg": "#ca8a04", "Ca": "#ca8a04", "Sr": "#ca8a04", "Ba": "#ca8a04", "Ra": "#ca8a04",
+        # Transition metals (darker green)
+        "Sc": "#16a34a", "Ti": "#16a34a", "V": "#16a34a", "Cr": "#16a34a", "Mn": "#16a34a", "Fe": "#16a34a", 
+        "Co": "#16a34a", "Ni": "#16a34a", "Cu": "#16a34a", "Zn": "#16a34a", "Y": "#16a34a", "Zr": "#16a34a", 
+        "Nb": "#16a34a", "Mo": "#16a34a", "Tc": "#16a34a", "Ru": "#16a34a", "Rh": "#16a34a", "Pd": "#16a34a", 
+        "Ag": "#16a34a", "Cd": "#16a34a", "Hf": "#16a34a", "Ta": "#16a34a", "W": "#16a34a", "Re": "#16a34a", 
+        "Os": "#16a34a", "Ir": "#16a34a", "Pt": "#16a34a", "Au": "#16a34a", "Hg": "#16a34a", "Rf": "#16a34a", 
+        "Db": "#16a34a", "Sg": "#16a34a", "Bh": "#16a34a", "Hs": "#16a34a", "Mt": "#16a34a", "Ds": "#16a34a", 
+        "Rg": "#16a34a", "Cn": "#16a34a",
+        # Post-transition metals (darker teal)
+        "Al": "#0891b2", "Ga": "#0891b2", "In": "#0891b2", "Sn": "#0891b2", "Tl": "#0891b2", "Pb": "#0891b2", 
+        "Bi": "#0891b2", "Nh": "#0891b2", "Fl": "#0891b2", "Mc": "#0891b2", "Lv": "#0891b2",
+        # Metalloids (darker pink/magenta)
+        "B": "#c026d3", "Si": "#c026d3", "Ge": "#c026d3", "As": "#c026d3", "Sb": "#c026d3", "Te": "#c026d3", "Po": "#c026d3",
+        # Nonmetals (darker blue)
+        "H": "#2563eb", "C": "#2563eb", "N": "#2563eb", "O": "#2563eb", "P": "#2563eb", "S": "#2563eb", "Se": "#2563eb",
+        # Halogens (darker purple)
+        "F": "#7c3aed", "Cl": "#7c3aed", "Br": "#7c3aed", "I": "#7c3aed", "At": "#7c3aed", "Ts": "#7c3aed",
+        # Noble gases (darker pink)
+        "He": "#db2777", "Ne": "#db2777", "Ar": "#db2777", "Kr": "#db2777", "Xe": "#db2777", "Rn": "#db2777", "Og": "#db2777",
+        # Lanthanides (darker lavender)
+        "La": "#6d28d9", "Ce": "#6d28d9", "Pr": "#6d28d9", "Nd": "#6d28d9", "Pm": "#6d28d9", "Sm": "#6d28d9", 
+        "Eu": "#6d28d9", "Gd": "#6d28d9", "Tb": "#6d28d9", "Dy": "#6d28d9", "Ho": "#6d28d9", "Er": "#6d28d9", 
+        "Tm": "#6d28d9", "Yb": "#6d28d9", "Lu": "#6d28d9",
+        # Actinides (darker blue)
+        "Ac": "#1e40af", "Th": "#1e40af", "Pa": "#1e40af", "U": "#1e40af", "Np": "#1e40af", "Pu": "#1e40af", 
+        "Am": "#1e40af", "Cm": "#1e40af", "Bk": "#1e40af", "Cf": "#1e40af", "Es": "#1e40af", "Fm": "#1e40af", 
+        "Md": "#1e40af", "No": "#1e40af", "Lr": "#1e40af"
     }
     
-    for category_name, category_data in element_categories.items():
-        if category_data["elements"]:
-            # Category header
-            st.markdown(f"""
-            <div class="category-header">
-                <div class="category-indicator" style="background: {category_data['color']};"></div>
-                <span>{category_name}</span>
-            </div>
-            """, unsafe_allow_html=True)
+    # Create container for periodic table
+    periodic_container = st.container()
+    
+    with periodic_container:
+        # Apply button styles using JavaScript after DOM loads
+        st.markdown("""
+    <script>
+    // Wait for Streamlit to render all elements
+    setTimeout(() => {
+        // Find all element button markers
+        const markers = document.querySelectorAll('.element-button-marker');
+        markers.forEach(marker => {
+            const element = marker.getAttribute('data-element');
+            const isSelected = marker.getAttribute('data-selected') === 'true';
             
-            # Element grid for this category - show more elements per row
-            num_cols = min(6, len(category_data["elements"]))
-            cols = st.columns(num_cols)
-            for i, element in enumerate(category_data["elements"]):
-                with cols[i % num_cols]:
-                    elem_data = material_db.get_material(element)
-                    if elem_data:
-                        is_selected = element in st.session_state.current_molecule
-                        
-                        # Create clickable element button
-                        selected_class = "selected" if is_selected else ""
-                        element_name = elem_data.get('name', element)[:8]
-                        
-                        # Use streamlit button with custom styling
-                        button_label = f"{element}\n{element_name}"
-                        
-                        # Add custom CSS for this specific element
+            // Find the next sibling that contains the button
+            let nextSibling = marker.nextElementSibling;
+            while (nextSibling && !nextSibling.querySelector('.stButton')) {
+                nextSibling = nextSibling.nextElementSibling;
+            }
+            
+            if (nextSibling) {
+                const button = nextSibling.querySelector('.stButton button');
+                if (button) {
+                    // Apply button styles
+                    button.style.cssText = `
+                        background: ${isSelected ? '#dc3545' : '#28a745'} !important;
+                        color: white !important;
+                        border: ${isSelected ? '3px solid #00d4ff' : '1px solid #444444'} !important;
+                        border-top: none !important;
+                        border-radius: 0 0 8px 8px !important;
+                        height: 20px !important;
+                        min-height: 20px !important;
+                        width: 75px !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        font-size: 10px !important;
+                        line-height: 20px !important;
+                        cursor: pointer !important;
+                    `;
+                    
+                    // Style the button container
+                    const buttonContainer = button.closest('.stButton');
+                    if (buttonContainer) {
+                        buttonContainer.style.cssText = `
+                            width: 75px !important;
+                            margin: -1px auto 0 auto !important;
+                            padding: 0 !important;
+                        `;
+                    }
+                }
+            }
+        });
+        }, 500);
+        </script>
+        """, unsafe_allow_html=True)
+        
+        # Display periodic table with better styling
+        legend_added = False
+        for row_idx, row in enumerate(periodic_table):
+            cols = st.columns(18)  # 18 columns for period table width
+            
+            
+            for col_idx, element in enumerate(row):
+                # Add legend in the empty space between H and He (columns 1-16 of row 0)
+                if row_idx == 0 and col_idx == 1 and not legend_added:
+                    # Use columns 1 through 16 for the legend
+                    with cols[1]:
                         st.markdown(f"""
-                        <style>
-                        button[key="elem_{element}"] {{
-                            border-left: 3px solid {category_data['color']} !important;
-                        }}
-                        </style>
+                        <div style="
+                            background: var(--bg-secondary);
+                            border: 2px solid var(--border-color);
+                            border-radius: var(--radius-lg);
+                            padding: 16px 20px;
+                            width: calc(75px * 16 + 8px * 15);
+                            box-sizing: border-box;
+                            height: 105px;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                        ">
+                            <h3 style="text-align: center; margin-bottom: 10px; color: var(--accent-red); font-size: 14px; font-weight: 600;">Element Categories</h3>
+                            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; font-size: 10px;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #dc2626; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Alkali Metals</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #ca8a04; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Alkaline Earth</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #16a34a; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Transition</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #0891b2; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Post-Transition</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #c026d3; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Metalloids</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #2563eb; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Nonmetals</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #7c3aed; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Halogens</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #db2777; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Noble Gases</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #6d28d9; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Lanthanides</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <div style="width: 10px; height: 10px; background: #1e40af; border-radius: 2px; flex-shrink: 0;"></div>
+                                    <span style="color: var(--text-primary);">Actinides</span>
+                                </div>
+                            </div>
+                        </div>
                         """, unsafe_allow_html=True)
-                        
-                        if st.button(
-                            button_label,
-                            key=f"elem_{element}",
-                            help=f"{element_name} - Click to {'remove' if is_selected else 'add'}",
-                            use_container_width=True
-                        ):
-                            if is_selected:
-                                # Remove element
-                                del st.session_state.current_molecule[element]
-                            else:
-                                # Add element with quantity 1
-                                st.session_state.current_molecule[element] = 1
-                            st.rerun()
+                    legend_added = True
+                    continue  # Skip to next iteration since we used this column
+                
+                # Skip columns that would be covered by the legend
+                if row_idx == 0 and col_idx >= 1 and col_idx < 17 and legend_added:
+                    continue
+                
+                with cols[col_idx]:
+                    if element and element != "":
+                        elem_data = material_db.get_material(element)
+                        if elem_data:
+                            is_selected = element in st.session_state.current_molecule
+                            element_name = elem_data.get('name', element)
+                            atomic_number = elem_data.get('atomic_number', '')
+                            atomic_weight = elem_data.get('atomic_weight', 0)
+                            weight_display = f"{atomic_weight:.3f}" if atomic_weight > 0 else ""
+                            color = element_colors.get(element, "#666666")
+                            
+                            # Fixed size element display cell
+                            element_width = "75px"
+                            element_height = "85px"
+                            button_height = "20px"
+                            
+                            # Container for element + button
+                            st.markdown(f"""
+                            <div style="width: {element_width}; margin: 0 auto;">
+                                <!-- Element cell -->
+                                <div style="
+                                    background: {color}; 
+                                    color: white; 
+                                    border: {'3px solid #00d4ff' if is_selected else '1px solid #444444'}; 
+                                    border-bottom: none;
+                                    border-radius: 8px 8px 0 0; 
+                                    height: {element_height}; 
+                                    width: {element_width}; 
+                                    padding: 6px 4px; 
+                                    font-family: 'Inter', sans-serif; 
+                                    display: flex; 
+                                    flex-direction: column; 
+                                    justify-content: space-between; 
+                                    align-items: center; 
+                                    text-align: center; 
+                                    box-sizing: border-box;
+                                    margin-bottom: 0;
+                                ">
+                                    <div style="font-size: 9px; font-weight: 400; opacity: 0.9;">{atomic_number}</div>
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1;">
+                                        <div style="font-size: 18px; font-weight: 700; line-height: 1; margin-bottom: 2px;">{element}</div>
+                                        <div style="font-size: 9px; font-weight: 400; opacity: 0.9;">{element_name[:8]}</div>
+                                    </div>
+                                    <div style="font-size: 8px; font-weight: 300; opacity: 0.8;">{weight_display}</div>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            # Slim select button with exact same width
+                            button_key = f"select_{element}"
+                            button_text = ""  # No text in the button
+                            
+                            # Add a marker div before the button to help with styling
+                            st.markdown(f'<div class="element-button-marker" data-element="{element}" data-selected="{str(is_selected).lower()}"></div>', unsafe_allow_html=True)
+                            
+                            if st.button(button_text, key=button_key, use_container_width=True):
+                                if is_selected:
+                                    del st.session_state.current_molecule[element]
+                                else:
+                                    st.session_state.current_molecule[element] = 1
+                                st.rerun()
+                        else:
+                            # Element not in database, show as disabled
+                            st.markdown(f"""
+                            <div style="
+                                background: #333333;
+                                border: 1px solid #555555;
+                                border-radius: 8px;
+                                padding: 4px;
+                                text-align: center;
+                                min-height: 60px;
+                                margin: 1px;
+                                color: #888888;
+                                font-size: 11px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">{element}</div>
+                            """, unsafe_allow_html=True)
     
     # Molecular presets section
     if MOLECULAR_PRESETS:

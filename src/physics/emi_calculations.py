@@ -204,7 +204,8 @@ class EMICalculator:
                                         relative_permeability: float,
                                         relative_permittivity: float,
                                         thickness: float,
-                                        frequency: float) -> Dict[str, float]:
+                                        frequency: float,
+                                        include_confidence: bool = True) -> Dict[str, float]:
         """
         Calculate total shielding effectiveness and its components.
         
@@ -214,9 +215,10 @@ class EMICalculator:
             relative_permittivity: Relative permittivity
             thickness: Material thickness (m)
             frequency: Frequency (Hz)
+            include_confidence: Whether to include confidence estimation
             
         Returns:
-            Dictionary with SE components and total SE (dB)
+            Dictionary with SE components, total SE (dB), and confidence metrics
         """
         # Calculate electromagnetic properties
         eta = self.calculate_intrinsic_impedance(
@@ -241,7 +243,7 @@ class EMICalculator:
         mu = relative_permeability * MU_0
         skin_depth = self.calculate_skin_depth(conductivity, mu, frequency)
         
-        return {
+        result = {
             'reflection_loss': reflection_loss,
             'absorption_loss': absorption_loss,
             'multiple_reflection_loss': multiple_reflection_loss,
@@ -252,6 +254,16 @@ class EMICalculator:
             'propagation_constant_real': gamma.real,
             'propagation_constant_imag': gamma.imag
         }
+        
+        if include_confidence:
+            # Add confidence estimation
+            confidence_data = self._estimate_confidence(
+                conductivity, relative_permeability, relative_permittivity,
+                thickness, frequency, result
+            )
+            result.update(confidence_data)
+        
+        return result
     
     def calculate_near_field_shielding(self, conductivity: float,
                                      relative_permeability: float,
@@ -403,6 +415,69 @@ class EMICalculator:
             'total_ses': total_ses,
             'skin_depths': skin_depths
         }
+
+    def _estimate_confidence(self, conductivity: float,
+                           relative_permeability: float,
+                           relative_permittivity: float,
+                           thickness: float,
+                           frequency: float,
+                           result: Dict[str, float]) -> Dict[str, float]:
+        """
+        Estimate confidence in the calculation results.
+        
+        Returns:
+            Dictionary with confidence metrics
+        """
+        confidence = 1.0
+        
+        # Physics constraints confidence
+        if result['total_se'] < 0:
+            confidence *= 0.1
+        
+        if result['skin_depth'] <= 0 or result['skin_depth'] > 1:
+            confidence *= 0.8
+        
+        # Check if parameters are in reasonable ranges
+        if conductivity < 1e-10 or conductivity > 1e10:
+            confidence *= 0.7
+        
+        if relative_permeability < 0.999 or relative_permeability > 1e6:
+            confidence *= 0.8
+        
+        # Frequency range confidence
+        if frequency < 1e3 or frequency > 1e12:  # Outside 1kHz - 1THz
+            confidence *= 0.85
+        
+        # Thickness vs skin depth
+        if thickness < result['skin_depth'] / 10:
+            confidence *= 0.9  # Very thin shield
+        
+        # Convert to uncertainty in dB
+        if confidence > 0.95:
+            uncertainty_db = 2.0
+        elif confidence > 0.85:
+            uncertainty_db = 5.0
+        elif confidence > 0.70:
+            uncertainty_db = 10.0
+        else:
+            uncertainty_db = 15.0
+        
+        return {
+            'confidence': confidence,
+            'uncertainty_db': uncertainty_db,
+            'confidence_level': self._get_confidence_level(confidence)
+        }
+    
+    def _get_confidence_level(self, confidence: float) -> str:
+        """Get confidence level description."""
+        if confidence > 0.95:
+            return 'high'
+        elif confidence > 0.85:
+            return 'medium'
+        elif confidence > 0.70:
+            return 'low'
+        else:
+            return 'very_low'
 
 # Create global instance
 emi_calculator = EMICalculator()

@@ -26,6 +26,12 @@ except ImportError:
     MOLECULAR_PRESETS = {}
     REACTION_PRESETS = {}
 
+# Import direct composition manager
+try:
+    from direct_composition_integration import render_direct_composition_section
+except ImportError:
+    render_direct_composition_section = None
+
 # Page configuration
 st.set_page_config(
     page_title="🔬 Chemical EMI Designer",
@@ -958,11 +964,20 @@ class ReactionEngine:
         if not self.molecules:
             return {}
         
-        # Calculate total mass for each element
+        # Check if we have a direct composition (single molecule with type='direct')
+        if len(self.molecules) == 1 and self.molecules[0].get('type') == 'direct':
+            # Direct composition - percentages are already provided
+            return self.molecules[0]['composition']
+        
+        # Calculate total mass for each element (molecular mode)
         element_masses = {}
         total_mass = 0
         
         for mol in self.molecules:
+            if mol.get('type') == 'direct':
+                # Skip direct compositions in mixed mode
+                continue
+                
             mol_mass = mol['molecular_weight'] * mol['coefficient']
             total_mass += mol_mass
             
@@ -997,9 +1012,14 @@ class ReactionEngine:
         
         equation_parts = []
         for mol in self.molecules:
-            coeff = f"{mol['coefficient']}" if mol['coefficient'] > 1 else ""
-            formula = ChemicalParser.format_formula(mol['composition'])
-            equation_parts.append(f"{coeff}{formula}")
+            if mol.get('type') == 'direct':
+                # Format direct composition differently
+                display_name = mol.get('display_name', 'Direct Composition')
+                equation_parts.append(display_name)
+            else:
+                coeff = f"{mol['coefficient']}" if mol['coefficient'] > 1 else ""
+                formula = ChemicalParser.format_formula(mol['composition'])
+                equation_parts.append(f"{coeff}{formula}")
         
         return " + ".join(equation_parts)
 
@@ -1024,6 +1044,15 @@ if 'shield_thickness' not in st.session_state:
 
 if 'shield_frequency' not in st.session_state:
     st.session_state.shield_frequency = 100.0
+
+if 'direct_composition' not in st.session_state:
+    st.session_state.direct_composition = {}
+
+if 'last_prediction' not in st.session_state:
+    st.session_state.last_prediction = None
+
+if 'last_conditions' not in st.session_state:
+    st.session_state.last_conditions = None
 
 # ================================
 # HELPER FUNCTIONS
@@ -1075,8 +1104,9 @@ st.markdown("""
         <h3 class="card-title">📋 How To Use</h3>
     </div>
     <div style="padding: var(--space-3);">
-        <p style="margin: 0 0 var(--space-2) 0;">1. Select elements from the list below to build molecules</p>
-        <p style="margin: 0 0 var(--space-2) 0;">2. Add molecules to create a chemical reaction</p>
+        <p style="margin: 0 0 var(--space-2) 0;">1a. <strong>Molecular Builder</strong>: Select elements from the list below to build molecules</p>
+        <p style="margin: 0 0 var(--space-2) 0;">1b. <strong>Direct Composition</strong>: OR enter percentages directly (e.g., 70% Fe, 30% C)</p>
+        <p style="margin: 0 0 var(--space-2) 0;">2. Add molecules or compositions to create your material</p>
         <p style="margin: 0 0 var(--space-2) 0;">3. Set shield thickness and frequency parameters</p>
         <p style="margin: 0 0 var(--space-2) 0;">4. Click ⚛️ REACT to analyze EMI shielding</p>
         <p style="margin: 0;">5. View step-by-step calculations and results</p>
@@ -1084,13 +1114,34 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# INPUT MODE SELECTOR
+st.markdown("""
+<div style="margin: var(--space-4) 0 var(--space-6) 0;">
+    <h3 style="
+        font-size: var(--font-xl);
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: center;
+        margin-bottom: var(--space-3);
+    ">Select Input Method</h3>
+</div>
+""", unsafe_allow_html=True)
+
+input_mode = st.radio(
+    "Choose how to define your material:",
+    ["Molecular Builder", "Direct Composition"],
+    horizontal=True,
+    help="Molecular: Build molecules from elements | Direct: Enter percentages directly",
+    key="input_mode"
+)
 
 # Single column layout for better flow
 main_container = st.container()
 
 with main_container:
-    # BUILD YOUR MOLECULE section
-    st.markdown("""
+    if input_mode == "Molecular Builder":
+        # BUILD YOUR MOLECULE section
+        st.markdown("""
     <div style="margin: var(--space-6) 0 var(--space-4) 0;">
         <h3 style="
             font-size: var(--font-2xl);
@@ -2033,5 +2084,10 @@ with main_container:
                 
                 st.plotly_chart(fig_freq, use_container_width=True)
     
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    else:  # Direct Composition mode
+        if render_direct_composition_section:
+            render_direct_composition_section(st, material_db)
+        else:
+            st.error("Direct Composition module not found. Please ensure direct_composition_integration.py is in the streamlit_app directory.")
+
+st.markdown('</div>', unsafe_allow_html=True)

@@ -39,3 +39,7 @@ credentials/
 **/credentials/
 *.pem
 *.key
+
+# Streamlit secrets
+.streamlit/secrets.toml
+**/secrets.toml

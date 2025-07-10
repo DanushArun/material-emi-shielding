@@ -659,8 +659,21 @@ with main_col:
             
         with tab4:
             st.info("For more elements, use the element selector below")
-            all_elements = sorted(material_db.periodic_table.keys())
-            selected_elem = st.selectbox("Select element:", [""] + all_elements)
+            
+            # Create element options with both symbol and name
+            element_options = []
+            elem_map = {}  # To map display names back to symbols
+            
+            for elem in sorted(material_db.periodic_table.keys()):
+                elem_data = material_db.get_material(elem)
+                elem_name = elem_data.get('name', elem) if elem_data else elem
+                display_name = f"{elem} ({elem_name})"
+                element_options.append(display_name)
+                elem_map[display_name] = elem
+            
+            selected_display = st.selectbox("Select element:", [""] + element_options)
+            selected_elem = elem_map.get(selected_display, "")
+            
             if selected_elem and st.button("Add Element"):
                 if selected_elem in st.session_state.current_molecule:
                     st.session_state.current_molecule[selected_elem] += 1
@@ -734,13 +747,26 @@ with main_col:
         col1, col2, col3 = st.columns([3, 2, 1])
         
         with col1:
-            available_elements = [elem for elem in sorted(material_db.periodic_table.keys()) 
-                                if elem not in st.session_state.direct_composition]
-            new_element = st.selectbox(
+            # Create element options with both symbol and name
+            available_elements = []
+            element_map = {}  # To map display names back to symbols
+            
+            for elem in sorted(material_db.periodic_table.keys()):
+                if elem not in st.session_state.direct_composition:
+                    elem_data = material_db.get_material(elem)
+                    elem_name = elem_data.get('name', elem) if elem_data else elem
+                    display_name = f"{elem} - {elem_name}"
+                    available_elements.append(display_name)
+                    element_map[display_name] = elem
+            
+            selected_display = st.selectbox(
                 "Select Element",
                 [""] + available_elements,
                 key="new_element_select"
             )
+            
+            # Get the actual element symbol from the display name
+            new_element = element_map.get(selected_display, "")
         
         with col2:
             new_percentage = st.number_input(
@@ -1209,7 +1235,7 @@ Total SE = R_dB + A_dB + M_dB = {result['total_se']:.1f} dB
                 st.dataframe(verify_df, hide_index=True, use_container_width=True)
                 
                 if max(skin_depth_diff, refl_diff, abs_diff) < 1:
-                    st.success("Calculations verified - Excellent accuracy!")
+                    st.success("Calculations verified")
                 elif max(skin_depth_diff, refl_diff, abs_diff) < 5:
                     st.info("Calculations verified - Good accuracy")
                 else:

@@ -43,3 +43,6 @@ credentials/
 # Streamlit secrets
 .streamlit/secrets.toml
 **/secrets.toml
+
+# Runtime files
+calculation_history.json

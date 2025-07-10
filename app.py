@@ -8,27 +8,22 @@ import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
 import re
-from pathlib import Path
-import sys
 from typing import Dict
 import time
 from datetime import datetime
 import json
 import os
+import sys
+from pathlib import Path
 
-# Add parent directory
-sys.path.append(str(Path(__file__).parent.parent))
+# Add current directory to Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Import modules
 from src.physics.emi_calculations import emi_calculator
 from src.materials.material_properties import material_db
 from auth import check_password
 
-# Import molecular presets
-try:
-    from molecular_presets import MOLECULAR_PRESETS, REACTION_PRESETS
-except ImportError:
-    MOLECULAR_PRESETS = {}
-    REACTION_PRESETS = {}
 
 # Page configuration
 st.set_page_config(
@@ -1189,38 +1184,3 @@ Total SE = R_dB + A_dB + M_dB = {result['total_se']:.1f} dB
                 else:
                     st.warning("⚠️ Minor discrepancies detected - Check input values")
                 
-                # Performance Rating
-                st.markdown("### 🎯 Performance Rating")
-                if result['total_se'] >= 90:
-                    rating = "Excellent"
-                    rating_msg = "Your material produces an excellent EMI shield."
-                    color = "#10b981"
-                elif result['total_se'] >= 60:
-                    rating = "Very Good"
-                    rating_msg = "Your material produces a very good EMI shield."
-                    color = "#00d4ff"
-                elif result['total_se'] >= 40:
-                    rating = "Good"
-                    rating_msg = "Your material produces a good EMI shield."
-                    color = "#fbbf24"
-                elif result['total_se'] >= 20:
-                    rating = "Moderate"
-                    rating_msg = "Your material produces a moderate EMI shield."
-                    color = "#fbbf24"
-                else:
-                    rating = "Poor"
-                    rating_msg = "Your material produces a poor EMI shield."
-                    color = "#f87171"
-                
-                st.markdown(f"""
-                <div style="
-                    background: {color}22;
-                    border: 2px solid {color};
-                    border-radius: var(--radius-lg);
-                    padding: var(--space-3);
-                    margin: var(--space-3) 0;
-                ">
-                    <div style="font-weight: bold; color: {color};">Shield Performance: {rating}</div>
-                    <div style="color: var(--text-secondary); margin-top: 5px;">{rating_msg}</div>
-                </div>
-                """, unsafe_allow_html=True)

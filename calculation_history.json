@@ -1,237 +1,177 @@
 [
   {
-    "timestamp": "2025-07-10 09:17:58",
+    "timestamp": "2025-07-10 09:56:33",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "Fe": 70.0,
+      "Ni": 30.0
+    },
+    "composition_summary": "Fe: 70.0%, Ni: 30.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "total_se": 30134.957984085748,
+    "reflection_loss": 24.95472425515895,
+    "absorption_loss": 30110.003259830588,
+    "molecules": []
+  },
+  {
+    "timestamp": "2025-07-10 09:56:26",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "K": 50.0,
+      "Na": 50.0
+    },
+    "composition_summary": "K: 50.0%, Na: 50.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "total_se": 763.904056718025,
+    "reflection_loss": 42.96699445980819,
+    "absorption_loss": 720.9370622582168,
+    "molecules": [
+      {
+        "formula": "KNa",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-10 09:56:25",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "K": 50.0,
+      "Na": 50.0
+    },
+    "composition_summary": "K: 50.0%, Na: 50.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "total_se": 763.904056718025,
+    "reflection_loss": 42.96699445980819,
+    "absorption_loss": 720.9370622582168,
+    "molecules": [
+      {
+        "formula": "KNa",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-10 09:56:23",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "K": 50.0,
+      "Na": 50.0
+    },
+    "composition_summary": "K: 50.0%, Na: 50.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "total_se": 763.904056718025,
+    "reflection_loss": 42.96699445980819,
+    "absorption_loss": 720.9370622582168,
+    "molecules": [
+      {
+        "formula": "KNa",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-10 09:56:20",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "K": 50.0,
+      "Na": 50.0
+    },
+    "composition_summary": "K: 50.0%, Na: 50.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "total_se": 763.904056718025,
+    "reflection_loss": 42.96699445980819,
+    "absorption_loss": 720.9370622582168,
+    "molecules": [
+      {
+        "formula": "KNa",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-10 09:56:19",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "K": 50.0,
+      "Na": 50.0
+    },
+    "composition_summary": "K: 50.0%, Na: 50.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "total_se": 763.904056718025,
+    "reflection_loss": 42.96699445980819,
+    "absorption_loss": 720.9370622582168,
+    "molecules": [
+      {
+        "formula": "KNa",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-10 09:56:15",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "K": 50.0,
+      "Na": 50.0
+    },
+    "composition_summary": "K: 50.0%, Na: 50.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "total_se": 763.904056718025,
+    "reflection_loss": 42.96699445980819,
+    "absorption_loss": 720.9370622582168,
+    "molecules": [
+      {
+        "formula": "KNa",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-10 09:56:09",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "K": 50.0,
+      "Na": 50.0
+    },
+    "composition_summary": "K: 50.0%, Na: 50.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "total_se": 763.904056718025,
+    "reflection_loss": 42.96699445980819,
+    "absorption_loss": 720.9370622582168,
+    "molecules": [
+      {
+        "formula": "KNa",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-10 09:55:47",
     "mode": "\ud83e\uddea Molecular Builder",
     "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
+      "K": 50.0,
+      "Na": 50.0
     },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
+    "composition_summary": "K: 50.0%, Na: 50.0%",
     "thickness": 1.0,
     "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-10 09:17:55",
-    "mode": "\ud83e\uddea Molecular Builder",
-    "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
-    },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-10 09:17:54",
-    "mode": "\ud83e\uddea Molecular Builder",
-    "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
-    },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-10 04:48:47",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
-    },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-10 00:13:24",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
-    },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 23:29:51",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
-    },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 23:14:29",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
-    },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 22:48:01",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
-    },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 12:23:33",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
-    },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 12:19:05",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 69.0,
-      "Ni": 6.9,
-      "Dy": 24.1
-    },
-    "composition_summary": "Fe: 69.0%, Dy: 24.1%, Ni: 6.9%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 11779.875042775362,
-    "reflection_loss": 27.649371233780148,
-    "absorption_loss": 11752.225671541582,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 09:58:11",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 70.0,
-      "Ni": 30.0
-    },
-    "composition_summary": "Fe: 70.0%, Ni: 30.0%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 30134.957984085748,
-    "reflection_loss": 24.95472425515895,
-    "absorption_loss": 30110.003259830588,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 09:49:09",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 70.0,
-      "Ni": 30.0
-    },
-    "composition_summary": "Fe: 70.0%, Ni: 30.0%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 30134.957984085748,
-    "reflection_loss": 24.95472425515895,
-    "absorption_loss": 30110.003259830588,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 09:47:49",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 70.0,
-      "Ni": 30.0
-    },
-    "composition_summary": "Fe: 70.0%, Ni: 30.0%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 30134.957984085748,
-    "reflection_loss": 24.95472425515895,
-    "absorption_loss": 30110.003259830588,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 09:35:59",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 70.0,
-      "Ni": 30.0
-    },
-    "composition_summary": "Fe: 70.0%, Ni: 30.0%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 30134.957984085748,
-    "reflection_loss": 24.95472425515895,
-    "absorption_loss": 30110.003259830588,
-    "molecules": []
-  },
-  {
-    "timestamp": "2025-07-09 08:50:02",
-    "mode": "Direct Composition (Weight %)",
-    "composition": {
-      "Fe": 70.0,
-      "Ni": 30.0
-    },
-    "composition_summary": "Fe: 70.0%, Ni: 30.0%",
-    "thickness": 1.0,
-    "frequency": 100.0,
-    "total_se": 30134.957984085748,
-    "reflection_loss": 24.95472425515895,
-    "absorption_loss": 30110.003259830588,
-    "molecules": []
+    "total_se": 763.904056718025,
+    "reflection_loss": 42.96699445980819,
+    "absorption_loss": 720.9370622582168,
+    "molecules": [
+      {
+        "formula": "KNa",
+        "coefficient": 1
+      }
+    ]
   }
 ]

@@ -30,11 +30,18 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Configuration
+
+Create a `.streamlit/secrets.toml` file with your password:
+```toml
+password = "your-secure-password"
+```
+
 ## Usage
 
 1. Start the application:
 ```bash
-streamlit run streamlit_app/app.py
+streamlit run app.py
 ```
 
 2. Open your browser to the displayed URL (typically http://localhost:8501)
@@ -49,22 +56,36 @@ streamlit run streamlit_app/app.py
    - View step-by-step calculations
    - Check final performance rating
 
+## Deployment
+
+### Streamlit Cloud Deployment
+
+1. Push your code to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Connect your GitHub account
+4. Deploy with these settings:
+   - Main file path: `app.py`
+   - Add secrets in the Streamlit Cloud dashboard:
+     ```toml
+     password = "your-secure-password"
+     ```
+
 ## Project Structure
 
 ```
 EMI-shielding/
-├── streamlit_app/
-│   ├── app.py                    # Main application
-│   └── molecular_presets.py      # Pre-configured molecules and reactions
+├── app.py                    # Main application
+├── auth.py                   # Authentication module
 ├── src/
 │   ├── materials/
 │   │   ├── material_properties.py   # Material property calculations
 │   │   └── periodic_table.json      # Element data
 │   ├── physics/
-│   │   ├── emi_calculations.py      # EMI shielding physics
-│   │   └── shielding_theory.py      # Theoretical calculations
+│   │   └── emi_calculations.py      # EMI shielding physics
 │   └── utils/
 │       └── constants.py             # Physical constants
+├── .streamlit/
+│   └── config.toml          # Streamlit configuration
 └── requirements.txt
 ```
 

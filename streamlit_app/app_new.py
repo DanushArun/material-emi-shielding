@@ -302,7 +302,7 @@ col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     input_mode = st.selectbox(
         "Choose how to define your materials:",
-        ["🧪 Molecular Builder", "📊 Direct Composition (Weight %)"],
+        ["🧪 Molecular Builder", "Direct Composition (Weight %)"],
         index=0 if st.session_state.input_mode == "Molecular Builder" else 1,
         help="Molecular Builder: Build molecules from elements | Direct Composition: Enter percentages directly",
         key="mode_selector"

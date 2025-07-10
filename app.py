@@ -16,19 +16,42 @@ import os
 import sys
 from pathlib import Path
 
-# Add current directory to Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add current directory to Python path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
+
+# Also add parent directory in case we're in a subdirectory
+parent_dir = os.path.dirname(current_dir)
+if os.path.exists(os.path.join(parent_dir, 'src')):
+    sys.path.insert(0, parent_dir)
 
 # Import modules
 from src.physics.emi_calculations import emi_calculator
 from src.materials.material_properties import material_db
-from auth import check_password
+
+# Import auth with proper error handling
+try:
+    from auth import check_password
+except ImportError:
+    # Try importing from current directory
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("auth", os.path.join(current_dir, "auth.py"))
+        auth = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(auth)
+        check_password = auth.check_password
+    except Exception as e:
+        import streamlit as st
+        st.error(f"Could not import auth module: {e}")
+        st.error(f"Current directory: {current_dir}")
+        st.error(f"Files in current directory: {os.listdir(current_dir)}")
+        st.stop()
 
 
 # Page configuration
 st.set_page_config(
-    page_title="🔬 EMI Shield Designer",
-    page_icon="⚛️",
+    page_title="EMI Shield Designer",
+    page_icon="shield",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -360,6 +383,9 @@ if 'input_mode' not in st.session_state:
 if 'show_history' not in st.session_state:
     st.session_state.show_history = False
 
+if 'calculation_saved' not in st.session_state:
+    st.session_state.calculation_saved = False
+
 # Authentication
 if not check_password():
     st.stop()
@@ -379,14 +405,14 @@ with header_col2:
             color: var(--text-primary);
             margin: 0;
             letter-spacing: 2px;
-        ">🔬 EMI SHIELDER</h1>
+        ">EMI SHIELDER</h1>
     </div>
     """, unsafe_allow_html=True)
 
 with header_col3:
     # History button in top-right (smaller)
     history_count = len(load_history())
-    if st.button(f"📜 ({history_count})", key="history_button", help="View calculation history"):
+    if st.button(f"History ({history_count})", key="history_button", help="View calculation history"):
         st.session_state.show_history = not st.session_state.show_history
         st.rerun()
 
@@ -410,7 +436,7 @@ if st.session_state.show_history:
                 color: var(--text-primary);
                 margin: 0;
                 text-align: center;
-            ">📜 History</h3>
+            ">History</h3>
         </div>
         """, unsafe_allow_html=True)
         
@@ -420,7 +446,7 @@ if st.session_state.show_history:
             st.info("No calculations yet. Complete a calculation to see it here.")
         else:
             # Add export button
-            if st.button("📥 Export CSV", use_container_width=True):
+            if st.button("Export CSV", use_container_width=True):
                 # Prepare data for export
                 export_data = []
                 for calc in history:
@@ -438,7 +464,7 @@ if st.session_state.show_history:
                 df = pd.DataFrame(export_data)
                 csv = df.to_csv(index=False)
                 st.download_button(
-                    label="💾 Download",
+                    label="Download",
                     data=csv,
                     file_name=f"emi_history_{time.strftime('%Y%m%d_%H%M%S')}.csv",
                     mime="text/csv"
@@ -448,10 +474,11 @@ if st.session_state.show_history:
             
             # Display history entries (show only recent 10 in sidebar)
             for idx, calc in enumerate(history[:10]):
-                with st.expander(f"{calc['total_se']:.1f} dB - {calc['timestamp'].split()[1]}", expanded=False):
+                with st.expander(f"{calc['composition_summary']}", expanded=False):
                     st.markdown(f"""
-                    **{calc['composition_summary']}**  
-                    {calc['thickness']}mm @ {calc['frequency']}MHz
+                    **{calc['total_se']:.1f} dB**  
+                    {calc['thickness']}mm @ {calc['frequency']}MHz  
+                    {calc['timestamp']}
                     """)
                     
                     if st.button(f"Load", key=f"load_{idx}", use_container_width=True):
@@ -467,7 +494,7 @@ if st.session_state.show_history:
                         st.session_state.direct_composition = {}
                         
                         # Restore composition
-                        if load_calc['mode'] == "🧪 Molecular Builder":
+                        if load_calc['mode'] == "Molecular Builder":
                             # Restore molecules
                             for mol_data in load_calc['molecules']:
                                 st.session_state.reaction_engine.add_molecule(
@@ -495,7 +522,7 @@ if st.session_state.show_history:
         
         # Close button at bottom
         st.markdown("---")
-        if st.button("✖️ Close", use_container_width=True):
+        if st.button("Close", use_container_width=True):
             st.session_state.show_history = False
             st.rerun()
 else:
@@ -519,7 +546,7 @@ with main_col:
     # Mode selection dropdown (left-aligned)
     input_mode = st.selectbox(
         "Choose how to define your materials:",
-        ["🧪 Molecular Builder", "Direct Composition (Weight %)"],
+        ["Molecular Builder", "Direct Composition (Weight %)"],
         index=0 if st.session_state.input_mode == "Molecular Builder" else 1,
         help="Molecular Builder: Build molecules from elements | Direct Composition: Enter percentages directly",
         key="mode_selector"
@@ -527,7 +554,7 @@ with main_col:
     st.session_state.input_mode = input_mode
     
     # Show instructions based on mode
-    with st.expander("📋 How To Use", expanded=True):
+    with st.expander("How To Use", expanded=True):
         if "Molecular Builder" in input_mode:
             st.write("""
             ### Molecular Builder Mode
@@ -535,7 +562,7 @@ with main_col:
             2. Adjust quantities to build your molecule
             3. Add molecules to create your material reaction
             4. Set shield thickness and frequency parameters
-            5. Click ⚛️ REACT to analyze EMI shielding
+            5. Click REACT to analyze EMI shielding
             """)
         else:
             st.write("""
@@ -544,7 +571,7 @@ with main_col:
             2. Total must equal 100%
             3. Add composition to reaction
             4. Set shield thickness and frequency parameters
-            5. Click ⚛️ REACT to analyze EMI shielding
+            5. Click REACT to analyze EMI shielding
             
             ### Example Compositions:
             - **Steel**: Fe: 98%, C: 2%
@@ -564,7 +591,7 @@ with main_col:
                 font-weight: 600;
                 color: var(--text-primary);
                 text-align: center;
-            ">⚛️ Build Your Molecule</h3>
+            ">Build Your Molecule</h3>
         </div>
         """, unsafe_allow_html=True)
         
@@ -589,7 +616,7 @@ with main_col:
             st.info("Select elements from the periodic table below to build your molecule")
         
         # Element selection - simplified periodic table
-        st.markdown("### 🧪 Select Elements")
+        st.markdown("### Select Elements")
         
         # Common elements in tabs
         tab1, tab2, tab3, tab4 = st.tabs(["Metals", "Non-metals", "Transition Metals", "All Elements"])
@@ -643,7 +670,7 @@ with main_col:
             
         # Quantity adjustment
         if st.session_state.current_molecule:
-            st.markdown("### ⚙️ Adjust Quantities")
+            st.markdown("### Adjust Quantities")
             cols = st.columns(4)
             for i, (element, quantity) in enumerate(st.session_state.current_molecule.items()):
                 with cols[i % 4]:
@@ -666,24 +693,24 @@ with main_col:
                                 st.session_state.current_molecule[element] = new_qty
                             st.rerun()
                     with col3:
-                        if st.button("❌", key=f"del_{element}"):
+                        if st.button("X", key=f"del_{element}"):
                             del st.session_state.current_molecule[element]
                             st.rerun()
                 
             # Action buttons
             col1, col2, col3 = st.columns(3)
             with col2:
-                if st.button("➕ Add to Reaction", type="primary", use_container_width=True):
+                if st.button("Add to Reaction", type="primary", use_container_width=True):
                     formula = ChemicalParser.format_formula(st.session_state.current_molecule)
                     st.session_state.reaction_engine.add_molecule(
                         formula.replace('<sub>', '').replace('</sub>', ''),
                         1
                     )
                     st.session_state.current_molecule = {}
-                    st.success("✅ Molecule added to reaction!")
+                    st.success("Molecule added to reaction!")
                     st.rerun()
             with col3:
-                if st.button("🔄 Clear Molecule", use_container_width=True):
+                if st.button("Clear Molecule", use_container_width=True):
                     st.session_state.current_molecule = {}
                     st.rerun()
 
@@ -696,7 +723,7 @@ with main_col:
                 font-weight: 600;
                 color: var(--text-primary);
                 text-align: center;
-            ">📊 Direct Composition Input</h3>
+            ">Direct Composition Input</h3>
             <p style="text-align: center; color: var(--text-secondary);">
                 Enter your material composition by weight percentage
             </p>
@@ -726,7 +753,7 @@ with main_col:
             )
         
         with col3:
-            if st.button("➕ Add", key="add_element_btn", use_container_width=True):
+            if st.button("Add", key="add_element_btn", use_container_width=True):
                 if new_element and new_percentage > 0:
                     st.session_state.direct_composition[new_element] = new_percentage
                     st.rerun()
@@ -737,9 +764,9 @@ with main_col:
             
             # Show total
             if abs(total - 100.0) < 0.01:
-                st.success(f"✅ Total: {total:.1f}%")
+                st.success(f"Total: {total:.1f}%")
             else:
-                st.error(f"❌ Total: {total:.1f}% (must equal 100%)")
+                st.error(f"Total: {total:.1f}% (must equal 100%)")
             
             # Composition table
             st.markdown("### Current Composition")
@@ -769,7 +796,7 @@ with main_col:
                         st.rerun()
                 
                 with col3:
-                    if st.button("🗑️", key=f"del_direct_{element}"):
+                    if st.button("Delete", key=f"del_direct_{element}"):
                         del st.session_state.direct_composition[element]
                         st.rerun()
             
@@ -777,14 +804,14 @@ with main_col:
             col1, col2, col3 = st.columns(3)
             with col1:
                 if abs(total - 100.0) > 0.01 and total > 0:
-                    if st.button("⚖️ Normalize to 100%", use_container_width=True):
+                    if st.button("Normalize to 100%", use_container_width=True):
                         for elem in st.session_state.direct_composition:
                             st.session_state.direct_composition[elem] *= (100.0 / total)
                         st.rerun()
             
             with col2:
                 if abs(total - 100.0) < 0.01:
-                    if st.button("➕ Add to Reaction", type="primary", use_container_width=True):
+                    if st.button("Add to Reaction", type="primary", use_container_width=True):
                         # Create display name
                         sorted_comp = sorted(st.session_state.direct_composition.items(), 
                                            key=lambda x: x[1], reverse=True)
@@ -799,11 +826,11 @@ with main_col:
                             display_name
                         )
                         st.session_state.direct_composition = {}
-                        st.success("✅ Composition added to reaction!")
+                        st.success("Composition added to reaction!")
                         st.rerun()
             
             with col3:
-                if st.button("🔄 Clear", use_container_width=True):
+                if st.button("Clear", use_container_width=True):
                     st.session_state.direct_composition = {}
                     st.rerun()
 
@@ -816,7 +843,7 @@ with main_col:
             font-weight: 600;
             color: var(--text-primary);
             text-align: center;
-        ">⚗️ Complete Reaction</h3>
+        ">Complete Reaction</h3>
     </div>
     """, unsafe_allow_html=True)
 
@@ -837,13 +864,14 @@ with main_col:
         """, unsafe_allow_html=True)
         
         # Clear reaction button
-        if st.button("🔄 Clear Reaction", use_container_width=True):
+        if st.button("Clear Reaction", use_container_width=True):
             st.session_state.reaction_engine = ReactionEngine()
             st.session_state.show_results = False
+            st.session_state.calculation_saved = False  # Reset for new calculation
             st.rerun()
         
         # Shield parameters
-        st.markdown("### ⚙️ Shield Parameters")
+        st.markdown("### Shield Parameters")
         
         # Use loaded values if available
         default_thickness = st.session_state.get('loaded_thickness', 1.0)
@@ -882,8 +910,9 @@ with main_col:
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("⚛️ REACT", type="primary", use_container_width=True):
+            if st.button("REACT", type="primary", use_container_width=True):
                 st.session_state.show_results = True
+                st.session_state.calculation_saved = False  # Reset flag for new calculation
                 st.rerun()
 
     else:
@@ -899,7 +928,7 @@ with main_col:
                 font-weight: 700;
                 color: var(--text-primary);
                 text-align: center;
-            ">📊 RESULTS</h2>
+            ">RESULTS</h2>
         </div>
         """, unsafe_allow_html=True)
         
@@ -962,23 +991,25 @@ with main_col:
                     frequency * 1e6
                 )
             
-            # Save to history
-            molecules_data = []
-            for mol in st.session_state.reaction_engine.molecules:
-                if mol.get('type') != 'direct':
-                    molecules_data.append({
-                        'formula': mol['formula'],
-                        'coefficient': mol['coefficient']
-                    })
-            
-            save_to_history(
-                mode=st.session_state.input_mode,
-                composition=total_comp,
-                thickness=thickness,
-                frequency=frequency,
-                result=result,
-                molecules=molecules_data
-            )
+            # Save to history only once per calculation
+            if not st.session_state.calculation_saved:
+                molecules_data = []
+                for mol in st.session_state.reaction_engine.molecules:
+                    if mol.get('type') != 'direct':
+                        molecules_data.append({
+                            'formula': mol['formula'],
+                            'coefficient': mol['coefficient']
+                        })
+                
+                save_to_history(
+                    mode=st.session_state.input_mode,
+                    composition=total_comp,
+                    thickness=thickness,
+                    frequency=frequency,
+                    result=result,
+                    molecules=molecules_data
+                )
+                st.session_state.calculation_saved = True  # Mark as saved
             
             # Display results
             col1, col2, col3 = st.columns(3)
@@ -990,9 +1021,9 @@ with main_col:
                 st.metric("Absorption Loss", f"{result['absorption_loss']:.1f} dB")
             
             # Detailed breakdown
-            with st.expander("📈 Detailed Analysis", expanded=True):
+            with st.expander("Detailed Analysis", expanded=True):
                 # Step 1: Material Composition
-                st.markdown("### 🔬 Step 1: Material Composition")
+                st.markdown("### Step 1: Material Composition")
                 st.write("**Total Elemental Composition (by mass %):**")
                 comp_df = pd.DataFrame([
                     {'Element': elem, 'Percentage': f"{perc:.2f}%"}
@@ -1001,13 +1032,13 @@ with main_col:
                 st.dataframe(comp_df, use_container_width=True, hide_index=True)
                 
                 # Step 2: Material Properties
-                st.markdown("### 🧮 Step 2: Material Properties Calculation")
+                st.markdown("### Step 2: Material Properties Calculation")
                 st.markdown("**Individual Element Properties:**")
                 
                 # Verify total percentage
                 total_percentage = sum(total_comp.values())
                 if abs(total_percentage - 100.0) > 0.1:
-                    st.error(f"⚠️ Total composition is {total_percentage:.1f}% (should be 100%)")
+                    st.error(f"Total composition is {total_percentage:.1f}% (should be 100%)")
                 
                 # Show properties for each element with calculation details
                 st.markdown("**Weighted Property Calculations:**")
@@ -1059,21 +1090,21 @@ Contributions:
                 st.code(f"""
 Conductivity (weighted sum):
   σ_eff = Σ(σᵢ × wᵢ) = {cond_sum:.2e} S/m
-  Verification: {conductivity:.2e} S/m ✓
+  Verification: {conductivity:.2e} S/m
 
 Permeability (geometric mean):
   μᵣ,eff = Π(μᵣ,ᵢ^wᵢ) = {perm_product:.6f}
-  Verification: {permeability:.6f} ✓
+  Verification: {permeability:.6f}
 
 Permittivity: εᵣ,eff = {permittivity:.3f}
 
 Density (weighted sum):
   ρ_eff = Σ(ρᵢ × wᵢ) = {dens_sum:.0f} kg/m³
-  Verification: {density:.0f} kg/m³ ✓
+  Verification: {density:.0f} kg/m³
 """, language="text")
                 
                 # Step 3: EMI Shielding Physics
-                st.markdown("### ⚡ Step 3: EMI Shielding Physics")
+                st.markdown("### Step 3: EMI Shielding Physics")
                 
                 # Show detailed calculations
                 st.markdown("**Input Parameters:**")
@@ -1178,9 +1209,9 @@ Total SE = R_dB + A_dB + M_dB = {result['total_se']:.1f} dB
                 st.dataframe(verify_df, hide_index=True, use_container_width=True)
                 
                 if max(skin_depth_diff, refl_diff, abs_diff) < 1:
-                    st.success("✅ Calculations verified - Excellent accuracy!")
+                    st.success("Calculations verified - Excellent accuracy!")
                 elif max(skin_depth_diff, refl_diff, abs_diff) < 5:
-                    st.info("✓ Calculations verified - Good accuracy")
+                    st.info("Calculations verified - Good accuracy")
                 else:
-                    st.warning("⚠️ Minor discrepancies detected - Check input values")
+                    st.warning("Minor discrepancies detected - Check input values")
                 

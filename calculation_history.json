@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "2025-07-10 14:05:49",
+    "mode": "Molecular Builder",
+    "composition": {
+      "K": 50.0,
+      "Na": 50.0
+    },
+    "composition_summary": "K: 50.0%, Na: 50.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "total_se": 763.904056718025,
+    "reflection_loss": 42.96699445980819,
+    "absorption_loss": 720.9370622582168,
+    "molecules": [
+      {
+        "formula": "KNa",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
     "timestamp": "2025-07-10 09:56:33",
     "mode": "Direct Composition (Weight %)",
     "composition": {

@@ -391,20 +391,22 @@ if not check_password():
     st.stop()
 
 # Main header with history button
-header_col1, header_col2, header_col3 = st.columns([3, 10, 2])
+header_col1, header_col2, header_col3 = st.columns([1, 5, 1])
 
 with header_col1:
     st.empty()  # Left spacer
 
 with header_col2:
     st.markdown("""
-    <div style="text-align: center;">
+    <div style="text-align: center; width: 100%;">
         <h1 style="
             font-size: var(--font-4xl);
             font-weight: 700;
             color: var(--text-primary);
             margin: 0;
             letter-spacing: 2px;
+            text-align: center;
+            display: block;
         ">EMI SHIELDER</h1>
     </div>
     """, unsafe_allow_html=True)
@@ -533,12 +535,14 @@ else:
 with main_col:
     # Mode selection header without box
     st.markdown("""
-    <div style="margin: var(--space-4) 0;">
+    <div style="margin: var(--space-4) 0; width: 100%;">
         <h3 style="
             font-size: var(--font-2xl);
             font-weight: 600;
             color: var(--text-primary);
             text-align: center;
+            width: 100%;
+            display: block;
         ">Select Input Method</h3>
     </div>
     """, unsafe_allow_html=True)
@@ -585,12 +589,14 @@ with main_col:
     if "Molecular Builder" in input_mode:
         # MOLECULAR BUILDER MODE
         st.markdown("""
-        <div style="margin: var(--space-4) 0;">
+        <div style="margin: var(--space-4) 0; width: 100%;">
             <h3 style="
                 font-size: var(--font-2xl);
                 font-weight: 600;
                 color: var(--text-primary);
                 text-align: center;
+                width: 100%;
+                display: block;
             ">Build Your Molecule</h3>
         </div>
         """, unsafe_allow_html=True)
@@ -730,14 +736,16 @@ with main_col:
     else:
         # DIRECT COMPOSITION MODE
         st.markdown("""
-        <div style="margin: var(--space-4) 0;">
+        <div style="margin: var(--space-4) 0; width: 100%;">
             <h3 style="
                 font-size: var(--font-2xl);
                 font-weight: 600;
                 color: var(--text-primary);
                 text-align: center;
+                width: 100%;
+                display: block;
             ">Direct Composition Input</h3>
-            <p style="text-align: center; color: var(--text-secondary);">
+            <p style="text-align: center; color: var(--text-secondary); width: 100%;">
                 Enter your material composition by weight percentage
             </p>
         </div>
@@ -863,12 +871,14 @@ with main_col:
     # COMPLETE REACTION section
     st.markdown("---")
     st.markdown("""
-    <div style="margin: var(--space-6) 0 var(--space-4) 0;">
+    <div style="margin: var(--space-6) 0 var(--space-4) 0; width: 100%;">
         <h3 style="
             font-size: var(--font-2xl);
             font-weight: 600;
             color: var(--text-primary);
             text-align: center;
+            width: 100%;
+            display: block;
         ">Complete Reaction</h3>
     </div>
     """, unsafe_allow_html=True)
@@ -948,12 +958,14 @@ with main_col:
     if st.session_state.show_results and len(st.session_state.reaction_engine.molecules) > 0:
         st.markdown("---")
         st.markdown("""
-        <div style="margin: var(--space-6) 0;">
+        <div style="margin: var(--space-6) 0; width: 100%;">
             <h2 style="
                 font-size: var(--font-3xl);
                 font-weight: 700;
                 color: var(--text-primary);
                 text-align: center;
+                width: 100%;
+                display: block;
             ">RESULTS</h2>
         </div>
         """, unsafe_allow_html=True)

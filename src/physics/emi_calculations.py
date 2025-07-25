@@ -200,11 +200,49 @@ class EMICalculator:
         
         return multiple_reflection_loss
     
+    def calculate_grain_size_effect(self, bulk_conductivity: float, 
+                                  grain_size: float,
+                                  electron_mean_free_path: float = 40e-9) -> float:
+        """
+        Calculate the effect of grain size on electrical conductivity.
+        Uses the Mayadas-Shatzkes model for grain boundary scattering.
+        
+        Args:
+            bulk_conductivity: Bulk electrical conductivity (S/m)
+            grain_size: Average grain size (m)
+            electron_mean_free_path: Electron mean free path (m), default 40nm
+            
+        Returns:
+            Effective conductivity considering grain boundary scattering (S/m)
+        """
+        if grain_size <= 0:
+            return bulk_conductivity
+            
+        # Reflection coefficient at grain boundaries (typically 0.1-0.5)
+        R = 0.25  # Average value for most metals
+        
+        # Calculate the grain boundary scattering parameter
+        alpha = electron_mean_free_path / grain_size * (R / (1 - R))
+        
+        # Mayadas-Shatzkes formula for conductivity reduction
+        if alpha < 0.01:
+            # For small alpha, use approximation
+            conductivity_ratio = 1 - 1.5 * alpha
+        else:
+            # Full formula
+            conductivity_ratio = 1 - (3/2) * alpha + 3 * alpha**2 - 3 * alpha**3 * np.log(1 + 1/alpha)
+        
+        # Ensure ratio is positive
+        conductivity_ratio = max(conductivity_ratio, 0.1)
+        
+        return bulk_conductivity * conductivity_ratio
+
     def calculate_shielding_effectiveness(self, conductivity: float,
                                         relative_permeability: float,
                                         relative_permittivity: float,
                                         thickness: float,
                                         frequency: float,
+                                        grain_size: Optional[float] = None,
                                         include_confidence: bool = True) -> Dict[str, float]:
         """
         Calculate total shielding effectiveness and its components.
@@ -215,11 +253,19 @@ class EMICalculator:
             relative_permittivity: Relative permittivity
             thickness: Material thickness (m)
             frequency: Frequency (Hz)
+            grain_size: Average grain size (m), optional
             include_confidence: Whether to include confidence estimation
             
         Returns:
             Dictionary with SE components, total SE (dB), and confidence metrics
         """
+        # Store original conductivity
+        bulk_conductivity = conductivity
+        
+        # Apply grain size effect if specified
+        if grain_size is not None and grain_size > 0:
+            conductivity = self.calculate_grain_size_effect(bulk_conductivity, grain_size)
+        
         # Calculate electromagnetic properties
         eta = self.calculate_intrinsic_impedance(
             conductivity, relative_permeability, relative_permittivity, frequency
@@ -252,8 +298,14 @@ class EMICalculator:
             'intrinsic_impedance_real': eta.real,
             'intrinsic_impedance_imag': eta.imag,
             'propagation_constant_real': gamma.real,
-            'propagation_constant_imag': gamma.imag
+            'propagation_constant_imag': gamma.imag,
+            'bulk_conductivity': bulk_conductivity,
+            'effective_conductivity': conductivity
         }
+        
+        if grain_size is not None:
+            result['grain_size'] = grain_size
+            result['conductivity_reduction'] = conductivity / bulk_conductivity
         
         if include_confidence:
             # Add confidence estimation
@@ -372,6 +424,7 @@ class EMICalculator:
                        relative_permeability: float,
                        relative_permittivity: float,
                        thickness: float,
+                       grain_size: Optional[float] = None,
                        freq_start: float = 1e6,
                        freq_end: float = 10e9,
                        num_points: int = 100) -> Dict[str, np.ndarray]:
@@ -383,6 +436,7 @@ class EMICalculator:
             relative_permeability: Relative permeability
             relative_permittivity: Relative permittivity
             thickness: Material thickness (m)
+            grain_size: Average grain size (m), optional
             freq_start: Start frequency (Hz)
             freq_end: End frequency (Hz)
             num_points: Number of frequency points
@@ -400,7 +454,7 @@ class EMICalculator:
         for i, freq in enumerate(frequencies):
             result = self.calculate_shielding_effectiveness(
                 conductivity, relative_permeability, relative_permittivity,
-                thickness, freq
+                thickness, freq, grain_size
             )
             
             reflection_losses[i] = result['reflection_loss']
@@ -414,6 +468,106 @@ class EMICalculator:
             'absorption_losses': absorption_losses,
             'total_ses': total_ses,
             'skin_depths': skin_depths
+        }
+    
+    def thickness_sweep(self, conductivity: float,
+                       relative_permeability: float,
+                       relative_permittivity: float,
+                       frequency: float,
+                       grain_size: Optional[float] = None,
+                       thickness_start: float = 0.1e-3,
+                       thickness_end: float = 10e-3,
+                       num_points: int = 100) -> Dict[str, np.ndarray]:
+        """
+        Calculate SE across a thickness range.
+        
+        Args:
+            conductivity: Electrical conductivity (S/m)
+            relative_permeability: Relative permeability
+            relative_permittivity: Relative permittivity
+            frequency: Frequency (Hz)
+            grain_size: Average grain size (m), optional
+            thickness_start: Start thickness (m)
+            thickness_end: End thickness (m)
+            num_points: Number of thickness points
+            
+        Returns:
+            Dictionary with thickness array and SE components
+        """
+        thicknesses = np.linspace(thickness_start, thickness_end, num_points)
+        
+        reflection_losses = np.zeros(num_points)
+        absorption_losses = np.zeros(num_points)
+        total_ses = np.zeros(num_points)
+        skin_depths = np.zeros(num_points)
+        
+        for i, thick in enumerate(thicknesses):
+            result = self.calculate_shielding_effectiveness(
+                conductivity, relative_permeability, relative_permittivity,
+                thick, frequency, grain_size
+            )
+            
+            reflection_losses[i] = result['reflection_loss']
+            absorption_losses[i] = result['absorption_loss']
+            total_ses[i] = result['total_se']
+            skin_depths[i] = result['skin_depth']
+        
+        return {
+            'thicknesses': thicknesses,
+            'reflection_losses': reflection_losses,
+            'absorption_losses': absorption_losses,
+            'total_ses': total_ses,
+            'skin_depths': skin_depths
+        }
+    
+    def grain_size_sweep(self, conductivity: float,
+                        relative_permeability: float,
+                        relative_permittivity: float,
+                        thickness: float,
+                        frequency: float,
+                        grain_start: float = 10e-9,
+                        grain_end: float = 100e-6,
+                        num_points: int = 100) -> Dict[str, np.ndarray]:
+        """
+        Calculate SE across a grain size range.
+        
+        Args:
+            conductivity: Electrical conductivity (S/m)
+            relative_permeability: Relative permeability
+            relative_permittivity: Relative permittivity
+            thickness: Material thickness (m)
+            frequency: Frequency (Hz)
+            grain_start: Start grain size (m)
+            grain_end: End grain size (m)
+            num_points: Number of grain size points
+            
+        Returns:
+            Dictionary with grain size array and SE components
+        """
+        grain_sizes = np.logspace(np.log10(grain_start), np.log10(grain_end), num_points)
+        
+        reflection_losses = np.zeros(num_points)
+        absorption_losses = np.zeros(num_points)
+        total_ses = np.zeros(num_points)
+        effective_conductivities = np.zeros(num_points)
+        
+        for i, grain in enumerate(grain_sizes):
+            result = self.calculate_shielding_effectiveness(
+                conductivity, relative_permeability, relative_permittivity,
+                thickness, frequency, grain
+            )
+            
+            reflection_losses[i] = result['reflection_loss']
+            absorption_losses[i] = result['absorption_loss']
+            total_ses[i] = result['total_se']
+            effective_conductivities[i] = result['effective_conductivity']
+        
+        return {
+            'grain_sizes': grain_sizes,
+            'reflection_losses': reflection_losses,
+            'absorption_losses': absorption_losses,
+            'total_ses': total_ses,
+            'effective_conductivities': effective_conductivities
         }
 
     def _estimate_confidence(self, conductivity: float,

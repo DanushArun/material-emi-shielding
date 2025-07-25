@@ -1,0 +1,47 @@
+# Web scraping
+beautifulsoup4==4.12.2
+selenium==4.15.2
+scrapy==2.11.0
+requests==2.31.0
+aiohttp==3.9.1
+
+# PDF processing
+PyPDF2==3.0.1
+pdfplumber==0.10.3
+tabula-py==2.8.2
+camelot-py[cv]==0.11.0
+
+# Data processing
+pandas==2.1.4
+numpy==1.26.2
+scipy==1.11.4
+
+# Database
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+alembic==1.13.0
+
+# Image processing
+opencv-python==4.8.1.78
+Pillow==10.1.0
+matplotlib==3.8.2
+
+# Text processing
+spacy==3.7.2
+regex==2023.10.3
+
+# API clients
+mp-api==0.35.1  # Materials Project
+httpx==0.25.2
+
+# Utils
+python-dotenv==1.0.0
+tqdm==4.66.1
+schedule==1.2.0
+tenacity==8.2.3  # For retries
+ratelimit==2.2.1
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+responses==0.24.1

@@ -92,7 +92,7 @@ def save_history(history):
         st.error(f"Could not save history: {e}")
 
 # Helper function to save calculation to history
-def save_to_history(mode, composition, thickness, frequency, result, molecules=None):
+def save_to_history(mode, composition, thickness, frequency, result, molecules=None, grain_size=None):
     """Save a calculation to the history."""
     # Create composition summary
     if isinstance(composition, dict):
@@ -111,6 +111,7 @@ def save_to_history(mode, composition, thickness, frequency, result, molecules=N
         'composition_summary': comp_summary,
         'thickness': thickness,
         'frequency': frequency,
+        'grain_size': grain_size * 1e6 if grain_size else 10.0,  # Convert to micrometers for display
         'total_se': result['total_se'],
         'reflection_loss': result['reflection_loss'],
         'absorption_loss': result['absorption_loss'],
@@ -912,8 +913,9 @@ with main_col:
         # Use loaded values if available
         default_thickness = st.session_state.get('loaded_thickness', 1.0)
         default_frequency = st.session_state.get('loaded_frequency', 100.0)
+        default_grain_size = st.session_state.get('loaded_grain_size', 10.0)
         
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             thickness = st.number_input(
                 "Thickness (mm)",
@@ -927,10 +929,40 @@ with main_col:
             frequency = st.number_input(
                 "Frequency (MHz)",
                 min_value=0.1,
-                max_value=10000.0,
+                max_value=30000.0,
                 value=float(default_frequency),
-                step=10.0
+                step=10.0,
+                help="Range: 0.1 MHz to 30 GHz (30,000 MHz)"
             )
+        
+        with col3:
+            # Grain size input
+            grain_size_unit = st.selectbox(
+                "Grain Size Unit",
+                ["μm (micrometers)", "nm (nanometers)"],
+                key="grain_unit"
+            )
+            
+            if "nm" in grain_size_unit:
+                grain_size_value = st.number_input(
+                    "Grain Size",
+                    min_value=10.0,
+                    max_value=1000.0,
+                    value=float(default_grain_size * 1000) if default_grain_size < 1e-6 else 100.0,
+                    step=10.0,
+                    help="Typical: 10-1000 nm for nanocrystalline materials"
+                )
+                grain_size_m = grain_size_value * 1e-9
+            else:
+                grain_size_value = st.number_input(
+                    "Grain Size",
+                    min_value=0.1,
+                    max_value=1000.0,
+                    value=float(default_grain_size),
+                    step=1.0,
+                    help="Typical: 10-100 μm for conventional materials"
+                )
+                grain_size_m = grain_size_value * 1e-6
         
         # Clear loaded values after use
         if 'loaded_thickness' in st.session_state:
@@ -1010,7 +1042,7 @@ with main_col:
             permeability = max(permeability, 0.999)  # Minimum permeability
             permittivity = max(permittivity, 1.0)    # Minimum permittivity
             
-            # EMI calculation
+            # EMI calculation with grain size
             try:
                 result = emi_calculator.calculate_shielding_effectiveness(
                     conductivity,
@@ -1018,6 +1050,7 @@ with main_col:
                     permittivity,  # Use calculated permittivity
                     thickness / 1000,
                     frequency * 1e6,
+                    grain_size=grain_size_m,
                     include_confidence=True
                 )
             except:
@@ -1026,7 +1059,8 @@ with main_col:
                     permeability,
                     permittivity,
                     thickness / 1000,
-                    frequency * 1e6
+                    frequency * 1e6,
+                    grain_size=grain_size_m
                 )
             
             # Save to history only once per calculation
@@ -1045,7 +1079,8 @@ with main_col:
                     thickness=thickness,
                     frequency=frequency,
                     result=result,
-                    molecules=molecules_data
+                    molecules=molecules_data,
+                    grain_size=grain_size_m
                 )
                 st.session_state.calculation_saved = True  # Mark as saved
             
@@ -1069,8 +1104,63 @@ with main_col:
                 ])
                 st.dataframe(comp_df, use_container_width=True, hide_index=True)
                 
-                # Step 2: Material Properties
-                st.markdown("### Step 2: Material Properties Calculation")
+                # Step 2: Grain Size Effects (if applicable)
+                if grain_size_m is not None and result.get('conductivity_reduction'):
+                    st.markdown("### Step 2: Grain Size Effects on Conductivity")
+                    st.markdown("""
+                    **Mayadas-Shatzkes Model for Grain Boundary Scattering:**
+                    
+                    The grain boundaries scatter electrons, reducing conductivity:
+                    """)
+                    
+                    # Calculate grain size parameters
+                    lambda_mfp = 40e-9  # electron mean free path
+                    R = 0.25  # reflection coefficient
+                    alpha = lambda_mfp / grain_size_m * (R / (1 - R))
+                    
+                    st.latex(r"\alpha = \frac{\lambda}{d} \cdot \frac{R}{1-R}")
+                    
+                    st.markdown("""
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 20px; line-height: 1.4;">
+                    • α (alpha) = Grain boundary scattering parameter (dimensionless)<br>
+                    • λ (lambda) = Electron mean free path in the material (m)<br>
+                    • d = Average grain size of the material (m)<br>
+                    • R = Reflection coefficient at grain boundaries (typically 0.1-0.5)
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.code(f"""
+α = λ/d × R/(1-R)
+  = ({lambda_mfp:.2e} m)/({grain_size_m:.2e} m) × {R}/(1-{R})
+  = {lambda_mfp/grain_size_m:.3f} × {R/(1-R):.3f}
+  = {alpha:.3f}
+""", language="text")
+                    
+                    st.markdown("**Conductivity Reduction Factor:**")
+                    if alpha < 0.01:
+                        st.latex(r"\frac{\sigma_{eff}}{\sigma_{bulk}} \approx 1 - 1.5\alpha")
+                    else:
+                        st.latex(r"\frac{\sigma_{eff}}{\sigma_{bulk}} = 1 - \frac{3}{2}\alpha + 3\alpha^2 - 3\alpha^3\ln(1 + \frac{1}{\alpha})")
+                    
+                    st.markdown("""
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 20px; line-height: 1.4;">
+                    • σ<sub>eff</sub> = Effective conductivity accounting for grain boundaries (S/m)<br>
+                    • σ<sub>bulk</sub> = Bulk conductivity without grain boundary effects (S/m)<br>
+                    • α = Grain boundary scattering parameter calculated above<br>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.code(f"""
+Bulk conductivity: σ_bulk = {result['bulk_conductivity']:.2e} S/m
+Reduction factor: {result['conductivity_reduction']:.3f}
+Effective conductivity: σ_eff = {result['effective_conductivity']:.2e} S/m
+
+Grain size effect: {(1 - result['conductivity_reduction']) * 100:.1f}% reduction in conductivity
+""", language="text")
+                
+                # Step 3: Material Properties (renumber based on grain size)
+                step_num = 3 if (grain_size_m is not None and result.get('conductivity_reduction')) else 2
+                st.markdown(f"### Step {step_num}: Material Properties Calculation")
                 st.markdown("**Individual Element Properties:**")
                 
                 # Verify total percentage
@@ -1141,8 +1231,9 @@ Density (weighted sum):
   Verification: {density:.0f} kg/m³
 """, language="text")
                 
-                # Step 3: EMI Shielding Physics
-                st.markdown("### Step 3: EMI Shielding Physics")
+                # Step 4 or 3: EMI Shielding Physics
+                physics_step = step_num + 1
+                st.markdown(f"### Step {physics_step}: EMI Shielding Physics")
                 
                 # Show detailed calculations
                 st.markdown("**Input Parameters:**")
@@ -1158,6 +1249,17 @@ Angular frequency: ω = 2πf = {2 * np.pi * frequency * 1e6:.2e} rad/s
                 mu_abs = permeability * 4 * np.pi * 1e-7
                 skin_depth_calc = np.sqrt(2 / (omega * mu_abs * conductivity))
                 
+                st.latex(r"\delta = \sqrt{\frac{2}{\omega\mu\sigma}}")
+                
+                st.markdown("""
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 20px; line-height: 1.4;">
+                • δ (delta) = Skin depth - the distance EM waves penetrate into the material (m)<br>
+                • ω (omega) = Angular frequency = 2πf (rad/s)<br>
+                • μ (mu) = Absolute permeability = μ<sub>r</sub> × μ<sub>0</sub> (H/m)<br>
+                • σ (sigma) = Electrical conductivity of the material (S/m)
+                </div>
+                """, unsafe_allow_html=True)
+                
                 st.code(f"""
 δ = √(2 / (ωμσ))
 δ = √(2 / ({omega:.2e} × {mu_abs:.2e} × {conductivity:.2e}))
@@ -1168,6 +1270,21 @@ Angular frequency: ω = 2πf = {2 * np.pi * frequency * 1e6:.2e} rad/s
                 
                 # Intrinsic Impedance
                 st.markdown("**Intrinsic Impedance Calculation:**")
+                
+                st.latex(r"\eta = \sqrt{\frac{\mu}{\varepsilon^*}}")
+                st.latex(r"\varepsilon^* = \varepsilon - j\frac{\sigma}{\omega}")
+                
+                st.markdown("""
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 20px; line-height: 1.4;">
+                • η (eta) = Intrinsic impedance of the material (Ω)<br>
+                • μ = Absolute permeability (H/m)<br>
+                • ε* = Complex permittivity (F/m)<br>
+                • ε = Real part of permittivity = ε<sub>r</sub> × ε<sub>0</sub> (F/m)<br>
+                • j = Imaginary unit (√-1)<br>
+                • σ = Electrical conductivity (S/m)<br>
+                • ω = Angular frequency (rad/s)
+                </div>
+                """, unsafe_allow_html=True)
                 
                 # Calculate complex permittivity
                 epsilon_abs = permittivity * 8.854e-12
@@ -1193,15 +1310,53 @@ Angular frequency: ω = 2πf = {2 * np.pi * frequency * 1e6:.2e} rad/s
                 # Shielding Components
                 st.markdown("**Shielding Components Calculation:**")
                 
+                st.latex(r"\gamma = j\omega\sqrt{\mu\varepsilon^*} = \alpha + j\beta")
+                
+                st.markdown("""
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 20px; line-height: 1.4;">
+                • γ (gamma) = Propagation constant (1/m)<br>
+                • α (alpha) = Attenuation constant - real part of γ (Np/m)<br>
+                • β (beta) = Phase constant - imaginary part of γ (rad/m)<br>
+                • j = Imaginary unit<br>
+                • ω, μ, ε* = As defined above
+                </div>
+                """, unsafe_allow_html=True)
+                
                 # Propagation constant
                 gamma_complex = 1j * omega * np.sqrt(mu_abs * complex(epsilon_complex_real, epsilon_complex_imag))
                 alpha = gamma_complex.real  # Attenuation constant
                 beta = gamma_complex.imag   # Phase constant
                 
+                st.latex(r"\Gamma = \frac{\eta - Z_0}{\eta + Z_0}")
+                st.latex(r"R = |\Gamma|^2")
+                
+                st.markdown("""
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 20px; line-height: 1.4;">
+                • Γ (Gamma) = Reflection coefficient at the material interface<br>
+                • R = Power reflection coefficient<br>
+                • Z<sub>0</sub> = Free space impedance ≈ 377 Ω<br>
+                • η = Intrinsic impedance of the material (Ω)
+                </div>
+                """, unsafe_allow_html=True)
+                
                 # Reflection coefficient
                 Z0 = 377  # Free space impedance
                 gamma_r = (eta_complex - Z0) / (eta_complex + Z0)
                 R = abs(gamma_r) ** 2
+                
+                st.latex(r"SE_R = -10\log_{10}(1 - R)")
+                st.latex(r"SE_A = 8.686 \alpha t")
+                
+                st.markdown("""
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 20px; line-height: 1.4;">
+                • SE<sub>R</sub> = Reflection loss component (dB)<br>
+                • SE<sub>A</sub> = Absorption loss component (dB)<br>
+                • R = Power reflection coefficient<br>
+                • α = Attenuation constant (Np/m)<br>
+                • t = Material thickness (m)<br>
+                • 8.686 = Conversion factor from Nepers to decibels
+                </div>
+                """, unsafe_allow_html=True)
                 
                 # Calculate components
                 reflection_loss_calc = -10 * np.log10(1 - R) if R < 1 else 0
@@ -1221,8 +1376,21 @@ Absorption Loss: A_dB = 8.686αt = 8.686 × {alpha:.2e} × {thickness/1000:.6f} 
 Multiple Reflection: M_dB = {result['multiple_reflection_loss']:.1f} dB
 (Negligible when A_dB > 15 dB)
 
+Note: M_dB refers to Multiple Reflection Loss in decibels
+
 Total SE = R_dB + A_dB + M_dB = {result['total_se']:.1f} dB
 """, language="text")
+                
+                st.latex(r"SE_{total} = SE_R + SE_A + SE_M")
+                
+                st.markdown("""
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 20px; line-height: 1.4;">
+                • SE<sub>total</sub> = Total shielding effectiveness (dB)<br>
+                • SE<sub>R</sub> = Reflection loss - power lost due to impedance mismatch (dB)<br>
+                • SE<sub>A</sub> = Absorption loss - power absorbed as waves propagate through material (dB)<br>
+                • SE<sub>M</sub> = Multiple reflection loss - additional loss from internal reflections (dB)
+                </div>
+                """, unsafe_allow_html=True)
                 
                 # Verification section
                 st.markdown("**Calculation Verification:**")
@@ -1252,4 +1420,315 @@ Total SE = R_dB + A_dB + M_dB = {result['total_se']:.1f} dB
                     st.info("Calculations verified - Good accuracy")
                 else:
                     st.warning("Minor discrepancies detected - Check input values")
+            
+            # Visualization Section - At the bottom
+            st.markdown("---")
+            st.markdown("""
+            <div style="margin: var(--space-6) 0; width: 100%;">
+                <h2 style="
+                    font-size: var(--font-3xl);
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    text-align: center;
+                    width: 100%;
+                    display: block;
+                ">EMI SHIELDING ANALYSIS GRAPHS</h2>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            with st.expander("Visualization & Analysis", expanded=True):
+                # Generate data for plots
+                freq_sweep = emi_calculator.frequency_sweep(
+                    conductivity, permeability, permittivity,
+                    thickness / 1000, grain_size_m,
+                    freq_start=1e6, freq_end=30e9, num_points=50
+                )
+                
+                thick_sweep = emi_calculator.thickness_sweep(
+                    conductivity, permeability, permittivity,
+                    frequency * 1e6, grain_size_m,
+                    thickness_start=0.1e-3, thickness_end=10e-3, num_points=50
+                )
+                
+                # Graph 1: EMI Shielding vs Frequency
+                st.markdown("### Graph 1: EMI Shielding vs Frequency")
+                st.markdown(f"*Fixed thickness: {thickness:.1f} mm, Grain size: {grain_size_value:.1f} {grain_size_unit.split()[0]}*")
+                
+                fig_freq = go.Figure()
+                
+                # Add total SE
+                fig_freq.add_trace(go.Scatter(
+                    x=freq_sweep['frequencies'] / 1e6,  # Convert to MHz
+                    y=freq_sweep['total_ses'],
+                    mode='lines',
+                    name='Total SE',
+                    line=dict(color='#00d4ff', width=3),
+                    hovertemplate='%{x:.1f} MHz<br>%{y:.1f} dB<extra></extra>'
+                ))
+                
+                # Add reflection loss
+                fig_freq.add_trace(go.Scatter(
+                    x=freq_sweep['frequencies'] / 1e6,
+                    y=freq_sweep['reflection_losses'],
+                    mode='lines',
+                    name='Reflection Loss',
+                    line=dict(color='#8b5cf6', width=2, dash='dash'),
+                    hovertemplate='%{x:.1f} MHz<br>%{y:.1f} dB<extra></extra>'
+                ))
+                
+                # Add absorption loss
+                fig_freq.add_trace(go.Scatter(
+                    x=freq_sweep['frequencies'] / 1e6,
+                    y=freq_sweep['absorption_losses'],
+                    mode='lines',
+                    name='Absorption Loss',
+                    line=dict(color='#10b981', width=2, dash='dot'),
+                    hovertemplate='%{x:.1f} MHz<br>%{y:.1f} dB<extra></extra>'
+                ))
+                
+                fig_freq.update_xaxes(
+                    title_text="Frequency (MHz)",
+                    type="log",
+                    gridcolor='#404040',
+                    showgrid=True
+                )
+                fig_freq.update_yaxes(
+                    title_text="Shielding Effectiveness (dB)",
+                    gridcolor='#404040',
+                    showgrid=True
+                )
+                fig_freq.update_layout(
+                    template="plotly_dark",
+                    height=500,
+                    hovermode='x unified',
+                    legend=dict(x=0.02, y=0.98, bgcolor='rgba(0,0,0,0.5)')
+                )
+                
+                st.plotly_chart(fig_freq, use_container_width=True)
+                
+                # Graph 2: EMI Shielding vs Thickness
+                st.markdown("### Graph 2: EMI Shielding vs Thickness")
+                st.markdown(f"*Fixed frequency: {frequency:.1f} MHz, Grain size: {grain_size_value:.1f} {grain_size_unit.split()[0]}*")
+                
+                fig_thick = go.Figure()
+                
+                # Multiple frequencies
+                frequencies_to_plot = [10, 100, 1000, 10000, 30000]  # MHz
+                colors = ['#00d4ff', '#8b5cf6', '#10b981', '#f87171', '#fbbf24']
+                
+                for freq_mhz, color in zip(frequencies_to_plot, colors):
+                    if freq_mhz <= 30000:  # Only plot if within our range
+                        thick_sweep_freq = emi_calculator.thickness_sweep(
+                            conductivity, permeability, permittivity,
+                            freq_mhz * 1e6, grain_size_m,
+                            thickness_start=0.1e-3, thickness_end=10e-3, num_points=50
+                        )
+                        
+                        fig_thick.add_trace(go.Scatter(
+                            x=thick_sweep_freq['thicknesses'] * 1000,  # Convert to mm
+                            y=thick_sweep_freq['total_ses'],
+                            mode='lines',
+                            name=f'{freq_mhz} MHz',
+                            line=dict(color=color, width=2),
+                            hovertemplate='%{x:.1f} mm<br>%{y:.1f} dB<extra></extra>'
+                        ))
+                
+                fig_thick.update_xaxes(
+                    title_text="Thickness (mm)",
+                    gridcolor='#404040',
+                    showgrid=True
+                )
+                fig_thick.update_yaxes(
+                    title_text="Total Shielding Effectiveness (dB)",
+                    gridcolor='#404040',
+                    showgrid=True
+                )
+                fig_thick.update_layout(
+                    template="plotly_dark",
+                    height=500,
+                    hovermode='x unified',
+                    legend=dict(x=0.02, y=0.98, bgcolor='rgba(0,0,0,0.5)')
+                )
+                
+                st.plotly_chart(fig_thick, use_container_width=True)
+                
+                # Graph 3: 3D Surface Plot
+                st.markdown("### Graph 3: Interactive 3D Surface Plot")
+                st.markdown(f"*Grain size: {grain_size_value:.1f} {grain_size_unit.split()[0]}*")
+                st.markdown("*Note: M = Mega (million), so 1M = 1 MHz, 10M = 10 MHz, etc.*")
+                
+                # Generate mesh data
+                freq_points = 30
+                thick_points = 30
+                
+                freq_range = np.logspace(6, np.log10(30e9), freq_points)  # 1 MHz to 30 GHz
+                thick_range = np.linspace(0.1e-3, 10e-3, thick_points)  # 0.1 to 10 mm
+                
+                SE_mesh = np.zeros((thick_points, freq_points))
+                
+                for i, thick in enumerate(thick_range):
+                    for j, freq in enumerate(freq_range):
+                        se_result = emi_calculator.calculate_shielding_effectiveness(
+                            conductivity, permeability, permittivity,
+                            thick, freq, grain_size_m
+                        )
+                        SE_mesh[i, j] = se_result['total_se']
+                
+                fig_3d = go.Figure(data=[go.Surface(
+                    x=freq_range / 1e6,  # MHz
+                    y=thick_range * 1000,  # mm
+                    z=SE_mesh,
+                    colorscale='Viridis',
+                    colorbar=dict(title="SE (dB)"),
+                    hovertemplate='Freq: %{x:.1f} MHz<br>Thickness: %{y:.2f} mm<br>SE: %{z:.1f} dB<extra></extra>'
+                )])
+                
+                fig_3d.update_layout(
+                    template="plotly_dark",
+                    height=800,
+                    scene=dict(
+                        xaxis=dict(
+                            title="Frequency (MHz)",
+                            type="log",
+                            gridcolor='#404040'
+                        ),
+                        yaxis=dict(
+                            title="Thickness (mm)",
+                            gridcolor='#404040'
+                        ),
+                        zaxis=dict(
+                            title="SE (dB)",
+                            gridcolor='#404040'
+                        ),
+                        bgcolor='rgba(0,0,0,0)'
+                    )
+                )
+                
+                st.plotly_chart(fig_3d, use_container_width=True)
+                
+                # Graph 4: Grain Size Effects
+                if grain_size_m is not None:
+                    st.markdown("### Graph 4: Grain Size Effects on EMI Shielding")
+                    st.markdown(f"*Fixed thickness: {thickness:.1f} mm, Frequency: {frequency:.1f} MHz*")
+                    
+                    grain_sweep = emi_calculator.grain_size_sweep(
+                        conductivity, permeability, permittivity,
+                        thickness / 1000, frequency * 1e6,
+                        grain_start=10e-9, grain_end=100e-6, num_points=50
+                    )
+                    
+                    fig_grain = go.Figure()
+                    
+                    # Create secondary y-axis for conductivity
+                    fig_grain = go.Figure().set_subplots(
+                        specs=[[{"secondary_y": True}]]
+                    )
+                    
+                    # Add total SE
+                    fig_grain.add_trace(go.Scatter(
+                        x=grain_sweep['grain_sizes'] * 1e6,  # Convert to μm
+                        y=grain_sweep['total_ses'],
+                        mode='lines',
+                        name='Total SE',
+                        line=dict(color='#00d4ff', width=3),
+                        hovertemplate='%{x:.2f} μm<br>%{y:.1f} dB<extra></extra>'
+                    ), secondary_y=False)
+                    
+                    # Add effective conductivity
+                    fig_grain.add_trace(go.Scatter(
+                        x=grain_sweep['grain_sizes'] * 1e6,
+                        y=grain_sweep['effective_conductivities'] / 1e6,  # MS/m
+                        mode='lines',
+                        name='Effective Conductivity',
+                        line=dict(color='#f87171', width=2, dash='dash'),
+                        hovertemplate='%{x:.2f} μm<br>%{y:.2f} MS/m<extra></extra>'
+                    ), secondary_y=True)
+                    
+                    fig_grain.update_xaxes(
+                        title_text="Grain Size (μm)",
+                        type="log",
+                        gridcolor='#404040',
+                        showgrid=True
+                    )
+                    fig_grain.update_yaxes(
+                        title_text="Shielding Effectiveness (dB)",
+                        gridcolor='#404040',
+                        showgrid=True,
+                        secondary_y=False
+                    )
+                    fig_grain.update_yaxes(
+                        title_text="Effective Conductivity (MS/m)",
+                        gridcolor='#404040',
+                        showgrid=False,
+                        secondary_y=True
+                    )
+                    fig_grain.update_layout(
+                        template="plotly_dark",
+                        height=500,
+                        hovermode='x unified',
+                        legend=dict(x=0.02, y=0.98, bgcolor='rgba(0,0,0,0.5)')
+                    )
+                    
+                    st.plotly_chart(fig_grain, use_container_width=True)
+                
+                # Export buttons
+                st.markdown("---")
+                st.markdown("### Export Options")
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    # Prepare data for CSV export
+                    export_data = {
+                        'Parameter': ['Frequency (MHz)', 'Thickness (mm)', 'Grain Size (μm)', 
+                                     'Total SE (dB)', 'Reflection Loss (dB)', 'Absorption Loss (dB)',
+                                     'Skin Depth (mm)', 'Effective Conductivity (S/m)'],
+                        'Value': [frequency, thickness, grain_size_value,
+                                 result['total_se'], result['reflection_loss'], result['absorption_loss'],
+                                 result['skin_depth'] * 1000, result.get('effective_conductivity', conductivity)]
+                    }
+                    
+                    df_export = pd.DataFrame(export_data)
+                    csv = df_export.to_csv(index=False)
+                    
+                    st.download_button(
+                        label="Download Results (CSV)",
+                        data=csv,
+                        file_name=f"emi_results_{time.strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv"
+                    )
+                
+                with col2:
+                    # Frequency sweep data
+                    freq_df = pd.DataFrame({
+                        'Frequency (MHz)': freq_sweep['frequencies'] / 1e6,
+                        'Total SE (dB)': freq_sweep['total_ses'],
+                        'Reflection Loss (dB)': freq_sweep['reflection_losses'],
+                        'Absorption Loss (dB)': freq_sweep['absorption_losses']
+                    })
+                    
+                    freq_csv = freq_df.to_csv(index=False)
+                    st.download_button(
+                        label="Download Frequency Data (CSV)",
+                        data=freq_csv,
+                        file_name=f"emi_freq_sweep_{time.strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv"
+                    )
+                
+                with col3:
+                    # Thickness sweep data
+                    thick_df = pd.DataFrame({
+                        'Thickness (mm)': thick_sweep['thicknesses'] * 1000,
+                        'Total SE (dB)': thick_sweep['total_ses'],
+                        'Reflection Loss (dB)': thick_sweep['reflection_losses'],
+                        'Absorption Loss (dB)': thick_sweep['absorption_losses']
+                    })
+                    
+                    thick_csv = thick_df.to_csv(index=False)
+                    st.download_button(
+                        label="Download Thickness Data (CSV)",
+                        data=thick_csv,
+                        file_name=f"emi_thick_sweep_{time.strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv"
+                    )
                 

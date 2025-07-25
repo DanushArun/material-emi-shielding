@@ -46,6 +46,8 @@ class MaterialDatabase:
                 "electrical_conductivity": 6.99e6,
                 "relative_permeability": 2000,
                 "relative_permittivity": 1,
+                "typical_grain_size": 25e-6,  # 25 micrometers
+                "grain_size_range": [10e-6, 100e-6],  # 10-100 micrometers
                 "note": "Common mild steel"
             },
             "stainless_steel_304": {

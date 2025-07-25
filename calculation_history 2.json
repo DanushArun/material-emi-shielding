@@ -1,5 +1,148 @@
 [
   {
+    "timestamp": "2025-07-21 10:01:00",
+    "mode": "Molecular Builder",
+    "composition": {
+      "K": 25.0,
+      "Na": 50.0,
+      "Ca": 25.0
+    },
+    "composition_summary": "Na: 50.0%, K: 25.0%, Ca: 25.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "grain_size": 10.0,
+    "total_se": 841.4514896473615,
+    "reflection_loss": 43.40825258017755,
+    "absorption_loss": 798.043237067184,
+    "molecules": [
+      {
+        "formula": "KNa2",
+        "coefficient": 1
+      },
+      {
+        "formula": "Ca",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
+    "timestamp": "2025-07-21 09:57:31",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "Fe": 30.0,
+      "Ni": 70.0
+    },
+    "composition_summary": "Ni: 70.0%, Fe: 30.0%",
+    "thickness": 1.0,
+    "frequency": 1000.0,
+    "grain_size": 10.0,
+    "total_se": 66457.40417352782,
+    "reflection_loss": 22.08142026751386,
+    "absorption_loss": 66435.3227532603,
+    "molecules": []
+  },
+  {
+    "timestamp": "2025-07-20 22:07:22",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "Fe": 30.0,
+      "Ni": 70.0
+    },
+    "composition_summary": "Ni: 70.0%, Fe: 30.0%",
+    "thickness": 1.0,
+    "frequency": 10000.0,
+    "grain_size": 10.0,
+    "total_se": 210104.04355105813,
+    "reflection_loss": 17.110585238567065,
+    "absorption_loss": 210086.93296581955,
+    "molecules": []
+  },
+  {
+    "timestamp": "2025-07-20 22:06:38",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "Fe": 30.0,
+      "Ni": 70.0
+    },
+    "composition_summary": "Ni: 70.0%, Fe: 30.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "grain_size": 10.0,
+    "total_se": 21035.76593638869,
+    "reflection_loss": 27.072197288666725,
+    "absorption_loss": 21008.69373910002,
+    "molecules": []
+  },
+  {
+    "timestamp": "2025-07-20 20:40:03",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "Fe": 30.0,
+      "Ni": 70.0
+    },
+    "composition_summary": "Ni: 70.0%, Fe: 30.0%",
+    "thickness": 1.0,
+    "frequency": 30000.0,
+    "grain_size": 0.30000000000000004,
+    "total_se": 352868.43109948013,
+    "reflection_loss": 14.624861046059781,
+    "absorption_loss": 352853.8062384341,
+    "molecules": []
+  },
+  {
+    "timestamp": "2025-07-20 19:52:34",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "Fe": 30.0,
+      "Ni": 70.0
+    },
+    "composition_summary": "Ni: 70.0%, Fe: 30.0%",
+    "thickness": 1.0,
+    "frequency": 30000.0,
+    "grain_size": 10.0,
+    "total_se": 363895.98261993984,
+    "reflection_loss": 14.75620093969429,
+    "absorption_loss": 363881.22641900013,
+    "molecules": []
+  },
+  {
+    "timestamp": "2025-07-20 19:42:23",
+    "mode": "Direct Composition (Weight %)",
+    "composition": {
+      "Fe": 30.0,
+      "Ni": 70.0
+    },
+    "composition_summary": "Ni: 70.0%, Fe: 30.0%",
+    "thickness": 1.0,
+    "frequency": 30000.0,
+    "grain_size": 10.0,
+    "total_se": 363895.98261993984,
+    "reflection_loss": 14.75620093969429,
+    "absorption_loss": 363881.22641900013,
+    "molecules": []
+  },
+  {
+    "timestamp": "2025-07-20 19:38:02",
+    "mode": "Molecular Builder",
+    "composition": {
+      "K": 50.0,
+      "Mg": 50.0
+    },
+    "composition_summary": "K: 50.0%, Mg: 50.0%",
+    "thickness": 1.0,
+    "frequency": 100.0,
+    "grain_size": 10.0,
+    "total_se": 779.6022373695486,
+    "reflection_loss": 43.05996869822675,
+    "absorption_loss": 736.5422686713218,
+    "molecules": [
+      {
+        "formula": "KMg",
+        "coefficient": 1
+      }
+    ]
+  },
+  {
     "timestamp": "2025-07-10 14:05:49",
     "mode": "Molecular Builder",
     "composition": {

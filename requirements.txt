@@ -1,9 +1,13 @@
 # Core dependencies
 numpy>=1.26.0
 pandas>=2.0.3
-pydantic-settings
+scipy>=1.11.0
+
 # Web framework
 streamlit>=1.28.2
 
 # Visualization
 plotly>=5.18.0
+
+# Machine Learning (used in src/ml/features)
+scikit-learn>=1.3.0

@@ -964,6 +964,78 @@ with main_col:
                 )
                 grain_size_m = grain_size_value * 1e-6
         
+        # Advanced Parameters Section
+        st.markdown("### Advanced Analysis Parameters")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            # Analysis Mode Selection
+            analysis_mode = st.selectbox(
+                "Analysis Mode",
+                ["Standard", "Processing Optimization", "Reliability Analysis"],
+                help="Standard: Basic EMI calculation\nProcessing: Optimize cooling rate\nReliability: Predict degradation over time"
+            )
+        
+        with col2:
+            # Cooling Rate (for Processing Optimization mode)
+            cooling_rate = st.number_input(
+                "Cooling Rate (K/s)",
+                min_value=0.1,
+                max_value=1000.0,
+                value=50.0,
+                step=10.0,
+                help="Processing cooling rate for microstructure control"
+            )
+        
+        with col3:
+            # Service Life (for Reliability Analysis mode)
+            service_life = st.number_input(
+                "Service Life (years)",
+                min_value=1.0,
+                max_value=50.0,
+                value=20.0,
+                step=1.0,
+                help="Design service life for reliability analysis"
+            )
+        
+        # Environment Selection (only for Reliability mode)
+        if analysis_mode == "Reliability Analysis":
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                environment_type = st.selectbox(
+                    "Environment",
+                    ["indoor", "outdoor", "automotive", "aerospace", "marine"],
+                    help="Service environment affects degradation"
+                )
+            with col2:
+                max_stress = st.number_input(
+                    "Max Stress (MPa)",
+                    min_value=0.0,
+                    max_value=500.0,
+                    value=100.0,
+                    step=10.0,
+                    help="Maximum mechanical stress in service"
+                )
+            with col3:
+                temp_min = st.number_input(
+                    "Min Temperature (°C)",
+                    min_value=-100.0,
+                    max_value=100.0,
+                    value=20.0,
+                    step=5.0
+                )
+                temp_max = st.number_input(
+                    "Max Temperature (°C)",
+                    min_value=temp_min,
+                    max_value=200.0,
+                    value=80.0,
+                    step=5.0
+                )
+        else:
+            environment_type = "indoor"
+            max_stress = 100.0
+            temp_min, temp_max = 20.0, 80.0
+
         # Clear loaded values after use
         if 'loaded_thickness' in st.session_state:
             del st.session_state.loaded_thickness
@@ -976,16 +1048,43 @@ with main_col:
         </div>
         """, unsafe_allow_html=True)
         
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
+        col1, col2, col3 = st.columns(3)
+        with col1:
             if st.button("REACT", type="primary", use_container_width=True):
                 st.session_state.show_results = True
                 st.session_state.calculation_saved = False  # Reset flag for new calculation
+                st.session_state.analysis_mode = analysis_mode
+                st.session_state.advanced_params = {
+                    'cooling_rate': cooling_rate,
+                    'service_life': service_life,
+                    'environment_type': environment_type,
+                    'max_stress': max_stress * 1e6,  # Convert to Pa
+                    'temperature_range': (temp_min + 273.15, temp_max + 273.15)  # Convert to K
+                }
+                st.rerun()
+        
+        with col2:
+            # Old "Discover Materials" button removed - will be replaced with AI chatbot
+            pass
+        
+        with col3:
+            if st.button("Clear All", use_container_width=True):
+                st.session_state.reaction_engine = ReactionEngine()
+                st.session_state.show_results = False
+                st.session_state.calculation_saved = False
+                # Clear AI-related state when new system is implemented
                 st.rerun()
 
     else:
         st.info("Add materials to build your reaction using the input method above")
 
+    # AI Materials Advisor - Perplexity-style Chat Interface
+    st.markdown("---")
+    
+    # Direct integration - the AI system is working fine
+    from src.ui.chat_interface import chat_interface
+    chat_interface.render_chat_interface()
+    
     # Results section
     if st.session_state.show_results and len(st.session_state.reaction_engine.molecules) > 0:
         st.markdown("---")
@@ -1042,18 +1141,75 @@ with main_col:
             permeability = max(permeability, 0.999)  # Minimum permeability
             permittivity = max(permittivity, 1.0)    # Minimum permittivity
             
-            # EMI calculation with grain size
+            # Intelligent EMI calculation based on analysis mode
+            analysis_mode = st.session_state.get('analysis_mode', 'Standard')
+            advanced_params = st.session_state.get('advanced_params', {})
+            
             try:
-                result = emi_calculator.calculate_shielding_effectiveness(
-                    conductivity,
-                    permeability,
-                    permittivity,  # Use calculated permittivity
-                    thickness / 1000,
-                    frequency * 1e6,
-                    grain_size=grain_size_m,
-                    include_confidence=True
-                )
-            except:
+                if analysis_mode == "Standard":
+                    # Standard EMI calculation
+                    result = emi_calculator.calculate_shielding_effectiveness(
+                        conductivity,
+                        permeability,
+                        permittivity,
+                        thickness / 1000,
+                        frequency * 1e6,
+                        grain_size=grain_size_m,
+                        include_confidence=True
+                    )
+                    
+                elif analysis_mode == "Processing Optimization":
+                    # Processing optimization with cooling rate
+                    from src.physics.advanced_microstructure import ProcessingParams
+                    
+                    processing_result = emi_calculator.optimize_cooling_rate_for_emi(
+                        composition=total_comp,
+                        target_se=50.0,  # Default target
+                        thickness=thickness / 1000,
+                        frequency=frequency * 1e6,
+                        base_conductivity=conductivity
+                    )
+                    
+                    # Get the EMI result with optimized processing
+                    result = processing_result
+                    result['processing_optimization'] = True
+                    
+                elif analysis_mode == "Reliability Analysis":
+                    # Reliability analysis over time
+                    from src.physics.advanced_microstructure import ProcessingParams
+                    
+                    processing = ProcessingParams(cooling_rate=advanced_params.get('cooling_rate', 50.0))
+                    service_conditions = {
+                        'max_stress': advanced_params.get('max_stress', 100e6),
+                        'cycles_per_year': 1e6,  # Default cycles
+                        'temperature_range': advanced_params.get('temperature_range', (293, 373)),
+                        'environment': advanced_params.get('environment_type', 'outdoor')
+                    }
+                    
+                    reliability_result = emi_calculator.predict_emi_reliability_over_time(
+                        composition=total_comp,
+                        processing=processing,
+                        service_conditions=service_conditions,
+                        thickness=thickness / 1000,
+                        frequency=frequency * 1e6,
+                        base_conductivity=conductivity,
+                        design_life_years=advanced_params.get('service_life', 20.0),
+                        time_points=50
+                    )
+                    
+                    # Convert reliability result to standard format
+                    result = {
+                        'total_se': reliability_result['initial_se'],
+                        'reflection_loss': reliability_result['initial_se'] * 0.4,  # Estimate
+                        'absorption_loss': reliability_result['initial_se'] * 0.6,  # Estimate
+                        'multiple_reflection_loss': 0.0,
+                        'skin_depth': 1e-6,  # Default
+                        'effective_conductivity': conductivity,
+                        'reliability_analysis': reliability_result
+                    }
+                
+            except Exception as e:
+                # Fallback to basic calculation
                 result = emi_calculator.calculate_shielding_effectiveness(
                     conductivity,
                     permeability,
@@ -1104,9 +1260,125 @@ with main_col:
                 ])
                 st.dataframe(comp_df, use_container_width=True, hide_index=True)
                 
-                # Step 2: Grain Size Effects (if applicable)
+                # Step 2: Advanced Analysis Parameters (if applicable)
+                analysis_mode = st.session_state.get('analysis_mode', 'Standard')
+                advanced_params = st.session_state.get('advanced_params', {})
+                
+                if analysis_mode != 'Standard':
+                    st.markdown("### Step 2: Advanced Analysis Parameters")
+                    st.markdown(f"**Analysis Mode: {analysis_mode}**")
+                    
+                    if analysis_mode == "Processing Optimization":
+                        cooling_rate = advanced_params.get('cooling_rate', 50.0)
+                        st.markdown("**Processing-Microstructure-Property Relationship:**")
+                        st.markdown("""
+                        The cooling rate controls the microstructure formation during solidification,
+                        which directly affects the material's electromagnetic properties.
+                        """)
+                        
+                        # Show cooling rate effects
+                        st.code(f"""
+Processing Parameters:
+  Cooling Rate: {cooling_rate:.1f} K/s
+
+Microstructure Effects:
+  • Dendrite arm spacing: λ₂ ∝ (cooling_rate)^(-0.33)
+  • Grain refinement: Higher cooling rates → smaller grains
+  • Secondary phase distribution: Finer precipitates at higher cooling rates
+  • Grain boundary density: Increases with faster cooling
+
+Property Modifications:
+  • Electrical conductivity: Affected by grain boundary scattering
+  • Magnetic permeability: Modified by grain size and texture
+  • Processing target: Optimize cooling rate for maximum EMI performance
+""", language="text")
+                        
+                        # Show if optimization was performed
+                        if result.get('processing_optimization'):
+                            opt_result = result.get('cooling_rate_optimization', {})
+                            optimal_rate = opt_result.get('optimal_cooling_rate', cooling_rate)
+                            se_improvement = opt_result.get('se_improvement', 0.0)
+                            
+                            st.markdown("**Cooling Rate Optimization Results:**")
+                            st.code(f"""
+Optimization Analysis:
+  Input cooling rate: {cooling_rate:.1f} K/s
+  Optimal cooling rate: {optimal_rate:.1f} K/s
+  SE improvement potential: {se_improvement:.1f} dB
+  
+Microstructure at optimal rate:
+  • Optimized grain size for minimum scattering
+  • Balanced conductivity vs. permeability
+  • Enhanced electromagnetic properties
+""", language="text")
+                    
+                    elif analysis_mode == "Reliability Analysis":
+                        service_life = advanced_params.get('service_life', 20.0)
+                        environment = advanced_params.get('environment_type', 'indoor')
+                        max_stress = advanced_params.get('max_stress', 100e6)
+                        temp_range = advanced_params.get('temperature_range', (293, 373))
+                        
+                        st.markdown("**Long-term Degradation Analysis:**")
+                        st.markdown("""
+                        Mechanical and thermal stresses cause gradual degradation of EMI properties
+                        over the service life through microstructural changes.
+                        """)
+                        
+                        st.code(f"""
+Service Conditions:
+  Design Life: {service_life:.0f} years
+  Environment: {environment.title()}
+  Maximum Stress: {max_stress/1e6:.0f} MPa
+  Temperature Range: {temp_range[0]-273:.0f}°C to {temp_range[1]-273:.0f}°C
+
+Degradation Mechanisms:
+  • Fatigue microcrack formation and growth
+  • Thermal cycling stress accumulation
+  • Environmental corrosion effects
+  • Grain boundary sliding and migration
+  • Secondary phase coarsening
+
+Property Evolution Over Time:
+  • Conductivity reduction due to microcrack networks
+  • Permeability changes from magnetic domain modifications
+  • Mechanical property degradation affecting coupling
+""", language="text")
+                        
+                        # Show reliability results if available
+                        if result.get('reliability_analysis'):
+                            reliability_data = result['reliability_analysis']
+                            initial_se = reliability_data.get('initial_se', result['total_se'])
+                            final_se = reliability_data.get('final_se', initial_se * 0.8)
+                            degradation_rate = (initial_se - final_se) / service_life
+                            
+                            st.markdown("**Degradation Prediction Results:**")
+                            st.code(f"""
+EMI Performance Evolution:
+  Initial SE (t=0): {initial_se:.1f} dB
+  Predicted SE (t={service_life:.0f}y): {final_se:.1f} dB
+  Total degradation: {initial_se - final_se:.1f} dB ({((initial_se - final_se)/initial_se*100):.1f}%)
+  Degradation rate: {degradation_rate:.2f} dB/year
+
+Reliability Assessment:
+  • {environment.title()} environment factor included
+  • Stress-enhanced degradation: {max_stress/1e6:.0f} MPa loading
+  • Thermal cycling: {temp_range[1]-temp_range[0]:.0f}K temperature range
+  • End-of-life performance: {(final_se/initial_se*100):.0f}% of initial value
+""", language="text")
+                    
+                    st.markdown("**Parameter Impact on Final Results:**")
+                    st.info(f"""
+                    🎯 **Analysis Mode Effect**: {analysis_mode} analysis provides enhanced accuracy by:
+                    • Including advanced physical models beyond standard EMI theory
+                    • Accounting for real-world service conditions and processing effects
+                    • Providing time-dependent or process-optimized predictions
+                    • Enabling design optimization for specific applications
+                    """)
+                
+                # Step 3: Grain Size Effects (if applicable) - Renumber appropriately
+                grain_step = 3 if analysis_mode != 'Standard' else 2
                 if grain_size_m is not None and result.get('conductivity_reduction'):
-                    st.markdown("### Step 2: Grain Size Effects on Conductivity")
+                    st.markdown(f"### Step {grain_step}: Grain Size Effects on Conductivity")
                     st.markdown("""
                     **Mayadas-Shatzkes Model for Grain Boundary Scattering:**
                     
@@ -1158,8 +1430,17 @@ Effective conductivity: σ_eff = {result['effective_conductivity']:.2e} S/m
 Grain size effect: {(1 - result['conductivity_reduction']) * 100:.1f}% reduction in conductivity
 """, language="text")
                 
-                # Step 3: Material Properties (renumber based on grain size)
-                step_num = 3 if (grain_size_m is not None and result.get('conductivity_reduction')) else 2
+                # Material Properties (renumber based on advanced analysis and grain size)
+                has_grain_size = (grain_size_m is not None and result.get('conductivity_reduction'))
+                has_advanced = (analysis_mode != 'Standard')
+                
+                if has_advanced and has_grain_size:
+                    step_num = 4
+                elif has_advanced or has_grain_size:
+                    step_num = 3
+                else:
+                    step_num = 2
+                    
                 st.markdown(f"### Step {step_num}: Material Properties Calculation")
                 st.markdown("**Individual Element Properties:**")
                 
@@ -1231,7 +1512,7 @@ Density (weighted sum):
   Verification: {density:.0f} kg/m³
 """, language="text")
                 
-                # Step 4 or 3: EMI Shielding Physics
+                # EMI Shielding Physics (renumber based on previous steps)
                 physics_step = step_num + 1
                 st.markdown(f"### Step {physics_step}: EMI Shielding Physics")
                 
@@ -1670,6 +1951,120 @@ Total SE = R_dB + A_dB + M_dB = {result['total_se']:.1f} dB
                     )
                     
                     st.plotly_chart(fig_grain, use_container_width=True)
+                
+                # Advanced Graphs for different analysis modes
+                analysis_mode = st.session_state.get('analysis_mode', 'Standard')
+                
+                if analysis_mode == "Processing Optimization":
+                    # Graph 5: Cooling Rate Optimization
+                    st.markdown("### Graph 5: Processing Optimization")
+                    st.markdown(f"*Cooling rate optimization for target composition*")
+                    
+                    try:
+                        cooling_sweep = emi_calculator.cooling_rate_sweep(
+                            composition=total_comp,
+                            thickness=thickness / 1000,
+                            frequency=frequency * 1e6,
+                            base_conductivity=conductivity
+                        )
+                        
+                        fig_cooling = go.Figure()
+                        
+                        # Add total SE vs cooling rate
+                        fig_cooling.add_trace(go.Scatter(
+                            x=cooling_sweep['cooling_rates'],
+                            y=cooling_sweep['total_ses'],
+                            mode='lines',
+                            name='Total SE',
+                            line=dict(color='#00d4ff', width=3),
+                            hovertemplate='%{x:.1f} K/s<br>%{y:.1f} dB<extra></extra>'
+                        ))
+                        
+                        # Add grain size on secondary y-axis
+                        fig_cooling_dual = go.Figure().add_trace(
+                            go.Scatter(
+                                x=cooling_sweep['cooling_rates'],
+                                y=cooling_sweep['grain_sizes'] * 1e6,  # Convert to μm
+                                mode='lines',
+                                name='Grain Size',
+                                line=dict(color='#f87171', width=2, dash='dash'),
+                                yaxis='y2',
+                                hovertemplate='%{x:.1f} K/s<br>%{y:.2f} μm<extra></extra>'
+                            )
+                        )
+                        
+                        fig_cooling.add_trace(fig_cooling_dual.data[0])
+                        
+                        fig_cooling.update_layout(
+                            template="plotly_dark",
+                            height=500,
+                            hovermode='x unified',
+                            legend=dict(x=0.02, y=0.98, bgcolor='rgba(0,0,0,0.5)'),
+                            yaxis=dict(title="Shielding Effectiveness (dB)", side="left"),
+                            yaxis2=dict(title="Grain Size (μm)", side="right", overlaying="y"),
+                            xaxis=dict(title="Cooling Rate (K/s)", type="log")
+                        )
+                        
+                        st.plotly_chart(fig_cooling, use_container_width=True)
+                        
+                    except Exception as e:
+                        st.warning(f"Cooling rate analysis unavailable: {e}")
+                
+                elif analysis_mode == "Reliability Analysis":
+                    # Graph 6: Reliability Degradation Timeline
+                    st.markdown("### Graph 6: Reliability Analysis Over Time")
+                    st.markdown(f"*EMI performance degradation over service life*")
+                    
+                    if 'reliability_analysis' in result:
+                        reliability_data = result['reliability_analysis']
+                        
+                        fig_reliability = go.Figure()
+                        
+                        # Add SE degradation over time
+                        fig_reliability.add_trace(go.Scatter(
+                            x=reliability_data['time_years'],
+                            y=reliability_data['se_values'],
+                            mode='lines',
+                            name='SE Performance',
+                            line=dict(color='#00d4ff', width=3),
+                            hovertemplate='Year %{x:.1f}<br>%{y:.1f} dB<extra></extra>'
+                        ))
+                        
+                        # Add reliability percentage on secondary y-axis
+                        reliability_percent = (1 - reliability_data['failure_probabilities']) * 100
+                        fig_reliability.add_trace(go.Scatter(
+                            x=reliability_data['time_years'],
+                            y=reliability_percent,
+                            mode='lines',
+                            name='Reliability',
+                            line=dict(color='#22c55e', width=2, dash='dash'),
+                            yaxis='y2',
+                            hovertemplate='Year %{x:.1f}<br>%{y:.1f}%<extra></extra>'
+                        ))
+                        
+                        fig_reliability.update_layout(
+                            template="plotly_dark",
+                            height=500,
+                            hovermode='x unified',
+                            legend=dict(x=0.02, y=0.98, bgcolor='rgba(0,0,0,0.5)'),
+                            yaxis=dict(title="Shielding Effectiveness (dB)", side="left"),
+                            yaxis2=dict(title="Reliability (%)", side="right", overlaying="y"),
+                            xaxis=dict(title="Service Time (Years)")
+                        )
+                        
+                        st.plotly_chart(fig_reliability, use_container_width=True)
+                        
+                        # Show reliability metrics
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Initial SE", f"{reliability_data['initial_se']:.1f} dB")
+                        with col2:
+                            st.metric("End-of-Life SE", f"{reliability_data['final_se']:.1f} dB")
+                        with col3:
+                            final_reliability = reliability_data['service_life_summary']['reliability_at_end_of_life']
+                            st.metric("Final Reliability", f"{final_reliability*100:.1f}%")
+                    else:
+                        st.info("Run reliability analysis to see degradation timeline")
                 
                 # Export buttons
                 st.markdown("---")

@@ -37,6 +37,9 @@ class Settings(BaseSettings):
 
     # Gemini AI (conversational design assistant)
     GEMINI_API_KEY: str = ""
+    GOOGLE_CLOUD_PROJECT_ID: str = ""
+    GOOGLE_CLOUD_LOCATION: str = "us-central1"
+    GOOGLE_VERTEX_CREDENTIALS_JSON: str = ""
 
     # Physics Calculation Limits
     MAX_FREQUENCY_POINTS: int = 1000

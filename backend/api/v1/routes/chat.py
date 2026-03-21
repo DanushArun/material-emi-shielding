@@ -115,12 +115,16 @@ async def chat_message(request: ChatRequest) -> ChatResponse:
     Accepts an optional `context` object with the current simulation state
     so the assistant can give composition- and result-aware advice.
     """
-    if not settings.GEMINI_API_KEY:
+    # Check credentials: support both direct API key and Vertex AI service account
+    has_api_key = bool(settings.GEMINI_API_KEY)
+    has_vertex = bool(settings.GOOGLE_VERTEX_CREDENTIALS_JSON and settings.GOOGLE_CLOUD_PROJECT_ID)
+
+    if not has_api_key and not has_vertex:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
-                "Gemini API key is not configured. "
-                "Set the GEMINI_API_KEY environment variable to enable the AI assistant."
+                "No AI credentials configured. Set either GEMINI_API_KEY "
+                "or GOOGLE_VERTEX_CREDENTIALS_JSON + GOOGLE_CLOUD_PROJECT_ID in .env"
             ),
         )
 
@@ -129,18 +133,43 @@ async def chat_message(request: ChatRequest) -> ChatResponse:
     except ImportError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "google-generativeai package is not installed. "
-                "Run: pip install google-generativeai"
-            ),
+            detail="google-generativeai not installed. Run: pip install google-generativeai",
         )
 
     try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=_SYSTEM_PROMPT,
-        )
+        if has_vertex:
+            # Use Vertex AI with service account credentials
+            import json
+            import tempfile
+            import os
+
+            creds_json = settings.GOOGLE_VERTEX_CREDENTIALS_JSON.strip()
+            if creds_json.startswith("'") or creds_json.startswith('"'):
+                creds_json = creds_json[1:-1]
+
+            # Write credentials to temp file for google auth
+            creds_dict = json.loads(creds_json)
+            creds_file = os.path.join(tempfile.gettempdir(), "emi_gcp_creds.json")
+            with open(creds_file, "w") as f:
+                json.dump(creds_dict, f)
+
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_file
+            genai.configure(
+                client_options={
+                    "api_endpoint": f"{settings.GOOGLE_CLOUD_LOCATION}-aiplatform.googleapis.com"
+                }
+            )
+            model = genai.GenerativeModel(
+                model_name="gemini-2.0-flash",
+                system_instruction=_SYSTEM_PROMPT,
+            )
+        else:
+            # Use direct API key
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            model = genai.GenerativeModel(
+                model_name="gemini-2.0-flash",
+                system_instruction=_SYSTEM_PROMPT,
+            )
 
         # Build the conversation history in the format Gemini expects.
         # Gemini uses 'model' for assistant turns; map accordingly.

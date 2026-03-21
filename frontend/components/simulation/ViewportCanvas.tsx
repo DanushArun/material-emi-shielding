@@ -3,7 +3,63 @@
 import { useWorkbenchStore } from '@/lib/store'
 
 export function ViewportCanvas() {
-  const { thickness, composition } = useWorkbenchStore()
+  const { thickness, composition, activeNode, cableLength, wireSeparation } = useWorkbenchStore()
+
+  if (activeNode === 'cables') {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center border border-border-panel bg-[#0d0d10] rounded relative overflow-hidden">
+        <div className="absolute top-4 left-4 bg-bg-panel border border-border-panel px-3 py-1.5 rounded text-[10px] font-mono text-text-secondary z-10 flex flex-col gap-1">
+          <span>Cable Harness Diagram (Cross-Section & Routing)</span>
+          <span>Length: {cableLength}m | Separation: {wireSeparation}m</span>
+        </div>
+        
+        <svg width="600" height="300" viewBox="0 0 600 300" className="opacity-80">
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1c1c22" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="600" height="300" fill="url(#grid)" />
+
+          {/* Generator and Load Nodes */}
+          <rect x="50" y="100" width="40" height="100" fill="#1c1c22" stroke="#2d2d33" />
+          <text x="55" y="155" fill="#8b8b99" fontSize="10" fontFamily="monospace">GEN</text>
+          
+          <rect x="510" y="100" width="40" height="100" fill="#1c1c22" stroke="#2d2d33" />
+          <text x="515" y="155" fill="#8b8b99" fontSize="10" fontFamily="monospace">LOAD</text>
+
+          {/* Aggressor Cable */}
+          <path d="M90,130 L510,130" fill="none" stroke="#da3633" strokeWidth="3" />
+          <text x="250" y="120" fill="#da3633" fontSize="10" fontFamily="monospace">Aggressor Line (noisy)</text>
+          
+          {/* Victim Cable */}
+          <path d="M90,170 L510,170" fill="none" stroke="#005fb8" strokeWidth="3" />
+          <text x="250" y="190" fill="#005fb8" fontSize="10" fontFamily="monospace">Victim Line (sensitive)</text>
+
+          {/* Capacitive/Inductive Coupling Lines */}
+          <path d="M300,130 Q310,150 300,170" fill="none" stroke="#d29922" strokeWidth="1" strokeDasharray="4,4" />
+          <path d="M350,130 Q360,150 350,170" fill="none" stroke="#d29922" strokeWidth="1" strokeDasharray="4,4" />
+          <text x="365" y="155" fill="#d29922" fontSize="10" fontFamily="monospace">Crosstalk (L, C)</text>
+        </svg>
+      </div>
+    )
+  }
+
+  if (activeNode === 'hazards') {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center border border-border-panel bg-[#0d0d10] rounded relative overflow-hidden">
+        <div className="absolute top-4 left-4 bg-bg-panel border border-border-panel px-3 py-1.5 rounded text-[10px] font-mono text-text-secondary z-10 flex flex-col gap-1">
+          <span>Environmental Hazard Visualization</span>
+        </div>
+        <div className="text-text-muted text-sm font-mono flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded border border-accent-warning flex items-center justify-center animate-pulse">
+            <span className="text-accent-warning text-2xl font-black">⚡</span>
+          </div>
+          <span>Select an environment hazard to simulate transient EM effects.</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center border border-border-panel bg-[#0d0d10] rounded relative overflow-hidden">

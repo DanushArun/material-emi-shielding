@@ -9,7 +9,7 @@ import { AIAssistantPanel } from '@/components/simulation/AIAssistantPanel'
 import { useWorkbenchStore } from '@/lib/store'
 import { Button } from '@/components/ui/Button'
 import { Play, Activity, Download } from 'lucide-react'
-import { calculateSE, frequencySweep, thicknessSweep } from '@/lib/api'
+import { calculateSE, frequencySweep, thicknessSweep, generateHeatmap, calculateCrosstalk } from '@/lib/api'
 
 export default function SimulationPage() {
   const { 
@@ -17,27 +17,48 @@ export default function SimulationPage() {
     isCalculating, setIsCalculating,
     composition, thickness, frequency, grainSize,
     sweepMode, sweepStart, sweepEnd, sweepPoints,
-    setSingleResult, setSweepResult
+    heatmapStartThickness, heatmapEndThickness,
+    cableLength, wireSeparation,
+    setSingleResult, setSweepResult, setHeatmapResult, setCableResult
   } = useWorkbenchStore()
 
   const handleSolve = async () => {
     setIsCalculating(true)
     try {
-      if (activeNode === 'sweep' || activeNode === 'results') {
-        // Run Sweep
-        let res
-        if (sweepMode === 'frequency') {
-          res = await frequencySweep({
+      if (activeNode === 'cables') {
+        const res = await calculateCrosstalk({
+          cable_length_m: cableLength,
+          wire_separation_m: wireSeparation,
+          freq_start_mhz: sweepStart,
+          freq_end_mhz: sweepEnd,
+          num_points: sweepPoints
+        })
+        setCableResult(res)
+        setActiveNode('results')
+      } else if (activeNode === 'sweep' || activeNode === 'results') {
+        if (sweepMode === 'heatmap') {
+          const res = await generateHeatmap({
+            composition,
+            freq_start_mhz: sweepStart,
+            freq_end_mhz: sweepEnd,
+            thickness_start_mm: heatmapStartThickness,
+            thickness_end_mm: heatmapEndThickness,
+            num_points: sweepPoints
+          })
+          setHeatmapResult(res)
+        } else if (sweepMode === 'frequency') {
+          const res = await frequencySweep({
             composition, thickness_mm: thickness, grain_size_um: grainSize,
             freq_start_mhz: sweepStart, freq_end_mhz: sweepEnd, num_points: sweepPoints
           })
+          setSweepResult(res)
         } else {
-          res = await thicknessSweep({
+          const res = await thicknessSweep({
             composition, frequency_mhz: frequency, grain_size_um: grainSize,
             thickness_start_mm: sweepStart, thickness_end_mm: sweepEnd, num_points: sweepPoints
           })
+          setSweepResult(res)
         }
-        setSweepResult(res)
         setActiveNode('results')
       } else {
         // Run Single Point

@@ -10,11 +10,65 @@ export function PropertyEditor() {
 
   return (
     <div className="flex flex-col gap-6">
+      {activeNode === 'enclosure' && <div className="text-xs text-text-muted">Select Geometry or Materials below.</div>}
       {activeNode === 'geometry' && <GeometryProperties />}
       {activeNode === 'materials' && <MaterialProperties />}
+      {activeNode === 'cables' && <CableProperties />}
+      {activeNode === 'hazards' && <HazardProperties />}
       {activeNode === 'analysis' && <AnalysisProperties />}
       {activeNode === 'sweep' && <SweepProperties />}
       {activeNode === 'results' && <ResultProperties />}
+    </div>
+  )
+}
+
+function CableProperties() {
+  const { cableLength, setCableLength, wireSeparation, setWireSeparation } = useWorkbenchStore()
+  return (
+    <div className="flex flex-col gap-4">
+      <h3 className="text-xs font-semibold text-text-primary uppercase tracking-widest border-b border-border-panel pb-2">Cable Harness Config</h3>
+      <div className="bg-bg-subpanel border border-border-panel p-2 rounded text-[10px] text-text-secondary italic mb-2">
+        Define multi-conductor transmission line parameters for crosstalk calculation.
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="text-xs text-text-secondary">Cable Run Length (m)</label>
+        <input 
+          type="number" 
+          value={cableLength}
+          onChange={e => setCableLength(parseFloat(e.target.value))}
+          className="input-engineering" 
+          step="0.1"
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="text-xs text-text-secondary">Wire Separation (m)</label>
+        <input 
+          type="number" 
+          value={wireSeparation}
+          onChange={e => setWireSeparation(parseFloat(e.target.value))}
+          className="input-engineering" 
+          step="0.01"
+        />
+      </div>
+    </div>
+  )
+}
+
+function HazardProperties() {
+  return (
+    <div className="flex flex-col gap-4">
+      <h3 className="text-xs font-semibold text-text-primary uppercase tracking-widest border-b border-border-panel pb-2">Environmental Hazards</h3>
+      <div className="flex flex-col gap-2">
+        <label className="text-xs text-text-secondary">Hazard Type</label>
+        <select className="input-engineering cursor-pointer">
+          <option>EMP (Electromagnetic Pulse)</option>
+          <option>Lightning Indirect Effects</option>
+          <option>HIRF (High Intensity Radiated Field)</option>
+        </select>
+      </div>
+      <div className="text-xs text-text-muted mt-2 border border-dashed border-border-panel p-2 rounded">
+        Feature under development. For now, use Analysis Setup for frequency sweeps.
+      </div>
     </div>
   )
 }
@@ -117,34 +171,65 @@ function AnalysisProperties() {
 }
 
 function SweepProperties() {
-  const { sweepMode, setSweepMode, sweepStart, setSweepStart, sweepEnd, setSweepEnd, sweepPoints, setSweepPoints } = useWorkbenchStore()
+  const { 
+    sweepMode, setSweepMode, 
+    sweepStart, setSweepStart, sweepEnd, setSweepEnd, sweepPoints, setSweepPoints,
+    heatmapStartThickness, setHeatmapStartThickness, heatmapEndThickness, setHeatmapEndThickness
+  } = useWorkbenchStore()
+
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-xs font-semibold text-text-primary uppercase tracking-widest border-b border-border-panel pb-2">Parametric Sweep</h3>
+      <h3 className="text-xs font-semibold text-text-primary uppercase tracking-widest border-b border-border-panel pb-2">3. Parametric Analysis</h3>
+      
+      <div className="bg-bg-subpanel border border-border-panel p-2 rounded text-[10px] text-text-secondary italic mb-2">
+        Generate large datasets by sweeping physical parameters across a defined range.
+      </div>
+
       <div className="flex flex-col gap-2">
-        <label className="text-xs text-text-secondary">Variable to Sweep</label>
+        <label className="text-xs text-text-secondary">Analysis Type</label>
         <select 
           value={sweepMode}
-          onChange={e => setSweepMode(e.target.value as 'frequency' | 'thickness')}
+          onChange={e => setSweepMode(e.target.value as 'frequency' | 'thickness' | 'heatmap')}
           className="input-engineering cursor-pointer"
         >
-          <option value="frequency">Frequency (MHz)</option>
-          <option value="thickness">Thickness (mm)</option>
+          <option value="frequency">1D: Frequency Sweep (MHz)</option>
+          <option value="thickness">1D: Thickness Sweep (mm)</option>
+          <option value="heatmap">2D: Full Spectrum Heatmap</option>
         </select>
       </div>
+
       <div className="flex gap-2">
         <div className="flex flex-col gap-1 flex-1">
-          <label className="text-[10px] text-text-secondary">Start</label>
+          <label className="text-[10px] text-text-secondary">
+            {sweepMode === 'thickness' ? 'Start (mm)' : 'Start Freq (MHz)'}
+          </label>
           <input value={sweepStart} onChange={e => setSweepStart(parseFloat(e.target.value))} type="number" className="input-engineering" />
         </div>
         <div className="flex flex-col gap-1 flex-1">
-          <label className="text-[10px] text-text-secondary">End</label>
+          <label className="text-[10px] text-text-secondary">
+            {sweepMode === 'thickness' ? 'End (mm)' : 'End Freq (MHz)'}
+          </label>
           <input value={sweepEnd} onChange={e => setSweepEnd(parseFloat(e.target.value))} type="number" className="input-engineering" />
         </div>
       </div>
+
+      {sweepMode === 'heatmap' && (
+        <div className="flex gap-2 pt-2 border-t border-border-panel">
+          <div className="flex flex-col gap-1 flex-1">
+            <label className="text-[10px] text-text-secondary">Start Thick. (mm)</label>
+            <input value={heatmapStartThickness} onChange={e => setHeatmapStartThickness(parseFloat(e.target.value))} type="number" className="input-engineering" />
+          </div>
+          <div className="flex flex-col gap-1 flex-1">
+            <label className="text-[10px] text-text-secondary">End Thick. (mm)</label>
+            <input value={heatmapEndThickness} onChange={e => setHeatmapEndThickness(parseFloat(e.target.value))} type="number" className="input-engineering" />
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-text-secondary">Number of Points (Resolution)</label>
+        <label className="text-[10px] text-text-secondary">Resolution (Points)</label>
         <input value={sweepPoints} onChange={e => setSweepPoints(parseFloat(e.target.value))} type="number" className="input-engineering" />
+        {sweepMode === 'heatmap' && <span className="text-[9px] text-accent-warning">Warning: 2D grids calculate N×N points. High resolution may take longer.</span>}
       </div>
     </div>
   )

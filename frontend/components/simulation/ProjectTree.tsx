@@ -1,7 +1,7 @@
 'use client'
 
 import { useWorkbenchStore, TreeNodeId } from '@/lib/store'
-import { FolderGit2, Box, Layers, Play, LineChart, Activity } from 'lucide-react'
+import { FolderGit2, Box, Layers, Play, LineChart, Activity, Cpu, Cable, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function ProjectTree() {
@@ -9,19 +9,26 @@ export function ProjectTree() {
 
   const nodes: { id: TreeNodeId, label: string, icon: React.ElementType, children?: { id: TreeNodeId, label: string, icon: React.ElementType }[] }[] = [
     {
-      id: 'geometry', label: 'Shield Geometry', icon: Box
-    },
-    {
-      id: 'materials', label: 'Materials & Composites', icon: Layers
-    },
-    {
-      id: 'analysis', label: 'Analysis Setup', icon: Play,
+      id: 'enclosure', label: '1. Enclosure Shielding', icon: Cpu,
       children: [
-        { id: 'sweep', label: 'Parametric Sweep', icon: Activity }
+        { id: 'geometry', label: '1.1 Shield Geometry', icon: Box },
+        { id: 'materials', label: '1.2 Materials & Composites', icon: Layers }
       ]
     },
     {
-      id: 'results', label: 'Results & Post-Processing', icon: LineChart
+      id: 'cables', label: '2. Cable Harness & SI', icon: Cable
+    },
+    {
+      id: 'hazards', label: '3. Environment Hazards', icon: Zap
+    },
+    {
+      id: 'analysis', label: '4. Analysis Setup', icon: Play,
+      children: [
+        { id: 'sweep', label: '4.1 Parametric Sweep', icon: Activity }
+      ]
+    },
+    {
+      id: 'results', label: '5. Results & Post-Processing', icon: LineChart
     }
   ]
 

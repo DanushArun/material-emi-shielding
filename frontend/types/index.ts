@@ -99,6 +99,8 @@ export interface ChatMessage {
   timestamp: Date
 }
 
+export * from './heatmap'
+
 // Calculation history entry
 export interface HistoryEntry {
   id: string

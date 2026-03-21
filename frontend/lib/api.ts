@@ -3,6 +3,7 @@ import type {
   ElementData, AlloyData, CompositeProperties,
   CalculationRequest, CalculationResult,
   FrequencySweepRequest, SweepResult, OptimizationResult,
+  HeatmapRequest, HeatmapResult
 } from '@/types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
@@ -43,8 +44,24 @@ export async function calculateSE(req: CalculationRequest): Promise<CalculationR
 }
 
 // Analysis sweeps
+export async function generateHeatmap(req: HeatmapRequest): Promise<HeatmapResult> {
+  const { data } = await api.post('/api/v1/heatmap/generate', req)
+  return data
+}
+
 export async function frequencySweep(req: FrequencySweepRequest): Promise<SweepResult> {
   const { data } = await api.post('/api/v1/analysis/frequency-sweep', req)
+  return data
+}
+
+export async function calculateCrosstalk(req: {
+  cable_length_m: number
+  wire_separation_m: number
+  freq_start_mhz: number
+  freq_end_mhz: number
+  num_points: number
+}): Promise<{ frequencies_mhz: number[], next_db: number[], fext_db: number[] }> {
+  const { data } = await api.post('/api/v1/cables/crosstalk', req)
   return data
 }
 

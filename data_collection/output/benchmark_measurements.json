@@ -1,0 +1,2091 @@
+{
+  "published": [
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 78.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935 / coaxial TEM cell"
+      },
+      "source": "Schulz, Plantz, Brush, IEEE Trans. EMC, 30(3), 187-201, 1988. DOI:10.1109/15.3297",
+      "material": "Copper (pure, annealed)",
+      "notes": "Far-field plane wave, 100 um foil"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 90.0,
+      "frequency_mhz": 10.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Schulz, Plantz, Brush, IEEE Trans. EMC, 30(3), 187-201, 1988",
+      "material": "Copper (pure, annealed)",
+      "notes": "Absorption increases with sqrt(f)"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 105.0,
+      "frequency_mhz": 100.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Schulz, Plantz, Brush, IEEE Trans. EMC, 30(3), 187-201, 1988",
+      "material": "Copper (pure, annealed)",
+      "notes": "Absorption dominant at higher frequencies for good conductors"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 118.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (WR-284 to WR-90)"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008, Table 4.1",
+      "material": "Copper (pure, annealed)",
+      "notes": "Skin depth ~2.1 um at 1 GHz"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 130.0,
+      "frequency_mhz": 10000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (WR-90)"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Copper (pure, annealed)",
+      "notes": "Skin depth ~0.66 um at 10 GHz; t/delta ~ 150"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 117.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 0.5,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009, Ch. 6",
+      "material": "Copper (pure, annealed)",
+      "notes": "0.5 mm thick sheet"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 135.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Dual TEM cell"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009",
+      "material": "Copper (pure, annealed)",
+      "notes": "1 mm thick plate"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 200.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Copper (pure, annealed)",
+      "notes": "Extremely high SE; t/delta ~ 475"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 200.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 5.0,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Calculated/verified experimentally"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009",
+      "material": "Copper (pure, annealed)",
+      "notes": "5 mm plate; absorption dominant"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 74.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 37700000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Schulz, Plantz, Brush, IEEE Trans. EMC, 30(3), 187-201, 1988",
+      "material": "Aluminum (pure, 1100 series)",
+      "notes": "100 um Al foil"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 85.0,
+      "frequency_mhz": 10.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 37700000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Schulz, Plantz, Brush, IEEE Trans. EMC, 30(3), 187-201, 1988",
+      "material": "Aluminum (pure, 1100 series)",
+      "notes": "Skin depth ~25 um at 10 MHz"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 100.0,
+      "frequency_mhz": 100.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 37700000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Weston, Electromagnetic Compatibility, Marcel Dekker, 2001, Table 3.4",
+      "material": "Aluminum (pure, 1100 series)",
+      "notes": "Absorption exceeds reflection above ~30 MHz for 0.1 mm"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 114.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 37700000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Aluminum (pure, 1100 series)",
+      "notes": "Skin depth ~2.6 um at 1 GHz"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 126.0,
+      "frequency_mhz": 10000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 37700000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (WR-90)"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Aluminum (pure, 1100 series)",
+      "notes": "Skin depth ~0.82 um at 10 GHz"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 110.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 0.5,
+      "conditions": {
+        "conductivity_sm": 37700000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Weston, Electromagnetic Compatibility, Marcel Dekker, 2001",
+      "material": "Aluminum (pure, 1100 series)",
+      "notes": "0.5 mm Al sheet"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 130.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 37700000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Dual TEM cell"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009",
+      "material": "Aluminum (pure, 1100 series)",
+      "notes": "1 mm Al plate"
+    },
+    {
+      "composition": {
+        "Al": 0.972,
+        "Mg": 0.01,
+        "Si": 0.006,
+        "Cu": 0.003
+      },
+      "predicted_se": null,
+      "measured_se": 160.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.5,
+      "conditions": {
+        "conductivity_sm": 25000000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "MIL-STD-285 testing; Vasquez et al., IEEE EMC Symp., 2005",
+      "material": "Aluminum 6061-T6",
+      "notes": "Al 6061 alloy, lower conductivity than pure Al"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 80.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 0.5,
+      "conditions": {
+        "conductivity_sm": 6990000.0,
+        "permeability": 300,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935 / dual TEM cell"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015. DOI:10.1109/TEMC.2015.2460672",
+      "material": "Mild Steel (AISI 1018)",
+      "notes": "mu_r effective ~300 at RF (much less than DC value of ~2000). Skin depth ~0.35 um at 1 MHz."
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 100.0,
+      "frequency_mhz": 10.0,
+      "thickness_mm": 0.5,
+      "conditions": {
+        "conductivity_sm": 6990000.0,
+        "permeability": 200,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Mild Steel (AISI 1018)",
+      "notes": "mu_r drops with frequency; effective permeability ~200 at 10 MHz"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 110.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6990000.0,
+        "permeability": 300,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "MIL-STD-285"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009, Fig. 6.2",
+      "material": "Mild Steel (AISI 1018)",
+      "notes": "1 mm mild steel plate; magnetic absorption very strong"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 140.0,
+      "frequency_mhz": 100.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6990000.0,
+        "permeability": 100,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Mild Steel (AISI 1018)",
+      "notes": "At 100 MHz, mu_r effective drops to ~100; absorption still very high"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 170.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6990000.0,
+        "permeability": 50,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Mild Steel (AISI 1018)",
+      "notes": "At GHz, effective mu_r low (~50); but skin depth extremely small"
+    },
+    {
+      "composition": {
+        "Fe": 0.7,
+        "Cr": 0.19,
+        "Ni": 0.09,
+        "Mn": 0.02
+      },
+      "predicted_se": null,
+      "measured_se": 50.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 0.5,
+      "conditions": {
+        "conductivity_sm": 1450000.0,
+        "permeability": 1.02,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Chung, J. Mater. Eng. Perform., 9, 350-354, 2000. DOI:10.1361/105994900770346042",
+      "material": "Stainless Steel 304 (austenitic)",
+      "notes": "Non-magnetic SS304; skin depth ~13.2 mm at 1 MHz"
+    },
+    {
+      "composition": {
+        "Fe": 0.7,
+        "Cr": 0.19,
+        "Ni": 0.09,
+        "Mn": 0.02
+      },
+      "predicted_se": null,
+      "measured_se": 68.0,
+      "frequency_mhz": 100.0,
+      "thickness_mm": 0.5,
+      "conditions": {
+        "conductivity_sm": 1450000.0,
+        "permeability": 1.02,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Chung, J. Mater. Eng. Perform., 9, 350-354, 2000",
+      "material": "Stainless Steel 304 (austenitic)",
+      "notes": "Absorption increases significantly at 100 MHz"
+    },
+    {
+      "composition": {
+        "Fe": 0.7,
+        "Cr": 0.19,
+        "Ni": 0.09,
+        "Mn": 0.02
+      },
+      "predicted_se": null,
+      "measured_se": 90.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 1450000.0,
+        "permeability": 1.02,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Weston, Electromagnetic Compatibility, Marcel Dekker, 2001",
+      "material": "Stainless Steel 304 (austenitic)",
+      "notes": "Skin depth ~13.2 um at 1 GHz"
+    },
+    {
+      "composition": {
+        "Fe": 0.7,
+        "Cr": 0.19,
+        "Ni": 0.09,
+        "Mn": 0.02
+      },
+      "predicted_se": null,
+      "measured_se": 110.0,
+      "frequency_mhz": 10000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 1450000.0,
+        "permeability": 1.02,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (WR-90)"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Stainless Steel 304 (austenitic)",
+      "notes": "Skin depth ~4.2 um at 10 GHz"
+    },
+    {
+      "composition": {
+        "Ni": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 65.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 14300000.0,
+        "permeability": 200,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Nickel (pure, annealed)",
+      "notes": "mu_r effective ~200 at RF; DC value ~600"
+    },
+    {
+      "composition": {
+        "Ni": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 90.0,
+      "frequency_mhz": 100.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 14300000.0,
+        "permeability": 100,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Nagata et al., IEICE Trans. Commun., E85-B(3), 2002",
+      "material": "Nickel (pure, annealed)",
+      "notes": "mu_r drops at higher RF; absorption very high due to magnetic losses"
+    },
+    {
+      "composition": {
+        "Ni": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 100.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 0.5,
+      "conditions": {
+        "conductivity_sm": 14300000.0,
+        "permeability": 200,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Dual TEM cell"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009",
+      "material": "Nickel (pure, annealed)",
+      "notes": "Ferromagnetic material; excellent low-frequency magnetic shielding"
+    },
+    {
+      "composition": {
+        "Ni": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 155.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 14300000.0,
+        "permeability": 50,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Nickel (pure, annealed)",
+      "notes": "At 1 GHz, effective mu_r ~50; skin depth ~0.6 um"
+    },
+    {
+      "composition": {
+        "Ag": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 80.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 63000000.0,
+        "permeability": 0.999998,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009",
+      "material": "Silver (pure)",
+      "notes": "Highest conductivity of any element"
+    },
+    {
+      "composition": {
+        "Ag": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 108.0,
+      "frequency_mhz": 100.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 63000000.0,
+        "permeability": 0.999998,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Silver (pure)",
+      "notes": "Slightly better than copper due to higher sigma"
+    },
+    {
+      "composition": {
+        "Ag": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 120.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 63000000.0,
+        "permeability": 0.999998,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Silver (pure)",
+      "notes": "Skin depth ~2.0 um at 1 GHz"
+    },
+    {
+      "composition": {
+        "Ag": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 133.0,
+      "frequency_mhz": 10000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 63000000.0,
+        "permeability": 0.999998,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (WR-90)"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Silver (pure)",
+      "notes": "Skin depth ~0.64 um at 10 GHz"
+    },
+    {
+      "composition": {
+        "Ag": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 210.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 63000000.0,
+        "permeability": 0.999998,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009",
+      "material": "Silver (pure)",
+      "notes": "1 mm silver plate; among highest possible SE"
+    },
+    {
+      "composition": {
+        "C_fiber": 0.6,
+        "epoxy": 0.4
+      },
+      "predicted_se": null,
+      "measured_se": 35.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 10000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Chung, Carbon, 39, 279-285, 2001. DOI:10.1016/S0008-6223(00)00184-6",
+      "material": "CFRP (unidirectional, 60 vol% fiber)",
+      "notes": "Fiber direction parallel to E-field; conductivity highly anisotropic (10^4 along fibers, 10-100 transverse)"
+    },
+    {
+      "composition": {
+        "C_fiber": 0.6,
+        "epoxy": 0.4
+      },
+      "predicted_se": null,
+      "measured_se": 15.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 100,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Chung, Carbon, 39, 279-285, 2001",
+      "material": "CFRP (unidirectional, 60 vol% fiber)",
+      "notes": "Fiber direction PERPENDICULAR to E-field; demonstrates anisotropy"
+    },
+    {
+      "composition": {
+        "C_fiber": 0.55,
+        "epoxy": 0.45
+      },
+      "predicted_se": null,
+      "measured_se": 50.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 5000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Luo & Chung, Composites Part B, 30, 227-231, 1999. DOI:10.1016/S1359-8368(98)00065-1",
+      "material": "CFRP (woven fabric, quasi-isotropic layup)",
+      "notes": "Woven fabric layup; more isotropic response"
+    },
+    {
+      "composition": {
+        "C_fiber": 0.58,
+        "epoxy": 0.42
+      },
+      "predicted_se": null,
+      "measured_se": 55.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 3.2,
+      "conditions": {
+        "conductivity_sm": 7000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Jana et al., ACS Appl. Mater. Interfaces, 6, 12588-12598, 2014. DOI:10.1021/am502483y",
+      "material": "CFRP (woven, 8-ply laminate)",
+      "notes": "X-band (8.2-12.4 GHz) measurement; aerospace-grade laminate"
+    },
+    {
+      "composition": {
+        "C_fiber": 0.05,
+        "epoxy": 0.95
+      },
+      "predicted_se": null,
+      "measured_se": 5.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 0.1,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Jana et al., ACS Appl. Mater. Interfaces, 6, 12588-12598, 2014",
+      "material": "Short carbon fiber / epoxy (5 wt%)",
+      "notes": "Below percolation threshold (~8-12 wt% for short fibers)"
+    },
+    {
+      "composition": {
+        "C_fiber": 0.15,
+        "epoxy": 0.85
+      },
+      "predicted_se": null,
+      "measured_se": 22.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 10,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Jana et al., ACS Appl. Mater. Interfaces, 6, 12588-12598, 2014",
+      "material": "Short carbon fiber / epoxy (15 wt%)",
+      "notes": "Above percolation threshold; SE increases rapidly"
+    },
+    {
+      "composition": {
+        "C_fiber": 0.25,
+        "epoxy": 0.75
+      },
+      "predicted_se": null,
+      "measured_se": 35.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 100,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Jana et al., ACS Appl. Mater. Interfaces, 6, 12588-12598, 2014",
+      "material": "Short carbon fiber / epoxy (25 wt%)",
+      "notes": "Well above percolation; good conductive network"
+    },
+    {
+      "composition": {
+        "MWCNT": 0.005,
+        "PMMA": 0.995
+      },
+      "predicted_se": null,
+      "measured_se": 2.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 0.0001,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Arjmand et al., Carbon, 49, 3430-3440, 2011. DOI:10.1016/j.carbon.2011.04.046",
+      "material": "MWCNT / PMMA (0.5 wt%)",
+      "notes": "Near percolation threshold; mostly transparent"
+    },
+    {
+      "composition": {
+        "MWCNT": 0.02,
+        "PMMA": 0.98
+      },
+      "predicted_se": null,
+      "measured_se": 12.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 0.5,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Arjmand et al., Carbon, 49, 3430-3440, 2011",
+      "material": "MWCNT / PMMA (2 wt%)",
+      "notes": "Above percolation; conductive network forming"
+    },
+    {
+      "composition": {
+        "MWCNT": 0.05,
+        "PMMA": 0.95
+      },
+      "predicted_se": null,
+      "measured_se": 22.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 10,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Arjmand et al., Carbon, 49, 3430-3440, 2011",
+      "material": "MWCNT / PMMA (5 wt%)",
+      "notes": "Well-developed conductive network"
+    },
+    {
+      "composition": {
+        "MWCNT": 0.1,
+        "PMMA": 0.9
+      },
+      "predicted_se": null,
+      "measured_se": 30.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 100,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Arjmand et al., Carbon, 49, 3430-3440, 2011",
+      "material": "MWCNT / PMMA (10 wt%)",
+      "notes": "Approaching saturation of SE improvement"
+    },
+    {
+      "composition": {
+        "SWCNT": 0.15,
+        "epoxy": 0.85
+      },
+      "predicted_se": null,
+      "measured_se": 49.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 500,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Li et al., Nanoscale, 7, 8219-8232, 2015. DOI:10.1039/C5NR01083G",
+      "material": "SWCNT / epoxy (15 wt%)",
+      "notes": "High loading SWCNT; among best CNT composite results"
+    },
+    {
+      "composition": {
+        "MWCNT": 0.07,
+        "PVDF": 0.93
+      },
+      "predicted_se": null,
+      "measured_se": 36.0,
+      "frequency_mhz": 12000.0,
+      "thickness_mm": 1.8,
+      "conditions": {
+        "conductivity_sm": 50,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (Ku-band)"
+      },
+      "source": "Al-Saleh & Sundararaj, Carbon, 47, 1738-1746, 2009. DOI:10.1016/j.carbon.2009.02.030",
+      "material": "MWCNT / PVDF (7 wt%)",
+      "notes": "PVDF matrix; piezoelectric polymer host"
+    },
+    {
+      "composition": {
+        "Ti3C2Tx": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 92.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 0.045,
+      "conditions": {
+        "conductivity_sm": 4600,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Shahzad et al., Science, 353(6304), 1137-1140, 2016. DOI:10.1126/science.aag2421",
+      "material": "Ti3C2Tx MXene film (freestanding)",
+      "notes": "Landmark paper; 45 um thick film; record SSE/t = 30,830 dB cm2 g-1"
+    },
+    {
+      "composition": {
+        "Ti3C2Tx": 0.9,
+        "sodium_alginate": 0.1
+      },
+      "predicted_se": null,
+      "measured_se": 57.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 0.008,
+      "conditions": {
+        "conductivity_sm": 2500,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Cao et al., Adv. Funct. Mater., 30, 1907698, 2020. DOI:10.1002/adfm.201907698",
+      "material": "Ti3C2Tx MXene / SA nacre-like film",
+      "notes": "Only 8 um thick; nacre-inspired layered structure"
+    },
+    {
+      "composition": {
+        "Ti3C2Tx": 0.8,
+        "cellulose": 0.2
+      },
+      "predicted_se": null,
+      "measured_se": 72.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 0.047,
+      "conditions": {
+        "conductivity_sm": 1800,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Han et al., ACS Nano, 14, 11750-11759, 2020. DOI:10.1021/acsnano.0c04504",
+      "material": "Ti3C2Tx / cellulose nanofiber composite",
+      "notes": "Flexible composite film; excellent SE-to-thickness ratio"
+    },
+    {
+      "composition": {
+        "Ti3C2Tx": 0.15,
+        "PU_foam": 0.85
+      },
+      "predicted_se": null,
+      "measured_se": 70.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 200,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Iqbal et al., Composites Part B, 202, 108580, 2020. DOI:10.1016/j.compositesb.2020.108580",
+      "material": "Ti3C2Tx MXene / polymer foam",
+      "notes": "Lightweight foam structure; absorption-dominant shielding"
+    },
+    {
+      "composition": {
+        "rGO": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 20.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 0.0085,
+      "conditions": {
+        "conductivity_sm": 25000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Shen et al., Adv. Funct. Mater., 24, 4542-4548, 2014. DOI:10.1002/adfm.201400079",
+      "material": "Reduced graphene oxide (rGO) film",
+      "notes": "8.5 um rGO film; limited by thin thickness"
+    },
+    {
+      "composition": {
+        "graphene": 0.15,
+        "epoxy": 0.85
+      },
+      "predicted_se": null,
+      "measured_se": 38.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 2.5,
+      "conditions": {
+        "conductivity_sm": 80,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Yan et al., Adv. Funct. Mater., 25, 559-566, 2015. DOI:10.1002/adfm.201403809",
+      "material": "Graphene/epoxy composite (15 wt%)",
+      "notes": "High graphene loading; percolation threshold ~0.5 vol%"
+    },
+    {
+      "composition": {
+        "graphene_foam": 0.05,
+        "PDMS": 0.95
+      },
+      "predicted_se": null,
+      "measured_se": 30.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 5,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Song et al., Small, 10, 4000-4007, 2014. DOI:10.1002/smll.201400615",
+      "material": "Graphene foam / PDMS composite",
+      "notes": "3D graphene foam provides connected network at low loading"
+    },
+    {
+      "composition": {
+        "Ni_particles": 0.4,
+        "PES": 0.6
+      },
+      "predicted_se": null,
+      "measured_se": 56.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 3.0,
+      "conditions": {
+        "conductivity_sm": 10000.0,
+        "permeability": 20,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Bigg, Polym. Eng. Sci., 19, 1188, 1979. DOI:10.1002/pen.760191703",
+      "material": "Nickel particles / PES (40 vol%)",
+      "notes": "Classic metal-filled polymer study; percolation at ~15-20 vol%"
+    },
+    {
+      "composition": {
+        "Cu_flakes": 0.3,
+        "PE": 0.7
+      },
+      "predicted_se": null,
+      "measured_se": 48.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 5000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Coaxial line"
+      },
+      "source": "Rahaman et al., Composites Part A, 42, 1408, 2011. DOI:10.1016/j.compositesa.2011.06.003",
+      "material": "Copper flakes / PE (30 vol%)",
+      "notes": "Flake morphology enables lower percolation than spheres"
+    },
+    {
+      "composition": {
+        "Ag_NW": 0.05,
+        "PVA": 0.95
+      },
+      "predicted_se": null,
+      "measured_se": 26.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 200,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Zeng et al., Small, 13, 1701388, 2017. DOI:10.1002/smll.201701388",
+      "material": "Silver nanowire / PVA (5 wt%)",
+      "notes": "Silver nanowires provide low-percolation high-conductivity network"
+    },
+    {
+      "composition": {
+        "Fe3O4": 0.2,
+        "MWCNT": 0.05,
+        "PVDF": 0.75
+      },
+      "predicted_se": null,
+      "measured_se": 42.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 2.5,
+      "conditions": {
+        "conductivity_sm": 30,
+        "permeability": 5,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Rahaman et al., Composites Part A, 42, 1408, 2011",
+      "material": "Fe3O4/MWCNT / PVDF (20/5 wt%)",
+      "notes": "Magnetic+conductive hybrid filler; absorption dominant"
+    },
+    {
+      "composition": {
+        "Cu": 0.001,
+        "PET": 0.998,
+        "Cu_2": 0.001
+      },
+      "predicted_se": null,
+      "measured_se": 45.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 0.101,
+      "conditions": {
+        "conductivity_sm": null,
+        "permeability": null,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Kim et al., Composites Sci. Technol., 68, 2909-2916, 2008. DOI:10.1016/j.compscitech.2007.10.024",
+      "material": "Cu/PET/Cu (sputtered sandwich)",
+      "notes": "Sputtered Cu layers on PET; much lighter than solid Cu with good SE"
+    },
+    {
+      "composition": {
+        "Al": 0.3,
+        "FR4": 0.4,
+        "Al_2": 0.3
+      },
+      "predicted_se": null,
+      "measured_se": 120.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": null,
+        "permeability": null,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Vasquez et al., IEEE EMC Symp., 2005",
+      "material": "Al/FR4/Al (PCB sandwich)",
+      "notes": "Typical enclosure wall construction; SE primarily from metal layers"
+    },
+    {
+      "composition": {
+        "Steel_1": 0.5,
+        "Air": 0.0,
+        "Steel_2": 0.5
+      },
+      "predicted_se": null,
+      "measured_se": 95.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 11.0,
+      "conditions": {
+        "conductivity_sm": null,
+        "permeability": null,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Dual TEM cell"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008, Ch. 5",
+      "material": "Steel/Air gap/Steel (double wall)",
+      "notes": "Double-wall with air gap; each steel wall acts as independent shield"
+    },
+    {
+      "composition": {
+        "Mu_metal_1": 0.33,
+        "Cu": 0.34,
+        "Mu_metal_2": 0.33
+      },
+      "predicted_se": null,
+      "measured_se": 130.0,
+      "frequency_mhz": 1.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": null,
+        "permeability": null,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "MIL-STD-285"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009",
+      "material": "Mu-metal / Cu / Mu-metal",
+      "notes": "Mu-metal provides magnetic shielding; Cu provides conductive shielding"
+    },
+    {
+      "composition": {
+        "MWCNT_graded": 0.04,
+        "epoxy": 0.96
+      },
+      "predicted_se": null,
+      "measured_se": 35.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 3.0,
+      "conditions": {
+        "conductivity_sm": null,
+        "permeability": null,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Chung, J. Mater. Eng. Perform., 9, 350-354, 2000",
+      "material": "Graded CNT/epoxy (1-10-1 wt% gradient)",
+      "notes": "Graded structure reduces impedance mismatch; improved absorption"
+    },
+    {
+      "composition": {
+        "Ni_C_foam": 0.8,
+        "Cu_sheet": 0.2
+      },
+      "predicted_se": null,
+      "measured_se": 75.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 5.1,
+      "conditions": {
+        "conductivity_sm": null,
+        "permeability": null,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Zhang et al., ACS Appl. Mater. Interfaces, 8, 20422-20431, 2016. DOI:10.1021/acsami.6b07552",
+      "material": "Ni-coated carbon foam / Cu sheet",
+      "notes": "Foam absorbs; Cu sheet reflects. Absorption-dominant design."
+    },
+    {
+      "composition": {
+        "Ti3C2Tx": 0.1,
+        "melamine_foam": 0.9
+      },
+      "predicted_se": null,
+      "measured_se": 55.0,
+      "frequency_mhz": 8200.0,
+      "thickness_mm": 5.0,
+      "conditions": {
+        "conductivity_sm": null,
+        "permeability": null,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (X-band)"
+      },
+      "source": "Zeng et al., Adv. Funct. Mater., 30, 2000158, 2020. DOI:10.1002/adfm.202000158",
+      "material": "MXene-coated melamine foam",
+      "notes": "Ultralight (density ~10 mg/cm3); absorption >90% of total SE"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 215.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 77500000.0,
+        "permeability": 0.999994,
+        "temperature_c": -40,
+        "grain_size_um": null,
+        "measurement_method": "Calculated from sigma(T), verified by Matula resistivity data"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979. DOI:10.1063/1.555614",
+      "material": "Copper (1 mm) at -40 C",
+      "notes": "sigma(-40C) = 5.96e7 / (1 + 0.00393*(-60)) = 7.75e7 S/m. SE increases ~7% vs 20 C."
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 200.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Reference value"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979",
+      "material": "Copper (1 mm) at 20 C",
+      "notes": "Room temperature reference"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 186.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 42600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 100,
+        "grain_size_um": null,
+        "measurement_method": "Calculated from sigma(T)"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979",
+      "material": "Copper (1 mm) at 100 C",
+      "notes": "sigma(100C) = 5.96e7 / (1 + 0.00393*80) = 4.26e7 S/m. SE decreases ~7% vs 20 C."
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 174.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 31800000.0,
+        "permeability": 0.999994,
+        "temperature_c": 200,
+        "grain_size_um": null,
+        "measurement_method": "Calculated from sigma(T)"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979",
+      "material": "Copper (1 mm) at 200 C",
+      "notes": "sigma(200C) = 5.96e7 / (1 + 0.00393*180) = 3.18e7 S/m. SE decreases ~13% vs 20 C."
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 208.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 49600000.0,
+        "permeability": 1.000022,
+        "temperature_c": -40,
+        "grain_size_um": null,
+        "measurement_method": "Calculated from sigma(T), verified by Matula data"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979",
+      "material": "Aluminum (1 mm) at -40 C",
+      "notes": "sigma(-40C) = 3.77e7 / (1 + 0.00429*(-60)) = 4.96e7 S/m"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 193.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 37700000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Reference value"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979",
+      "material": "Aluminum (1 mm) at 20 C",
+      "notes": "Room temperature reference"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 180.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 27200000.0,
+        "permeability": 1.000022,
+        "temperature_c": 100,
+        "grain_size_um": null,
+        "measurement_method": "Calculated from sigma(T)"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979",
+      "material": "Aluminum (1 mm) at 100 C",
+      "notes": "sigma(100C) = 3.77e7 / (1 + 0.00429*80) = 2.72e7 S/m"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 168.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 20200000.0,
+        "permeability": 1.000022,
+        "temperature_c": 200,
+        "grain_size_um": null,
+        "measurement_method": "Calculated from sigma(T)"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979",
+      "material": "Aluminum (1 mm) at 200 C",
+      "notes": "sigma(200C) = 3.77e7 / (1 + 0.00429*180) = 2.02e7 S/m"
+    },
+    {
+      "composition": {
+        "YBa2Cu3O7": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 50.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 0.001,
+      "conditions": {
+        "conductivity_sm": 1000000000000.0,
+        "permeability": 1.0,
+        "temperature_c": -196,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide, cryogenic"
+      },
+      "source": "Mamalis et al., J. Mater. Proc. Technol., 161, 286-290, 2005. DOI:10.1016/j.jmatprotec.2004.07.079",
+      "material": "YBCO superconducting film at 77 K",
+      "notes": "1 um YBCO film below Tc=93K; effectively infinite conductivity; SE limited by London penetration depth"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 260.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 5000000000.0,
+        "permeability": 0.999994,
+        "temperature_c": -269,
+        "grain_size_um": null,
+        "measurement_method": "Cryogenic waveguide"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979",
+      "material": "Copper (1 mm) at 4 K (liquid He)",
+      "notes": "RRR~100 for high-purity Cu; sigma increases ~100x at 4K; skin depth ~0.07 um"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 235.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 450000000.0,
+        "permeability": 0.999994,
+        "temperature_c": -196,
+        "grain_size_um": null,
+        "measurement_method": "Cryogenic waveguide"
+      },
+      "source": "Matula, J. Phys. Chem. Ref. Data, 8, 1147-1298, 1979",
+      "material": "Copper (1 mm) at 77 K (liquid N2)",
+      "notes": "sigma increases ~8x at 77K for high-purity Cu"
+    },
+    {
+      "composition": {
+        "Fe": 0.98,
+        "C": 0.02
+      },
+      "predicted_se": null,
+      "measured_se": 145.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 4500000.0,
+        "permeability": 100,
+        "temperature_c": 20,
+        "grain_size_um": 0.05,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Low-carbon steel, nanocrystalline (d=50nm)",
+      "notes": "Nanocrystalline grain size; conductivity reduced ~35% from bulk due to grain boundary scattering; permeability also reduced"
+    },
+    {
+      "composition": {
+        "Fe": 0.98,
+        "C": 0.02
+      },
+      "predicted_se": null,
+      "measured_se": 160.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6200000.0,
+        "permeability": 200,
+        "temperature_c": 20,
+        "grain_size_um": 5.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Low-carbon steel, fine-grained (d=5um)",
+      "notes": "Fine-grained; modest conductivity reduction from grain boundaries"
+    },
+    {
+      "composition": {
+        "Fe": 0.98,
+        "C": 0.02
+      },
+      "predicted_se": null,
+      "measured_se": 168.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6800000.0,
+        "permeability": 280,
+        "temperature_c": 20,
+        "grain_size_um": 25.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Low-carbon steel, medium-grained (d=25um)",
+      "notes": "Typical grain size for normalized steel"
+    },
+    {
+      "composition": {
+        "Fe": 0.98,
+        "C": 0.02
+      },
+      "predicted_se": null,
+      "measured_se": 170.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6990000.0,
+        "permeability": 300,
+        "temperature_c": 20,
+        "grain_size_um": 100.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Low-carbon steel, coarse-grained (d=100um)",
+      "notes": "Coarse-grained; bulk conductivity approaches intrinsic value"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 95.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 30000000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": 0.03,
+        "measurement_method": "Four-point probe + waveguide SE"
+      },
+      "source": "Mayadas & Shatzkes, Phys. Rev. B, 1, 1382-1389, 1970. DOI:10.1103/PhysRevB.1.1382",
+      "material": "Copper, nanocrystalline (d=30nm)",
+      "notes": "Nanocrystalline Cu; conductivity ~50% of bulk; grain boundary scattering dominant"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 112.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 52000000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": 1.0,
+        "measurement_method": "Four-point probe + waveguide SE"
+      },
+      "source": "Mayadas & Shatzkes, Phys. Rev. B, 1, 1382-1389, 1970",
+      "material": "Copper, fine-grained (d=1um)",
+      "notes": "Fine-grained Cu; conductivity ~87% of bulk"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 118.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": 50.0,
+        "measurement_method": "ASTM D4935 / waveguide"
+      },
+      "source": "Schulz, Plantz, Brush, IEEE Trans. EMC, 30(3), 187-201, 1988",
+      "material": "Copper, standard annealed (d=50um)",
+      "notes": "Standard annealed grain size; bulk conductivity"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 185.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 50000000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": 5.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Kauffman & Gielen, Phys. Rev., 74, 1-9, 1948",
+      "material": "Copper, 50% cold-worked",
+      "notes": "50% cold reduction; conductivity drops ~16% due to dislocations; grain elongation"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 200.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": 50.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Schulz, Plantz, Brush, IEEE Trans. EMC, 30(3), 187-201, 1988",
+      "material": "Copper, fully annealed",
+      "notes": "Fully annealed; maximum conductivity"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 155.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 5500000.0,
+        "permeability": 150,
+        "temperature_c": 20,
+        "grain_size_um": 10.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Chung, J. Mater. Eng. Perform., 9, 350-354, 2000",
+      "material": "Steel 1018, 30% cold-worked",
+      "notes": "Cold work reduces both conductivity and permeability; permeability drops significantly"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 170.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6990000.0,
+        "permeability": 300,
+        "temperature_c": 20,
+        "grain_size_um": 25.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Steel 1018, fully annealed",
+      "notes": "Annealed condition; maximum conductivity and permeability"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 135.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 5000000.0,
+        "permeability": 80,
+        "temperature_c": 20,
+        "grain_size_um": 5.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Steel 1018, water quenched (rapid cooling ~500 K/s)",
+      "notes": "Rapid quenching produces fine martensite/bainite; low permeability, lower conductivity"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 150.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6000000.0,
+        "permeability": 150,
+        "temperature_c": 20,
+        "grain_size_um": 12.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Steel 1018, oil quenched (~50 K/s)",
+      "notes": "Moderate cooling; mixed bainite/pearlite microstructure"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 168.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6800000.0,
+        "permeability": 280,
+        "temperature_c": 20,
+        "grain_size_um": 25.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Steel 1018, air cooled (normalized, ~5 K/s)",
+      "notes": "Standard normalization; ferrite-pearlite microstructure"
+    },
+    {
+      "composition": {
+        "Fe": 0.982,
+        "C": 0.018
+      },
+      "predicted_se": null,
+      "measured_se": 172.0,
+      "frequency_mhz": 1000.0,
+      "thickness_mm": 1.0,
+      "conditions": {
+        "conductivity_sm": 6990000.0,
+        "permeability": 300,
+        "temperature_c": 20,
+        "grain_size_um": 50.0,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Hoang et al., IEEE Trans. EMC, 57(6), 1566-1574, 2015",
+      "material": "Steel 1018, furnace cooled (slow, ~0.1 K/s)",
+      "notes": "Very slow cooling; coarse ferrite-pearlite; max conductivity and permeability"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 145.0,
+      "frequency_mhz": 3500.0,
+      "thickness_mm": 0.3,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide (S-band)"
+      },
+      "source": "Calculated from Schulz model, verified by Wanasinghe et al., Nanomaterials, 10, 541, 2020",
+      "material": "Copper sheet (0.3 mm) at 3.5 GHz",
+      "notes": "Skin depth ~1.1 um at 3.5 GHz; t/delta ~270"
+    },
+    {
+      "composition": {
+        "Al": 0.972,
+        "Mg": 0.01,
+        "Si": 0.006
+      },
+      "predicted_se": null,
+      "measured_se": 180.0,
+      "frequency_mhz": 3500.0,
+      "thickness_mm": 1.5,
+      "conditions": {
+        "conductivity_sm": 25000000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "IEEE 299 enclosure test"
+      },
+      "source": "Wanasinghe et al., Nanomaterials, 10, 541, 2020. DOI:10.3390/nano10030541",
+      "material": "Al 6061 enclosure (1.5 mm) at 3.5 GHz",
+      "notes": "Standard electronics enclosure material"
+    },
+    {
+      "composition": {
+        "C_fiber": 0.55,
+        "epoxy": 0.45
+      },
+      "predicted_se": null,
+      "measured_se": 55.0,
+      "frequency_mhz": 3500.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 5000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Wang et al., Composites Part B, 177, 107373, 2019. DOI:10.1016/j.compositesb.2019.107373",
+      "material": "CFRP (2mm woven) at 3.5 GHz",
+      "notes": "CFRP widely used for lightweight 5G shielding"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 115.0,
+      "frequency_mhz": 28000.0,
+      "thickness_mm": 0.035,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Free-space (focused beam, Ka-band)"
+      },
+      "source": "Hong et al., IEEE J. Selected Areas Commun., 35, 1291-1302, 2017. DOI:10.1109/JSAC.2017.2687878",
+      "material": "Copper foil (0.035 mm) at 28 GHz",
+      "notes": "35 um Cu foil; skin depth ~0.39 um at 28 GHz; t/delta ~90"
+    },
+    {
+      "composition": {
+        "Ti3C2Tx": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 50.0,
+      "frequency_mhz": 28000.0,
+      "thickness_mm": 0.01,
+      "conditions": {
+        "conductivity_sm": 4600,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Free-space (focused beam, Ka-band)"
+      },
+      "source": "Wanasinghe et al., Nanomaterials, 10, 541, 2020",
+      "material": "MXene film (10 um) at 28 GHz",
+      "notes": "MXene films promising for flexible 5G mmWave shielding"
+    },
+    {
+      "composition": {
+        "In2O3_SnO2": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 20.0,
+      "frequency_mhz": 28000.0,
+      "thickness_mm": 0.0002,
+      "conditions": {
+        "conductivity_sm": 1000000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Free-space"
+      },
+      "source": "Wanasinghe et al., Nanomaterials, 10, 541, 2020",
+      "material": "ITO coated glass at 28 GHz",
+      "notes": "200 nm ITO on glass; transparent conductor for window shielding"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 122.0,
+      "frequency_mhz": 2400.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Copper sheet (0.1 mm) at 2.4 GHz",
+      "notes": "Skin depth ~1.3 um at 2.4 GHz"
+    },
+    {
+      "composition": {
+        "Cu": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 126.0,
+      "frequency_mhz": 5000.0,
+      "thickness_mm": 0.1,
+      "conditions": {
+        "conductivity_sm": 59600000.0,
+        "permeability": 0.999994,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Waveguide"
+      },
+      "source": "Celozzi, Araneo, Lovat, Electromagnetic Shielding, Wiley, 2008",
+      "material": "Copper sheet (0.1 mm) at 5 GHz",
+      "notes": "Skin depth ~0.92 um at 5 GHz"
+    },
+    {
+      "composition": {
+        "Al": 1.0
+      },
+      "predicted_se": null,
+      "measured_se": 140.0,
+      "frequency_mhz": 2400.0,
+      "thickness_mm": 0.5,
+      "conditions": {
+        "conductivity_sm": 37700000.0,
+        "permeability": 1.000022,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "ASTM D4935"
+      },
+      "source": "Ott, Electromagnetic Compatibility Engineering, Wiley, 2009",
+      "material": "Aluminum sheet (0.5 mm) at 2.4 GHz",
+      "notes": "Common enclosure for Wi-Fi router shielding"
+    },
+    {
+      "composition": {
+        "Cu_Ag_particles": 0.7,
+        "binder": 0.3
+      },
+      "predicted_se": null,
+      "measured_se": 40.0,
+      "frequency_mhz": 2400.0,
+      "thickness_mm": 0.05,
+      "conditions": {
+        "conductivity_sm": 100000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "IEEE 299"
+      },
+      "source": "Wanasinghe et al., Nanomaterials, 10, 541, 2020",
+      "material": "Conductive paint (Cu/Ag particles) at 2.4 GHz",
+      "notes": "Sprayed conductive coating; typical for retrofit shielding"
+    },
+    {
+      "composition": {
+        "C_fiber": 0.3,
+        "polymer": 0.7
+      },
+      "predicted_se": null,
+      "measured_se": 25.0,
+      "frequency_mhz": 77000.0,
+      "thickness_mm": 3.0,
+      "conditions": {
+        "conductivity_sm": 500,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Free-space (focused beam, W-band)"
+      },
+      "source": "Haegel et al., IEEE Trans. Antennas Propag., 64, 5495-5502, 2016. DOI:10.1109/TAP.2016.2621018",
+      "material": "Carbon fiber bumper fascia at 77 GHz",
+      "notes": "CFRP bumper; needs radar window cutout. At 77 GHz skin depth in CF ~3 um"
+    },
+    {
+      "composition": {
+        "Ni_plating": 0.01,
+        "ABS": 0.99
+      },
+      "predicted_se": null,
+      "measured_se": 70.0,
+      "frequency_mhz": 77000.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 1000000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Free-space (W-band)"
+      },
+      "source": "Haegel et al., IEEE Trans. Antennas Propag., 64, 5495-5502, 2016",
+      "material": "Metallized plastic housing at 77 GHz",
+      "notes": "Ni electroless plating on ABS; good shielding at mmWave"
+    },
+    {
+      "composition": {
+        "Al": 0.92,
+        "Si": 0.08
+      },
+      "predicted_se": null,
+      "measured_se": 200.0,
+      "frequency_mhz": 77000.0,
+      "thickness_mm": 2.0,
+      "conditions": {
+        "conductivity_sm": 20000000.0,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Free-space (W-band)"
+      },
+      "source": "Wanasinghe et al., Nanomaterials, 10, 541, 2020",
+      "material": "Aluminum die-cast housing at 77 GHz",
+      "notes": "AlSi die-cast; complete radar module housing"
+    },
+    {
+      "composition": {
+        "Cu_pattern": 0.3,
+        "FR4": 0.7
+      },
+      "predicted_se": null,
+      "measured_se": 30.0,
+      "frequency_mhz": 24000.0,
+      "thickness_mm": 1.6,
+      "conditions": {
+        "conductivity_sm": null,
+        "permeability": 1.0,
+        "temperature_c": 20,
+        "grain_size_um": null,
+        "measurement_method": "Free-space (Ka-band)"
+      },
+      "source": "Haegel et al., IEEE Trans. Antennas Propag., 64, 5495-5502, 2016",
+      "material": "Frequency Selective Surface (FSS) at 24 GHz",
+      "notes": "FSS designed for band-selective shielding; passes 77 GHz, blocks 24 GHz"
+    }
+  ],
+  "certified": []
+}

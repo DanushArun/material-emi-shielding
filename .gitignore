@@ -100,3 +100,4 @@ calculation_history.json
 *.bak
 .cache/
 .claude/
+CLAUDE.md

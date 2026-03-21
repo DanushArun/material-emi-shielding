@@ -10,7 +10,7 @@ import time
 from typing import Dict, Any
 
 from core.config import settings
-from api.v1.routes import physics, auth
+from api.v1.routes import physics, auth, materials, analysis
 
 # Create FastAPI application
 app = FastAPI(
@@ -93,25 +93,30 @@ async def root() -> Dict[str, str]:
 
 # API v1 routes
 app.include_router(physics.router, prefix="/api/v1/physics", tags=["Physics"])
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
-# app.include_router(materials.router, prefix="/api/v1/materials", tags=["Materials"])
-# app.include_router(calculations.router, prefix="/api/v1/calculations", tags=["Calculations"])
+app.include_router(materials.router, prefix="/api/v1/materials", tags=["Materials"])
+app.include_router(analysis.router, prefix="/api/v1/analysis", tags=["Analysis"])
+
+# Auth router - optional, requires database
+try:
+    app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+except Exception:
+    pass  # Auth requires database; skip if unavailable
 
 
 # Startup event
 @app.on_event("startup")
 async def startup_event():
     """Run on application startup"""
-    print(f"🚀 Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    print(f"📊 Environment: {settings.ENVIRONMENT}")
-    print(f"🔗 Docs available at: http://localhost:8000/docs")
+    print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+    print(f"Environment: {settings.ENVIRONMENT}")
+    print(f"Docs: http://localhost:8000/docs")
 
 
 # Shutdown event
 @app.on_event("shutdown")
 async def shutdown_event():
     """Run on application shutdown"""
-    print(f"👋 Shutting down {settings.APP_NAME}")
+    print(f"Shutting down {settings.APP_NAME}")
 
 
 if __name__ == "__main__":

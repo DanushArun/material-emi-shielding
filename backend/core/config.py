@@ -2,8 +2,9 @@
 Application configuration using Pydantic Settings
 Reads from environment variables with fallback defaults
 """
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Union
 
 
 class Settings(BaseSettings):
@@ -28,19 +29,27 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
     CACHE_TTL_SECONDS: int = 3600  # 1 hour
 
-    # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    # CORS (can be comma-separated string or list)
+    CORS_ORIGINS: Union[List[str], str] = ["http://localhost:3000", "http://localhost:8000"]
 
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 60
 
-    # ML Model Settings
-    ML_MODEL_PATH: str = "./models"
-    ML_CACHE_ENABLED: bool = True
+    # Gemini AI (conversational design assistant)
+    GEMINI_API_KEY: str = ""
 
     # Physics Calculation Limits
     MAX_FREQUENCY_POINTS: int = 1000
     MAX_THICKNESS_POINTS: int = 100
+
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS_ORIGINS from string or list"""
+        if isinstance(v, str):
+            # Split comma-separated string
+            return [origin.strip() for origin in v.split(',')]
+        return v
 
     class Config:
         env_file = ".env"

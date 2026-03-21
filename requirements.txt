@@ -1,13 +1,10 @@
-# Core dependencies
+# Core scientific dependencies
 numpy>=1.26.0
 pandas>=2.0.3
 scipy>=1.11.0
 
-# Web framework
-streamlit>=1.28.2
-
-# Visualization
+# Visualization (server-side chart generation)
 plotly>=5.18.0
 
-# Machine Learning (used in src/ml/features)
-scikit-learn>=1.3.0
+# Testing
+pytest>=8.0.0

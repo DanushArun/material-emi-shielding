@@ -99,3 +99,4 @@ calculation_history.json
 *.tmp
 *.bak
 .cache/
+.claude/

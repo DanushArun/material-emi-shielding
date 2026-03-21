@@ -160,14 +160,14 @@ async def chat_message(request: ChatRequest) -> ChatResponse:
                 }
             )
             model = genai.GenerativeModel(
-                model_name="gemini-2.0-flash",
+                model_name=settings.GEMINI_MODEL_NAME,
                 system_instruction=_SYSTEM_PROMPT,
             )
         else:
             # Use direct API key
             genai.configure(api_key=settings.GEMINI_API_KEY)
             model = genai.GenerativeModel(
-                model_name="gemini-2.0-flash",
+                model_name=settings.GEMINI_MODEL_NAME,
                 system_instruction=_SYSTEM_PROMPT,
             )
 

@@ -37,6 +37,7 @@ class Settings(BaseSettings):
 
     # Gemini AI (conversational design assistant)
     GEMINI_API_KEY: str = ""
+    GEMINI_MODEL_NAME: str = "gemini-2.0-flash"
     GOOGLE_CLOUD_PROJECT_ID: str = ""
     GOOGLE_CLOUD_LOCATION: str = "us-central1"
     GOOGLE_VERTEX_CREDENTIALS_JSON: str = ""

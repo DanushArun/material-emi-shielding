@@ -3,10 +3,11 @@
 <!-- AUTO-MANAGED: project-description -->
 ## Project Description
 
-EMI Shield Designer: a physics-based tool for calculating electromagnetic interference shielding effectiveness (SE) of metallic and composite materials. Computes reflection loss, absorption loss, multiple reflection correction, and skin depth using analytical EM theory. Supports grain-size microstructure effects via the Mayadas-Shatzkes model.
+EMI Shield Designer: a physics-based platform for calculating electromagnetic interference shielding effectiveness (SE) of metallic and composite materials. Computes reflection loss, absorption loss, multiple reflection correction, and skin depth using analytical EM theory. Supports grain-size microstructure effects (Mayadas-Shatzkes), multilayer stacks (TMM), composite conductivity models, temperature/frequency-dependent material properties, and Monte Carlo uncertainty quantification.
 
 - **Version:** 4.0 (active branch: `version-4.0`)
-- **Status:** Active development — Streamlit monolith removed; three-layer architecture (src/backend/frontend) in place
+- **Status:** Feature-complete — Streamlit monolith deleted (`app.py`, `auth.py` removed); all five physics modules implemented; 160 Python tests passing; Next.js frontend builds clean
+- **Ports:** backend on 8001 (`uvicorn main:app --port 8001`); frontend dev server on 3001 (`next dev -p 3001`)
 - **Plan doc:** `docs/superpowers/plans/2026-03-21-cleanup-and-refactor.md`
 - **Methodology:** `docs/papers/methodology-paper.md` — publication-quality paper covering all five physics modules and validation against 106 experimental measurements
 <!-- END AUTO-MANAGED -->
@@ -41,13 +42,21 @@ frontend/     Next.js 14 app. Calls backend API only.
 
 ```
 backend/
-  main.py                        FastAPI app entry point; all four routers registered
+  main.py                        FastAPI app entry point; registers physics, materials, analysis,
+                                 chat, multilayer, composites, advanced; auth in try/except
   core/config.py                 Pydantic Settings (env vars, APP_VERSION=4.0.0)
   api/v1/routes/
     _helpers.py                  Shared calculate_composite_properties() used by all routes
     physics.py                   Single-point SE calculation + material-properties
     analysis.py                  Sweeps and optimization endpoints
     materials.py                 Elements, alloys, composite-properties endpoints
+    multilayer.py                N-layer TMM endpoints (POST /calculate, /frequency-sweep,
+                                 /optimize); registered at /api/v1/multilayer
+    composites.py                Composite conductivity endpoints (POST /percolation, /gem,
+                                 /threshold-estimate, /all-models); registered at /api/v1/composites
+    chat.py                      Gemini AI chat endpoint (POST /message); registered at
+                                 /api/v1/chat; model gemini-1.5-flash; requires GEMINI_API_KEY
+    advanced.py                  Advanced physics endpoints; registered at /api/v1/advanced
     auth.py                      Authentication (optional — loaded in try/except, requires DB)
   api/v1/schemas/
     physics.py                   Request/response models for physics + analysis routes
@@ -91,7 +100,7 @@ frontend/
   lib/
     api.ts                       axios client; baseURL = NEXT_PUBLIC_API_URL (default http://localhost:8001);
                                  30s timeout; endpoints: /api/v1/materials/*, /api/v1/physics/calculate,
-                                 /api/v1/analysis/*, /health
+                                 /api/v1/analysis/*, /api/v1/chat/message (sendChatMessage), /health
     store.ts                     Zustand stores: useCompositionStore, useSimulationStore,
                                  useResultsStore, useHistoryStore, useChatStore
   types/
@@ -163,6 +172,10 @@ cd frontend && npm run dev
 
 ### Pydantic schemas
 - All request/response models live in `backend/api/v1/schemas/` — not inline in route files
+- Exceptions (self-contained routes with inline schemas):
+  - `multilayer.py`: `LayerSpec`, `MultilayerCalculateRequest`, `MultilayerSweepRequest`, `MultilayerOptimizeRequest`
+  - `composites.py`: `FillerMatrixParams`, `PercolationRequest`, `GEMRequest`, `ThresholdEstimateRequest`, `AllModelsRequest`
+  - `chat.py`: `HistoryMessage`, `ChatRequest`, `ChatResponse`
 - Use Pydantic v2 (`model_config` / `json_schema_extra`, not `class Config` where possible)
 - Physics input units: frequency in MHz, thickness in mm, grain size in um — converted to SI inside route handlers
 
@@ -188,7 +201,8 @@ cd frontend && npm run dev
 ## Patterns
 
 - **Route pattern:** Each route calls `calculate_composite_properties(request.composition)`, optionally applies `calculator.calculate_grain_size_effect()`, then calls the relevant `EMICalculator` sweep/calculate method. Errors caught as `ValueError`/`KeyError` → `HTTPException(400)`.
-- **Unit conversion at route boundary:** Inputs arrive in human-friendly units (MHz, mm, um) and are converted to SI (Hz, m) before passing to `EMICalculator`.
+- **Multilayer route pattern:** `multilayer.py` uses `_build_shield(layers: List[LayerSpec]) -> MultilayerShield` as an internal helper — converts each `LayerSpec` (composition dict + thickness_mm) into a `ShieldLayer` via `calculate_composite_properties`, then calls `shield.add_layer()`. The route handler calls `_build_shield`, then `shield.calculate_se(frequency_hz)` or the sweep/optimize equivalent.
+- **Unit conversion at route boundary:** Inputs arrive in human-friendly units (MHz, mm, um) and are converted to SI (Hz, m) before passing to `EMICalculator`. Multilayer: `thickness_mm * 1e-3` per layer, `frequency_mhz * 1e6` at call site.
 - **Global calculator instance:** `calculator = EMICalculator()` is module-level in each route file; `emi_calculator` global also exported from `emi_calculations.py` for tests.
 - **Sweep → list conversion:** All numpy arrays in sweep results are serialized via `.tolist()` before returning from endpoints.
 - **MultilayerShield overflow guard:** `gd` is capped at 500.0 (preserving phase) when `real(gd) > 500` to avoid float64 overflow in cosh/sinh for thick conductors. This produces a lower-bound SE estimate rather than NaN/inf.
@@ -198,6 +212,9 @@ cd frontend && npm run dev
 <!-- AUTO-MANAGED: git-insights -->
 ## Git Insights
 
+- `backend/api/v1/routes/multilayer.py` implemented: three endpoints (POST /calculate, /frequency-sweep, /optimize) wrapping `MultilayerShield` TMM; uses inline Pydantic schemas (`LayerSpec`, `MultilayerCalculateRequest`, etc.) and `_build_shield()` internal helper; not yet registered in `main.py` — pending alongside planned `composites.py`, `advanced.py`, `chat.py` routes
+- Project reached feature-complete state: 160 Python tests passing across all modules (chemistry, physics engine, multilayer, composite models, material models, uncertainty); frontend builds clean with no type errors
+- `app/simulation/page.tsx` is the full simulation UI — three-panel layout (CompositionPanel + ShieldParameters + ResultsPanel) with integrated AI chat (useChatStore); all 6 analysis modes wired to API: calculateSE, frequencySweep, thicknessSweep, grainSizeSweep, coolingRateSweep, optimizeThickness
 - New frontend pages and simulation components added: `app/page.tsx` (home landing), `app/materials/page.tsx` (materials library with periodic table + alloy grid), `components/simulation/PeriodicTable.tsx` (118-element interactive grid), `components/simulation/CompositionPanel.tsx` (composition editor with preset alloys), `components/simulation/ShieldParameters.tsx` (6-mode analysis selector), `components/ui/Header.tsx` (shared sticky nav with API health badge)
 - Frontend infrastructure added: `lib/api.ts` (axios client → port 8001), `lib/store.ts` (5 Zustand stores), `types/index.ts` (shared TS interfaces); frontend dev server pinned to port 3001; CORS origins updated to `[localhost:3001, localhost:8001]`
 - `336294e` — Streamlit removed: `app.py` and root `auth.py` deleted; all four routers (physics, materials, analysis, auth) registered in `backend/main.py`; `GEMINI_API_KEY` added to Settings; `ML_MODEL_PATH`/`ML_CACHE_ENABLED` removed; auth router made optional via try/except

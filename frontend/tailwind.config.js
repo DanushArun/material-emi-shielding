@@ -8,27 +8,39 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+        bg: {
+          canvas: 'var(--bg-canvas)',
+          panel: 'var(--bg-panel)',
+          subpanel: 'var(--bg-subpanel)'
         },
+        border: {
+          panel: 'var(--border-panel)',
+          focus: 'var(--border-focus)'
+        },
+        text: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)'
+        },
+        accent: {
+          selection: 'var(--accent-selection)',
+          hover: 'var(--accent-hover)',
+          success: 'var(--accent-success)',
+          warning: 'var(--accent-warning)',
+          danger: 'var(--accent-danger)'
+        }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['Fira Code', 'monospace'],
+        mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+        display: ['"SF Pro Display"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'system-ui', 'sans-serif'],
       },
+      fontSize: {
+        'xxs': '0.65rem',
+      }
     },
   },
   plugins: [
-    require('@tailwindcss/forms'),
+    require('@tailwindcss/forms')
   ],
 }

@@ -140,43 +140,51 @@ async def chat_message(request: ChatRequest) -> ChatResponse:
         if has_vertex:
             # Use Vertex AI with service account credentials
             import json
-            import tempfile
-            import os
+            import vertexai
+            from vertexai.generative_models import GenerativeModel, Content, Part
+            from google.oauth2 import service_account
 
             creds_json = settings.GOOGLE_VERTEX_CREDENTIALS_JSON.strip()
             if creds_json.startswith("'") or creds_json.startswith('"'):
                 creds_json = creds_json[1:-1]
 
-            # Write credentials to temp file for google auth
             creds_dict = json.loads(creds_json)
-            creds_file = os.path.join(tempfile.gettempdir(), "emi_gcp_creds.json")
-            with open(creds_file, "w") as f:
-                json.dump(creds_dict, f)
-
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_file
-            genai.configure(
-                client_options={
-                    "api_endpoint": f"{settings.GOOGLE_CLOUD_LOCATION}-aiplatform.googleapis.com"
-                }
+            # Add explicit scopes required for Vertex AI
+            credentials = service_account.Credentials.from_service_account_info(
+                creds_dict,
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
             )
-            model = genai.GenerativeModel(
+
+            vertexai.init(
+                project=settings.GOOGLE_CLOUD_PROJECT_ID,
+                location=settings.GOOGLE_CLOUD_LOCATION,
+                credentials=credentials
+            )
+
+            model = GenerativeModel(
                 model_name=settings.GEMINI_MODEL_NAME,
                 system_instruction=_SYSTEM_PROMPT,
             )
+
+            # Build history for Vertex AI
+            gemini_history = []
+            for turn in request.history:
+                role = "model" if turn.role in ("assistant", "model") else "user"
+                gemini_history.append(Content(role=role, parts=[Part.from_text(turn.content)]))
         else:
             # Use direct API key
+            import google.generativeai as genai  # type: ignore[import]
             genai.configure(api_key=settings.GEMINI_API_KEY)
             model = genai.GenerativeModel(
                 model_name=settings.GEMINI_MODEL_NAME,
                 system_instruction=_SYSTEM_PROMPT,
             )
 
-        # Build the conversation history in the format Gemini expects.
-        # Gemini uses 'model' for assistant turns; map accordingly.
-        gemini_history = []
-        for turn in request.history:
-            role = "model" if turn.role in ("assistant", "model") else "user"
-            gemini_history.append({"role": role, "parts": [turn.content]})
+            # Build history for google-generativeai
+            gemini_history = []
+            for turn in request.history:
+                role = "model" if turn.role in ("assistant", "model") else "user"
+                gemini_history.append({"role": role, "parts": [turn.content]})
 
         # Prepend simulation context to the current user message when present.
         user_message = request.message

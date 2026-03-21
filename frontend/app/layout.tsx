@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
+import { Header } from '@/components/layout/Header'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' })
 
 export const metadata: Metadata = {
   title: 'EMI Shield Designer',
@@ -14,9 +14,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${jetbrains.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} antialiased selection:bg-accent-primary/30`}>
         <Providers>
-          {children}
+          <div className="min-h-screen flex flex-col bg-bg-primary text-text-primary">
+            <Header />
+            <main className="flex-1 flex flex-col relative z-0">
+              {children}
+            </main>
+          </div>
         </Providers>
       </body>
     </html>

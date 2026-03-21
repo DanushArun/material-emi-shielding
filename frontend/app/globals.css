@@ -3,66 +3,59 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-tertiary: #1a1a2e;
-  --bg-card: #16161f;
-  --border-color: #2a2a3e;
-  --border-light: #3a3a52;
-  --text-primary: #e8e8f0;
-  --text-secondary: #9898b0;
-  --text-muted: #6868808;
-  --accent-cyan: #00d4ff;
-  --accent-purple: #8b5cf6;
-  --accent-green: #10b981;
-  --accent-red: #ef4444;
-  --accent-amber: #f59e0b;
+  /* High-contrast, dense engineering software palette (Slate/Charcoal) */
+  --bg-canvas: #0a0a0c;       /* Main 3D/Plotting area background */
+  --bg-panel: #16161a;        /* Toolbars, side panels */
+  --bg-subpanel: #1c1c22;     /* Nested tree items, input backgrounds */
+  
+  --border-panel: #2d2d33;    /* Crisp structural dividers */
+  --border-focus: #005fb8;    /* Engineering selection blue */
+
+  --text-primary: #d1d1d6;    /* Standard label/value text */
+  --text-secondary: #8b8b99;  /* Tree inactive items, units */
+  --text-muted: #5a5a66;      /* Disabled text */
+
+  --accent-selection: #005fb8; /* Highlighted tree node, active tab */
+  --accent-hover: #1e3a5f;     /* Hover state for selected items */
+  --accent-success: #238636;   /* Validation success */
+  --accent-warning: #d29922;   /* Warnings, dirty state */
+  --accent-danger: #da3633;    /* Errors */
 }
 
 body {
-  background: var(--bg-primary);
+  background: var(--bg-canvas);
   color: var(--text-primary);
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden; /* Prevent body scroll in a desktop-app layout */
+  font-size: 13px; /* Smaller, denser font typical of engineering software */
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-secondary); }
-::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+/* Base Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+}
 
-/* Plotly dark theme override */
+/* Scrollbar - Industrial style */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-panel); border-left: 1px solid var(--border-panel); }
+::-webkit-scrollbar-thumb { background: #3d3d45; border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: #5a5a66; }
+
+/* Plotly overrides for dark theme */
 .js-plotly-plot .plotly .modebar { background: transparent !important; }
 .js-plotly-plot .plotly .modebar-btn path { fill: var(--text-secondary) !important; }
+.js-plotly-plot .plotly text { font-family: 'Inter', sans-serif !important; fill: var(--text-secondary) !important; }
 
-/* Input focus ring */
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--accent-cyan);
-  border-color: var(--accent-cyan);
-}
-
+/* Utilities */
 @layer components {
-  .card {
-    @apply bg-[#16161f] border border-[#2a2a3e] rounded-xl;
-  }
-  .card-hover {
-    @apply card transition-all duration-200 hover:border-[#3a3a52] hover:shadow-lg hover:shadow-cyan-900/10;
-  }
+  /* Flat, high-contrast buttons */
   .btn-primary {
-    @apply px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium rounded-lg
-           hover:from-cyan-400 hover:to-blue-500 transition-all duration-200
-           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-accent-selection text-white border border-transparent rounded px-4 py-1.5 font-medium text-xs transition-colors hover:bg-[#0070d6];
   }
   .btn-secondary {
-    @apply px-4 py-2 bg-[#1a1a2e] border border-[#2a2a3e] text-[#e8e8f0] font-medium rounded-lg
-           hover:border-[#3a3a52] hover:bg-[#1f1f35] transition-all duration-200;
+    @apply bg-bg-subpanel text-text-primary border border-border-panel rounded px-4 py-1.5 font-medium text-xs transition-colors hover:border-text-secondary;
   }
-  .input-field {
-    @apply w-full px-3 py-2 bg-[#12121a] border border-[#2a2a3e] rounded-lg text-[#e8e8f0]
-           placeholder-[#686880] text-sm focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500;
-  }
-  .label-text {
-    @apply text-sm font-medium text-[#9898b0] mb-1 block;
+  .input-engineering {
+    @apply w-full bg-bg-subpanel border border-border-panel rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent-selection font-mono;
   }
 }

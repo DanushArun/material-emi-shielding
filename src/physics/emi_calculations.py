@@ -5,29 +5,43 @@ Enhanced with advanced microstructure modeling and cooling rate dependencies.
 
 import numpy as np
 from typing import Dict, Tuple, Optional, List, Any
-try:
-    from ..utils.constants import (
-        MU_0, EPSILON_0, Z_0, C,
-        validate_conductivity, validate_permeability,
-        validate_permittivity, validate_frequency, validate_thickness
-    )
-except ImportError:
-    # Fallback for when running from streamlit app
-    import sys
-    import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-    from src.utils.constants import (
-        MU_0, EPSILON_0, Z_0, C,
-        validate_conductivity, validate_permeability,
-        validate_permittivity, validate_frequency, validate_thickness
-    )
+
+from src.utils.constants import (
+    MU_0, EPSILON_0, Z_0, C,
+    validate_conductivity, validate_permeability,
+    validate_permittivity, validate_frequency, validate_thickness
+)
+from src.physics.advanced_microstructure import (
+    AdvancedMicrostructure, MicrostructureParams, ProcessingParams
+)
+
+# Placeholder classes for mechanical coupling (not implemented yet)
+class MechanicalState:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+class EnvironmentalConditions:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+class FailureMode:
+    FATIGUE_CRACKING = "fatigue_cracking"
 
 class EMICalculator:
     """Performs electromagnetic interference shielding calculations based on electromagnetic theory."""
 
     def __init__(self):
         """Initialize the EMI calculator."""
-        pass
+        self.advanced_microstructure = AdvancedMicrostructure()
+        self.mechanical_coupling = type('MechanicalCoupling', (), {
+            'calculate_degraded_conductivity': lambda *args: args[0] * 0.95,  # Simple degradation
+            'calculate_degraded_permeability': lambda *args: complex(args[0], 0),
+            'predict_failure_mode': lambda *args: {},
+            'calculate_remaining_life': lambda *args: {},
+            'failure_models': {FailureMode.FATIGUE_CRACKING: None}
+        })()
     
     def calculate_skin_depth(self, conductivity: float, permeability: float, 
                            frequency: float) -> float:

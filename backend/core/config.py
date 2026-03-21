@@ -56,7 +56,7 @@ class Settings(BaseSettings):
         return v
 
     class Config:
-        env_file = ".env"
+        env_file = ("../.env", ".env")  # Look in project root first, then CWD
         case_sensitive = True
 
 

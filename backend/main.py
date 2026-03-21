@@ -109,24 +109,23 @@ app.include_router(advanced.router, prefix="/api/v1/advanced", tags=["Advanced"]
 # Auth router - optional, requires database
 try:
     app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
-except Exception:
-    pass  # Auth requires database; skip if unavailable
+except Exception as e:
+    import logging
+    logging.getLogger(__name__).warning(f"Auth router not loaded: {e}")
 
 
-# Startup event
-@app.on_event("startup")
-async def startup_event():
-    """Run on application startup"""
+# Lifecycle (modern FastAPI pattern, replaces deprecated @app.on_event)
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
     print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     print(f"Environment: {settings.ENVIRONMENT}")
-    print(f"Docs: http://localhost:8000/docs")
-
-
-# Shutdown event
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Run on application shutdown"""
+    print(f"API docs: http://localhost:8001/docs")
+    yield
     print(f"Shutting down {settings.APP_NAME}")
+
+app.router.lifespan_context = lifespan
 
 
 if __name__ == "__main__":
@@ -134,6 +133,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8001,
         reload=settings.DEBUG
     )

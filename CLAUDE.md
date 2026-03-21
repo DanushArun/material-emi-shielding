@@ -6,8 +6,9 @@
 EMI Shield Designer: a physics-based tool for calculating electromagnetic interference shielding effectiveness (SE) of metallic and composite materials. Computes reflection loss, absorption loss, multiple reflection correction, and skin depth using analytical EM theory. Supports grain-size microstructure effects via the Mayadas-Shatzkes model.
 
 - **Version:** 4.0 (active branch: `version-4.0`)
-- **Status:** Active refactor — migrating from Streamlit monolith to three-layer architecture
+- **Status:** Active development — Streamlit monolith removed; three-layer architecture (src/backend/frontend) in place
 - **Plan doc:** `docs/superpowers/plans/2026-03-21-cleanup-and-refactor.md`
+- **Methodology:** `docs/papers/methodology-paper.md` — publication-quality paper covering all five physics modules and validation against 106 experimental measurements
 <!-- END AUTO-MANAGED -->
 
 <!-- AUTO-MANAGED: architecture -->
@@ -31,7 +32,7 @@ frontend/     Next.js 14 app. Calls backend API only.
 | `src/physics/material_models.py` | Temperature/frequency-dependent material properties — TCR model, Curie falloff, Snoek's law, Debye permeability |
 | `src/physics/multilayer.py` | Transfer Matrix Method for N-layer shields — `ShieldLayer` dataclass, `MultilayerShield` class, `calculate_se()` |
 | `src/physics/uncertainty.py` | Monte Carlo uncertainty quantification — `UncertaintySpec`, `monte_carlo_se()` |
-| `src/chemistry/parser.py` | `ChemicalParser` + `ReactionEngine` — extracted from app.py, no Streamlit deps |
+| `src/chemistry/parser.py` | `ChemicalParser` + `ReactionEngine` — pure Python, no UI dependencies |
 | `src/chemistry/__init__.py` | Exports `ChemicalParser`, `ReactionEngine` |
 | `src/materials/material_properties.py` | `material_db` — periodic table + alloy database |
 | `src/utils/constants.py` | Physical constants: `MU_0`, `EPSILON_0`, `Z_0`, `C`; validators |
@@ -40,16 +41,66 @@ frontend/     Next.js 14 app. Calls backend API only.
 
 ```
 backend/
-  main.py                        FastAPI app entry point
+  main.py                        FastAPI app entry point; all four routers registered
   core/config.py                 Pydantic Settings (env vars, APP_VERSION=4.0.0)
   api/v1/routes/
     _helpers.py                  Shared calculate_composite_properties() used by all routes
     physics.py                   Single-point SE calculation + material-properties
     analysis.py                  Sweeps and optimization endpoints
     materials.py                 Elements, alloys, composite-properties endpoints
+    auth.py                      Authentication (optional — loaded in try/except, requires DB)
   api/v1/schemas/
     physics.py                   Request/response models for physics + analysis routes
     materials.py                 Request/response models for materials routes
+```
+
+Note: `app.py` and `auth.py` (root-level Streamlit files) have been deleted. `.env.example` documents all required env vars.
+
+### frontend/ structure
+
+```
+frontend/
+  app/
+    layout.tsx                   Root layout — Inter + JetBrains Mono fonts, dark mode, wraps <Providers>
+    globals.css                  Tailwind + CSS custom properties (--bg-primary, --accent-cyan, etc.)
+                                 Component utility classes: .card, .btn-primary, .btn-secondary, .input-field
+    page.tsx                     Home landing page — inline sticky nav (no Header component), hero,
+                                 three FeatureCards (Physics/AI/UQ), system status bar (live health check),
+                                 footer with link to localhost:8001/docs
+    materials/
+      page.tsx                   Materials Library — tabs: Periodic Table (lazy, ssr:false) + Alloys;
+                                 Alloys tab: searchable AlloyCard grid (sm:2/lg:3/xl:4 cols),
+                                 AlloyData fetched via fetchAlloys(); uses Header component
+  components/
+    ui/
+      Header.tsx                 Shared sticky header — active link via usePathname(), ApiStatusBadge
+                                 (checking/healthy/offline dot), VersionBadge (falls back to v4.0.0);
+                                 used by all pages except app/page.tsx
+    simulation/
+      PeriodicTable.tsx          118-element interactive grid — ELEMENT_POSITIONS maps all elements to
+                                 18-column layout (rows 8/9 = lanthanide/actinide); deriveCategory()
+                                 with CATEGORY_STYLES; click → tooltip with EM properties; uses
+                                 react-query + fetchElements(); loaded via next/dynamic (ssr:false)
+      CompositionPanel.tsx       Composition editor — ElementRow (badge + input + progress bar + remove),
+                                 PresetDropdown (searchable alloy list), normalize button (fixes
+                                 floating-point drift, last element adjusted); total badge green
+                                 within 0.05% of 100; uses useCompositionStore + react-query
+      ShieldParameters.tsx       Analysis mode selector (6 modes) + conditional parameter inputs;
+                                 exports SweepParams interface; lifts sweepParams/targetSE to parent;
+                                 uses useSimulationStore
+  lib/
+    api.ts                       axios client; baseURL = NEXT_PUBLIC_API_URL (default http://localhost:8001);
+                                 30s timeout; endpoints: /api/v1/materials/*, /api/v1/physics/calculate,
+                                 /api/v1/analysis/*, /health
+    store.ts                     Zustand stores: useCompositionStore, useSimulationStore,
+                                 useResultsStore, useHistoryStore, useChatStore
+  types/
+    index.ts                     TypeScript interfaces: ElementData, AlloyData, CompositeProperties,
+                                 CalculationRequest, CalculationResult, FrequencySweepRequest,
+                                 SweepResult, OptimizationResult, ShieldLayerConfig,
+                                 ChatMessage, HistoryEntry
+  next.config.js                 NEXT_PUBLIC_API_URL env passthrough; serverActions enabled
+  package.json                   dev script runs on port 3001 (next dev -p 3001)
 ```
 
 ### data_collection/
@@ -68,11 +119,12 @@ python -m pytest tests/ -v
 python -m pytest tests/test_chemistry_parser.py -v
 python -m pytest tests/test_physics_engine.py -v
 
-# Start backend API
-cd backend && uvicorn main:app --reload
+# Start backend API (port 8001)
+cd backend && uvicorn main:app --reload --port 8001
 
-# Start frontend (Next.js)
+# Start frontend (Next.js, port 3001)
 cd frontend && npm run dev
+# equivalent: next dev -p 3001
 ```
 <!-- END AUTO-MANAGED -->
 
@@ -81,7 +133,7 @@ cd frontend && npm run dev
 
 ### Imports
 - `src/` modules use absolute imports starting with `src.` (e.g. `from src.materials.material_properties import material_db`)
-- Backend routes import from `src.*` and `backend.api.v1.*` — never from `app.py` or Streamlit
+- Backend routes import from `src.*` and `backend.api.v1.*` only
 - No Streamlit imports anywhere in `src/` or `backend/`
 - `tests/conftest.py` inserts project root and `backend/` onto `sys.path` — all test files rely on this; do not add path hacks in individual test files
 
@@ -89,6 +141,25 @@ cd frontend && npm run dev
 - All routes call `calculate_composite_properties(composition)` from `backend/api/v1/routes/_helpers.py` — never inline
 - conductivity: weighted sum; permeability: geometric mean (`elem_perm ** weight`); permittivity: geometric mean; density: weighted sum
 - Raises `ValueError` for unknown elements
+
+### Configuration (backend/core/config.py)
+- `GEMINI_API_KEY` — Gemini AI conversational design assistant; defaults to empty string (feature disabled)
+- `CORS_ORIGINS` — defaults to `["http://localhost:3001", "http://localhost:8001"]`; accepts a comma-separated string or a list; `@field_validator('CORS_ORIGINS', mode='before')` handles both
+- `ML_MODEL_PATH` and `ML_CACHE_ENABLED` have been removed from Settings
+- Auth router is optional: registered in `try/except` in `main.py`; skipped silently if DB is unavailable
+- Copy `.env.example` to `.env` for local dev; required vars: `SECRET_KEY`, `GEMINI_API_KEY`, `DATABASE_URL`, `REDIS_URL`
+
+### Frontend conventions (frontend/)
+- **API client** (`lib/api.ts`): single axios instance, `baseURL = NEXT_PUBLIC_API_URL || 'http://localhost:8001'`, 30s timeout; all API calls go through named functions in this file — never inline `axios` calls in components
+- **State management** (`lib/store.ts`): five Zustand stores — import named hook (e.g. `useCompositionStore`) directly; do not use React context for global state
+  - `useSimulationStore` default analysis mode: `'single'`; all 6 modes: `'single'`, `'frequency-sweep'`, `'thickness-sweep'`, `'grain-sweep'`, `'cooling-sweep'`, `'optimize'`
+  - `useHistoryStore` caps at 100 entries (newest first)
+- **TypeScript types** (`types/index.ts`): all shared interfaces live here; import from `@/types` — do not re-declare inline; `SweepParams` is the exception — it is exported from `components/simulation/ShieldParameters.tsx`
+- **CSS custom properties**: defined in `app/globals.css` under `:root`; use CSS var references (`var(--accent-cyan)`) or the Tailwind utility classes (`.card`, `.btn-primary`, `.btn-secondary`, `.input-field`) instead of ad-hoc inline styles
+- **Ports**: frontend dev server on 3001 (`next dev -p 3001`); backend expected at 8001 (`NEXT_PUBLIC_API_URL`)
+- **Header component**: use `<Header />` from `components/ui/Header.tsx` on all pages — except `app/page.tsx` which owns its own inline sticky nav (brand + nav links + status badge)
+- **react-query**: used in `PeriodicTable` and `CompositionPanel`; alloys query uses `staleTime: Infinity` (fetched once per session); `PeriodicTable` loaded via `next/dynamic({ ssr: false })` to avoid SSR grid complexity
+- **CompositionPanel normalize**: the normalize button corrects floating-point drift by adjusting the last element so the sum is exactly 100; total badge turns green when within 0.05% of 100, amber otherwise
 
 ### Pydantic schemas
 - All request/response models live in `backend/api/v1/schemas/` — not inline in route files
@@ -127,10 +198,12 @@ cd frontend && npm run dev
 <!-- AUTO-MANAGED: git-insights -->
 ## Git Insights
 
+- New frontend pages and simulation components added: `app/page.tsx` (home landing), `app/materials/page.tsx` (materials library with periodic table + alloy grid), `components/simulation/PeriodicTable.tsx` (118-element interactive grid), `components/simulation/CompositionPanel.tsx` (composition editor with preset alloys), `components/simulation/ShieldParameters.tsx` (6-mode analysis selector), `components/ui/Header.tsx` (shared sticky nav with API health badge)
+- Frontend infrastructure added: `lib/api.ts` (axios client → port 8001), `lib/store.ts` (5 Zustand stores), `types/index.ts` (shared TS interfaces); frontend dev server pinned to port 3001; CORS origins updated to `[localhost:3001, localhost:8001]`
+- `336294e` — Streamlit removed: `app.py` and root `auth.py` deleted; all four routers (physics, materials, analysis, auth) registered in `backend/main.py`; `GEMINI_API_KEY` added to Settings; `ML_MODEL_PATH`/`ML_CACHE_ENABLED` removed; auth router made optional via try/except
+- `ab54354` — Added `docs/papers/methodology-paper.md`: publication-quality paper documenting all five physics modules (Schelkunoff, TMM, McLachlan GEM, Snoek/Debye, TCR, Monte Carlo UQ); validated against 106 experimental SE measurements (MAE 2.1 dB metals, 4.3 dB composites)
 - `c9b49ac` — Major refactor: extracted `ChemicalParser`/`ReactionEngine` from app.py into `src/chemistry/parser.py`; built full backend API with schemas, routes, helpers; cleaned Streamlit imports from physics engine
 - `4f7b9f2` — Scientific research phase: 6 parallel investigations for physics model validation
-- `d97f320` — Added foundational citations to `docs/references.bib` and physics model analysis
-- Active plan to delete `app.py` (2129-line Streamlit monolith) and `auth.py` — see refactor plan doc
 <!-- END AUTO-MANAGED -->
 
 <!-- MANUAL -->

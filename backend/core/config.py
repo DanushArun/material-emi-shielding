@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     CACHE_TTL_SECONDS: int = 3600  # 1 hour
 
     # CORS (can be comma-separated string or list)
-    CORS_ORIGINS: Union[List[str], str] = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ORIGINS: Union[List[str], str] = ["http://localhost:3001", "http://localhost:8001"]
 
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 60

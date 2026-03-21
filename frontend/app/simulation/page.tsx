@@ -6,6 +6,7 @@ import { PropertyEditor } from '@/components/simulation/PropertyEditor'
 import { ViewportCanvas } from '@/components/simulation/ViewportCanvas'
 import { ScientificChart } from '@/components/simulation/ScientificChart'
 import { AIAssistantPanel } from '@/components/simulation/AIAssistantPanel'
+import { PresetsMenu } from '@/components/simulation/PresetsMenu'
 import { useWorkbenchStore } from '@/lib/store'
 import { Button } from '@/components/ui/Button'
 import { Play, Activity, Download } from 'lucide-react'
@@ -78,6 +79,8 @@ export default function SimulationPage() {
   const ribbon = (
     <div className="w-full flex items-center justify-between">
       <div className="flex items-center gap-2">
+        <PresetsMenu />
+        <div className="w-px h-4 bg-border-panel mx-2" />
         <Button variant="ghost" size="sm" className="gap-2">File</Button>
         <Button variant="ghost" size="sm" className="gap-2">Edit</Button>
         <Button variant="ghost" size="sm" className="gap-2">View</Button>

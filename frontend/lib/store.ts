@@ -3,7 +3,7 @@ import { CalculationResult, SweepResult, HeatmapResult } from '@/types'
 
 export type TreeNodeId = 'geometry' | 'materials' | 'analysis' | 'results' | 'sweep' | 'enclosure' | 'cables' | 'hazards'
 
-interface WorkbenchState {
+export interface WorkbenchState {
   activeNode: TreeNodeId
   setActiveNode: (node: TreeNodeId) => void
 
@@ -53,6 +53,8 @@ interface WorkbenchState {
 
   isCalculating: boolean
   setIsCalculating: (val: boolean) => void
+
+  loadPreset: (preset: Partial<WorkbenchState>) => void
 }
 
 export const useWorkbenchStore = create<WorkbenchState>((set) => ({
@@ -108,4 +110,15 @@ export const useWorkbenchStore = create<WorkbenchState>((set) => ({
 
   isCalculating: false,
   setIsCalculating: (val) => set({ isCalculating: val }),
+
+  loadPreset: (preset) => set((state) => ({
+    ...state,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...(preset as any),
+    activeNode: preset.activeNode || state.activeNode,
+    singleResult: null,
+    sweepResult: null,
+    heatmapResult: null,
+    cableResult: null
+  }))
 }))

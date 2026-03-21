@@ -158,6 +158,18 @@ cd frontend && npm run dev
 - Auth router is optional: registered in `try/except` in `main.py`; skipped silently if DB is unavailable
 - Copy `.env.example` to `.env` for local dev; required vars: `SECRET_KEY`, `GEMINI_API_KEY`, `DATABASE_URL`, `REDIS_URL`
 
+### Chat route
+- `chat.py` enriches the user message with a `[Current simulation context]` block when `request.context` is provided — includes composition, frequency_mhz, thickness_mm, grain_size_um, analysisMode, latestResult SE
+- Gemini role mapping: `'assistant'` or `'model'` → `'model'`; all other roles → `'user'`
+- `google.generativeai` is imported lazily inside the endpoint; raises HTTP 503 if the package is missing or `GEMINI_API_KEY` is unset
+- `_extract_suggestions()` uses keyword heuristics (copper, permeability, skin depth, multilayer, absorption, reflection, composite, frequency) to pick up to 3 follow-up suggestions from the response text
+
+### Composites route
+- `composites.py` calls `composite_models` functions directly — no `_helpers.py` involvement (composites bypass `calculate_composite_properties`)
+- `/threshold-estimate` uses a `filler_type: Literal["rod", "disk"]` discriminator; rod requires `length_um` + `diameter_um`; disk requires `radius_um` + `thickness_um`
+- `/all-models` runs percolation, GEM, Maxwell-Garnett, Bruggeman, and Hashin-Shtrikman bounds in a single call for side-by-side comparison
+- All conductivity values in S/m; volume fractions dimensionless [0, 1]
+
 ### Frontend conventions (frontend/)
 - **API client** (`lib/api.ts`): single axios instance, `baseURL = NEXT_PUBLIC_API_URL || 'http://localhost:8001'`, 30s timeout; all API calls go through named functions in this file — never inline `axios` calls in components
 - **State management** (`lib/store.ts`): five Zustand stores — import named hook (e.g. `useCompositionStore`) directly; do not use React context for global state
@@ -207,12 +219,17 @@ cd frontend && npm run dev
 - **Sweep → list conversion:** All numpy arrays in sweep results are serialized via `.tolist()` before returning from endpoints.
 - **MultilayerShield overflow guard:** `gd` is capped at 500.0 (preserving phase) when `real(gd) > 500` to avoid float64 overflow in cosh/sinh for thick conductors. This produces a lower-bound SE estimate rather than NaN/inf.
 - **MC sampling strategy:** `UncertaintySpec.grain_size_cv` drives log-normal sampling (right-skewed manufacturing spread); all other CVs (`conductivity_cv`, `thickness_cv`, `permeability_cv`, `frequency_cv`) use normal sampling clipped to > 0.
+- **Chat route pattern:** `chat.py` builds `gemini_history` from `request.history` (role mapping: assistant/model → model), optionally prepends a `[Current simulation context]` block to the user message, calls `model.start_chat(history=gemini_history).send_message(user_message)`, then passes response text through `_extract_suggestions()` for up to 3 follow-up hints.
+- **Composites route pattern:** `composites.py` routes call `composite_models` functions directly (no `_helpers.py`); `/percolation` and `/gem` share `FillerMatrixParams` base schema; `/threshold-estimate` dispatches on `filler_type` literal to `percolation_threshold_rods()` or `percolation_threshold_disks()`; `/all-models` aggregates all five model results in one response dict.
 <!-- END AUTO-MANAGED -->
 
 <!-- AUTO-MANAGED: git-insights -->
 ## Git Insights
 
-- `backend/api/v1/routes/multilayer.py` implemented: three endpoints (POST /calculate, /frequency-sweep, /optimize) wrapping `MultilayerShield` TMM; uses inline Pydantic schemas (`LayerSpec`, `MultilayerCalculateRequest`, etc.) and `_build_shield()` internal helper; not yet registered in `main.py` — pending alongside planned `composites.py`, `advanced.py`, `chat.py` routes
+- All backend routers now registered in `main.py`: physics, materials, analysis, chat (`/api/v1/chat`), multilayer (`/api/v1/multilayer`), composites (`/api/v1/composites`), advanced (`/api/v1/advanced`); auth remains optional via try/except
+- `chat.py` added: Gemini AI conversational assistant (gemini-1.5-flash); `google-generativeai>=0.7.0` added to `backend/requirements.txt`; `sendChatMessage()` added to `frontend/lib/api.ts` (POST /api/v1/chat/message with optional simulation context)
+- `composites.py` added: four endpoints wrapping `src.physics.composite_models` — percolation, GEM, threshold-estimate (rod/disk geometry), all-models comparison
+- `backend/api/v1/routes/multilayer.py` implemented and registered: three endpoints (POST /calculate, /frequency-sweep, /optimize) wrapping `MultilayerShield` TMM; uses inline Pydantic schemas (`LayerSpec`, `MultilayerCalculateRequest`, etc.) and `_build_shield()` internal helper
 - Project reached feature-complete state: 160 Python tests passing across all modules (chemistry, physics engine, multilayer, composite models, material models, uncertainty); frontend builds clean with no type errors
 - `app/simulation/page.tsx` is the full simulation UI — three-panel layout (CompositionPanel + ShieldParameters + ResultsPanel) with integrated AI chat (useChatStore); all 6 analysis modes wired to API: calculateSE, frequencySweep, thicknessSweep, grainSizeSweep, coolingRateSweep, optimizeThickness
 - New frontend pages and simulation components added: `app/page.tsx` (home landing), `app/materials/page.tsx` (materials library with periodic table + alloy grid), `components/simulation/PeriodicTable.tsx` (118-element interactive grid), `components/simulation/CompositionPanel.tsx` (composition editor with preset alloys), `components/simulation/ShieldParameters.tsx` (6-mode analysis selector), `components/ui/Header.tsx` (shared sticky nav with API health badge)

@@ -16,7 +16,7 @@ import time
 from typing import Dict, Any
 
 from core.config import settings
-from api.v1.routes import physics, auth, materials, analysis, chat, multilayer, composites, advanced, heatmap, cables
+from api.v1.routes import physics, auth, materials, analysis, chat, multilayer, composites, advanced, heatmap, cables, enclosure
 
 # Create FastAPI application
 app = FastAPI(
@@ -107,6 +107,7 @@ app.include_router(multilayer.router, prefix="/api/v1/multilayer", tags=["Multil
 app.include_router(composites.router, prefix="/api/v1/composites", tags=["Composites"])
 app.include_router(advanced.router, prefix="/api/v1/advanced", tags=["Advanced"])
 app.include_router(cables.router, prefix="/api/v1/cables", tags=["Cables"])
+app.include_router(enclosure.router, prefix="/api/v1/enclosure", tags=["Enclosure"])
 
 # Auth router - optional, requires database
 try:

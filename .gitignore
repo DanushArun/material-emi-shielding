@@ -101,3 +101,13 @@ calculation_history.json
 .cache/
 .claude/
 CLAUDE.md
+
+# Word lock/temp files (created while document is open)
+~$*
+
+# Agent/skills local state
+.agents/
+skills-lock.json
+
+# Validation scratch files
+docs/papers/validation_focused.txt

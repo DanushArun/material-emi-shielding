@@ -1,0 +1,146 @@
+=====================================================================================
+HONEST VALIDATION METRICS - all benchmarks, no filtering tricks
+=====================================================================================
+
+PER-ENTRY PURE METAL TABLE (full dataset)
+Material                                      f(Hz)  t(mm)      mu    exp     pred     err
+-------------------------------------------------------------------------------------
+Copper (pure, annealed)                       1e+06   0.10   1.000   78.0     69.8    -8.2
+Copper (pure, annealed)                       1e+07   0.10   1.000   90.0     92.8    +2.8
+Copper (pure, annealed)                       1e+08   0.10   1.000  105.0    178.9   +73.9
+Copper (pure, annealed)                       1e+09   0.10   1.000  118.0    462.0  +344.0
+Copper (pure, annealed)                       1e+10   0.10   1.000  130.0   1368.0 +1238.0
+Copper (pure, annealed)                       1e+06   0.50   1.000  117.0    122.3    +5.3
+Copper (pure, annealed)                       1e+06   1.00   1.000  135.0    188.9   +53.9
+Copper (pure, annealed)                       1e+09   1.00   1.000  200.0   4253.9 +4053.9
+Copper (pure, annealed)                       1e+06   5.00   1.000  200.0    721.8  +521.8
+Aluminum (pure, 1100 series)                  1e+06   0.10   1.000   74.0     66.4    -7.6
+Aluminum (pure, 1100 series)                  1e+07   0.10   1.000   85.0     83.1    -1.9
+Aluminum (pure, 1100 series)                  1e+08   0.10   1.000  100.0    150.6   +50.6
+Aluminum (pure, 1100 series)                  1e+09   0.10   1.000  114.0    374.7  +260.7
+Aluminum (pure, 1100 series)                  1e+10   0.10   1.000  126.0   1094.3  +968.3
+Aluminum (pure, 1100 series)                  1e+06   1.00   1.000  130.0    160.6   +30.6
+Aluminum 6061-T6                              1e+09   1.50   1.000  160.0   4132.0 +3972.0
+Mild Steel (AISI 1018)                        1e+06   0.50 300.000   80.0    433.8  +353.8
+Mild Steel (AISI 1018)                        1e+07   0.50 200.000  100.0   1054.8  +954.8
+Mild Steel (AISI 1018)                        1e+06   1.00 300.000  110.0    828.9  +718.9
+Mild Steel (AISI 1018)                        1e+08   1.00 100.000  140.0   4593.9 +4453.9
+Mild Steel (AISI 1018)                        1e+09   1.00  50.000  170.0  10230.4 +10060.4
+Stainless Steel 304 (austenitic)              1e+06   0.50   1.020   50.0     59.2    +9.2
+Stainless Steel 304 (austenitic)              1e+08   0.50   1.020   68.0    142.5   +74.5
+Stainless Steel 304 (austenitic)              1e+09   1.00   1.020   90.0    696.2  +606.2
+Stainless Steel 304 (austenitic)              1e+10   1.00   1.020  110.0   2126.4 +2016.4
+Nickel (pure, annealed)                       1e+06   0.10 200.000   65.0    133.3   +68.3
+Nickel (pure, annealed)                       1e+08   0.10 100.000   90.0    685.2  +595.2
+Nickel (pure, annealed)                       1e+06   0.50 200.000  100.0    502.5  +402.5
+Nickel (pure, annealed)                       1e+09   1.00  50.000  155.0  14622.3 +14467.3
+Silver (pure)                                 1e+06   0.10   1.000   80.0     70.2    -9.8
+Silver (pure)                                 1e+08   0.10   1.000  108.0    182.7   +74.7
+Silver (pure)                                 1e+09   0.10   1.000  120.0    473.9  +353.9
+Silver (pure)                                 1e+10   0.10   1.000  133.0   1405.6 +1272.6
+Silver (pure)                                 1e+09   1.00   1.000  210.0   4372.6 +4162.6
+
+PURE METAL METRICS (multiple subsets)
+  All pure metals (n=35): MAE=1492.88 dB | RMSE=3342.77 dB | MedAE=353.75 dB | p90=4119.11 | max=14467.32 | R^2=-7793.957 | bias=+1491.17
+  Non-mag, all SE (n=26): MAE=775.99 dB | RMSE=1502.15 dB | MedAE=74.60 dB | p90=2994.18 | max=4162.57 | R^2=-1465.082 | bias=+773.69
+  Non-mag, SE<=80 (n=5): MAE=21.86 dB | RMSE=34.21 dB | MedAE=9.17 dB | p90=48.60 | max=74.47 | R^2=-9.019 | bias=+11.60
+  Non-mag, SE<=90 (n=8): MAE=90.02 dB | RMSE=216.04 dB | MedAE=8.70 dB | p90=234.00 | max=606.24 | R^2=-302.354 | bias=+83.14
+  Non-mag, SE<=100 (n=9): MAE=85.64 dB | RMSE=204.38 dB | MedAE=9.17 dB | p90=180.82 | max=606.24 | R^2=-219.342 | bias=+79.53
+  Magnetic, all (n=9): MAE=3563.89 dB | RMSE=6077.52 dB | MedAE=718.91 dB | p90=10941.77 | max=14467.32 | R^2=-33223.118 | bias=+3563.89
+  Magnetic, SE<=100 (n=5): MAE=474.90 dB | RMSE=558.14 dB | MedAE=402.51 dB | p90=810.93 | max=954.77 | R^2=-1769.025 | bias=+474.90
+
+COMPOSITE METRICS
+-------------------------------------------------------------------------------------
+Composites with reported conductivity: n=24/24
+  All composites (using reported sigma) (n=24): MAE=66.15 dB | RMSE=163.92 dB | MedAE=15.67 dB | p90=69.96 | max=691.53 | R^2=-56.736 | bias=+38.42
+  Composites SE<=60 (n=21): MAE=68.39 dB | RMSE=173.95 dB | MedAE=13.18 dB | p90=59.92 | max=691.53 | R^2=-115.228 | bias=+51.12
+  Composites SE<=40 (n=14): MAE=12.00 dB | RMSE=15.92 dB | MedAE=9.08 dB | p90=23.25 | max=41.35 | R^2=-1.031 | bias=-5.34
+
+  Temperature (n=11): MAE=7024.66 dB | RMSE=12423.38 dB | MedAE=3415.98 dB | p90=11387.25 | max=38381.02 | R^2=-59780.983 | bias=+7024.66
+  Temperature SE<=100 (n=1): MAE=557.52 dB | RMSE=557.52 dB | MedAE=557.52 dB | p90=557.52 | max=557.52 | R^2=nan | bias=+557.52
+  Microstructure (n=15): MAE=13579.29 dB | RMSE=16574.33 dB | MedAE=15545.28 dB | p90=24844.68 | max=24845.48 | R^2=-363442.749 | bias=+13579.29
+  Microstructure SE<=100 (n=1): MAE=243.07 dB | RMSE=243.07 dB | MedAE=243.07 dB | p90=243.07 | max=243.07 | R^2=nan | bias=+243.07
+  Frequency bands (n=13): MAE=5157.54 dB | RMSE=12342.46 dB | MedAE=698.71 dB | p90=9127.01 | max=42662.97 | R^2=-46652.039 | bias=+5148.27
+  Frequency bands SE<=100 (n=6): MAE=1666.47 dB | RMSE=3892.97 dB | MedAE=75.52 dB | p90=4915.79 | max=9530.32 | R^2=-50988.579 | bias=+1646.38
+  Multilayer: NO DATA
+  Multilayer SE<=100: NO DATA
+
+=====================================================================================
+FERROMAGNETIC IMPACT TEST (default mu vs 1.0)
+=====================================================================================
+Mild Steel (AISI 1018)              f=1e+06 mu=300 exp=80.0 pred(default)=433.8 pred(mu=1)=73.8
+Mild Steel (AISI 1018)              f=1e+07 mu=200 exp=100.0 pred(default)=1054.8 pred(mu=1)=118.1
+Mild Steel (AISI 1018)              f=1e+06 mu=300 exp=110.0 pred(default)=828.9 pred(mu=1)=96.6
+Mild Steel (AISI 1018)              f=1e+08 mu=100 exp=140.0 pred(default)=4593.9 pred(mu=1)=497.3
+Mild Steel (AISI 1018)              f=1e+09 mu=50 exp=170.0 pred(default)=10230.4 pred(mu=1)=1478.9
+Stainless Steel 304 (austenitic)    f=1e+06 mu=1.02 exp=50.0 pred(default)=59.2 pred(mu=1)=59.1
+Stainless Steel 304 (austenitic)    f=1e+08 mu=1.02 exp=68.0 pred(default)=142.5 pred(mu=1)=141.5
+Stainless Steel 304 (austenitic)    f=1e+09 mu=1.02 exp=90.0 pred(default)=696.2 pred(mu=1)=689.7
+Stainless Steel 304 (austenitic)    f=1e+10 mu=1.02 exp=110.0 pred(default)=2126.4 pred(mu=1)=2105.8
+Nickel (pure, annealed)             f=1e+06 mu=200 exp=65.0 pred(default)=133.3 pred(mu=1)=58.8
+Nickel (pure, annealed)             f=1e+08 mu=100 exp=90.0 pred(default)=685.2 pred(mu=1)=107.8
+Nickel (pure, annealed)             f=1e+06 mu=200 exp=100.0 pred(default)=502.5 pred(mu=1)=85.2
+Nickel (pure, annealed)             f=1e+09 mu=50 exp=155.0 pred(default)=14622.3 pred(mu=1)=2101.3
+
+=====================================================================================
+GEM EQUATION VERIFICATION
+=====================================================================================
+Filler=1e+05 S/m  Matrix=1e-10 S/m  fc=0.01  t=2.0
+  f=0.0010: linear=1.000e+02 GEM=1.234e-10 ratio=1.234e-12
+  f=0.0050: linear=5.000e+02 GEM=4.001e-10 ratio=8.001e-13
+  f=0.0080: linear=8.000e+02 GEM=2.499e-09 ratio=3.124e-12
+  f=0.0100: linear=1.000e+03 GEM=3.200e-05 ratio=3.200e-08
+  f=0.0120: linear=1.200e+03 GEM=4.082e-01 ratio=3.402e-04
+  f=0.0200: linear=2.000e+03 GEM=1.020e+01 ratio=5.102e-03
+  f=0.0500: linear=5.000e+03 GEM=1.632e+02 ratio=3.265e-02
+  f=0.1000: linear=1.000e+04 GEM=8.264e+02 ratio=8.264e-02
+
+=====================================================================================
+SOBOL SENSITIVITY - WITH PHYSICALLY APPROPRIATE CVs
+=====================================================================================
+
+Cu 10um @ 1GHz (DEFAULT)
+  S1[conductivity  ]=0.4316  S_T=0.4246
+  S1[permeability  ]=0.3490  S_T=0.3434
+  S1[thickness     ]=0.2124  S_T=0.2233
+  S1[frequency     ]=0.0000  S_T=0.0001
+
+Cu 10um @ 1GHz (REALISTIC)
+  S1[conductivity  ]=0.6699  S_T=0.6536
+  S1[permeability  ]=0.0000  S_T=0.0000
+  S1[thickness     ]=0.3482  S_T=0.3426
+  S1[frequency     ]=0.0002  S_T=0.0002
+
+Steel 1mm @ 1MHz (DEFAULT)
+  S1[conductivity  ]=0.1793  S_T=0.1772
+  S1[permeability  ]=0.7033  S_T=0.7076
+  S1[thickness     ]=0.1162  S_T=0.1126
+  S1[frequency     ]=0.0000  S_T=0.0001
+
+Steel 1mm @ 1MHz (REALISTIC)
+  S1[conductivity  ]=0.1295  S_T=0.1302
+  S1[permeability  ]=0.8324  S_T=0.8371
+  S1[thickness     ]=0.0347  S_T=0.0323
+  S1[frequency     ]=0.0000  S_T=0.0000
+
+CNT/poly 2mm @ 8.2GHz (DEFAULT)
+  S1[conductivity  ]=0.6919  S_T=0.6816
+  S1[permeability  ]=0.1234  S_T=0.1182
+  S1[thickness     ]=0.1877  S_T=0.1937
+  S1[frequency     ]=0.0000  S_T=0.0000
+
+CNT/poly 2mm @ 8.2GHz (REALISTIC)
+  S1[conductivity  ]=0.9477  S_T=0.9466
+  S1[permeability  ]=0.0000  S_T=0.0000
+  S1[thickness     ]=0.0380  S_T=0.0389
+  S1[frequency     ]=0.0000  S_T=0.0000
+
+=====================================================================================
+MONTE CARLO RUNS - reported configurations
+=====================================================================================
+Cu 1mm @ 1GHz, DEFAULT CVs:
+  Det=4253.94 dB  Mean=4335.48 +/- 182.26
+  95% CI: [4019.16, 4746.93]
+Cu 1mm @ 1GHz, REALISTIC CVs (mu=0.01%):
+  Det=4253.94 dB  Mean=4252.71 +/- 135.34
+  95% CI: [3986.40, 4521.53]

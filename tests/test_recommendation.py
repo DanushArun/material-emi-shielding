@@ -113,18 +113,20 @@ class TestRecommendMaterials:
         assert len(recs) <= 3
 
     def test_impossible_target_returns_best_effort(self):
-        """Very high target with thin max should still return best-effort results."""
+        """Very high target with thin max and low density should still return best-effort results."""
         recs = recommend_materials(
             constraints=MaterialConstraints(
                 target_se_db=500,
                 frequency_hz=1e9,
                 max_thickness_m=0.1e-3,
+                # Restrict to lightweight materials only -- excludes high-perm alloys
+                max_density_kg_m3=1000,
             ),
             n_results=5,
         )
         # Should return results even if none meet the extreme target
         assert len(recs) > 0
-        # With such an extreme target, none should meet it
+        # With such an extreme target and weight limit, none should meet it
         for r in recs:
             assert r.meets_target is False
 

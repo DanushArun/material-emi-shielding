@@ -1,98 +1,51 @@
 # Chemical EMI Designer
 
-A Chemical Reaction EMI Shield Designer that allows users to build molecular compounds and analyze their electromagnetic interference (EMI) shielding effectiveness.
+A Streamlit exploration tool for constructing chemical formulas and estimating electromagnetic
+shielding from material-property assumptions, frequency and thickness.
 
-## Features
+## Workflow
 
-- **Molecular Builder**: Select elements with adjustable quantities to form molecules (e.g., Fe₂O₃, C₁₄H₇Mo₄)
-- **Chemical Reactions**: Combine multiple molecules to create chemical reactions
-- **EMI Shielding Analysis**: Click "⚛️ REACT" to perform step-by-step EMI shielding calculations
-- **Real-time Results**: View calculations and final results with performance ratings
-- **Molecular Presets**: 25 pre-configured molecules across 6 categories
-- **Reaction Presets**: 5 common reaction combinations for quick testing
+1. Select elements and quantities or choose a molecular preset.
+2. Combine formulas into a proposed material mixture.
+3. Calculate material properties and shielding components.
+4. Inspect reflection, absorption, multiple-reflection and total shielding outputs.
 
-## Installation
+The calculations are a model of supplied properties. Building a formula in the UI does not
+establish that a chemical reaction occurs or that a synthesized material has those properties.
 
-1. Clone the repository:
+## Run locally
+
 ```bash
-git clone <your-repository-url>
-cd EMI-shielding
-```
-
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-1. Start the application:
-```bash
+git clone https://github.com/DanushArun/material-emi-shielding.git
+cd material-emi-shielding
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 streamlit run streamlit_app/app.py
 ```
 
-2. Open your browser to the displayed URL (typically http://localhost:8501)
+Open the URL printed by Streamlit, normally `http://localhost:8501`.
 
-3. Build molecules:
-   - Select elements from the periodic table
-   - Adjust quantities to form compounds
-   - Add molecules to create reactions
+## Computational structure
 
-4. Analyze shielding:
-   - Click "⚛️ REACT" to calculate EMI effectiveness
-   - View step-by-step calculations
-   - Check final performance rating
+| Source | Responsibility |
+| --- | --- |
+| [app.py](streamlit_app/app.py) | Formula builder and results interface |
+| [molecular_presets.py](streamlit_app/molecular_presets.py) | Molecule/reaction presets |
+| [material_properties.py](src/materials/material_properties.py) | Formula/property handling |
+| [emi_calculations.py](src/physics/emi_calculations.py) | Shielding and frequency calculations |
+| [constants.py](src/utils/constants.py) | Constants and input validation |
 
-## Project Structure
+The physics module computes skin depth and complex impedance/propagation, combines shielding
+terms, and includes frequency sweeps and a thickness search. The multiple-reflection correction
+is suppressed when modeled absorption exceeds 15 dB.
 
-```
-EMI-shielding/
-├── streamlit_app/
-│   ├── app.py                    # Main application
-│   └── molecular_presets.py      # Pre-configured molecules and reactions
-├── src/
-│   ├── materials/
-│   │   ├── material_properties.py   # Material property calculations
-│   │   └── periodic_table.json      # Element data
-│   ├── physics/
-│   │   ├── emi_calculations.py      # EMI shielding physics
-│   │   └── shielding_theory.py      # Theoretical calculations
-│   └── utils/
-│       └── constants.py             # Physical constants
-└── requirements.txt
-```
+## Evidence and limits
 
-## Technical Details
+Tracked source and dependency/setup paths were reviewed. No laboratory shielding measurement,
+material synthesis, numerical benchmark or UI acceptance run was performed for this README.
+There is no committed automated test suite.
 
-### Chemical Formula Parsing
-- Supports complex chemical formulas with subscripts
-- Validates molecular compositions
-- Calculates molecular weights and properties
-
-### EMI Shielding Physics
-- Reflection loss calculations
-- Absorption loss analysis
-- Multiple reflection effects
-- Frequency-dependent material properties
-
-### Material Properties
-- Weighted average calculations for mixtures
-- Conductivity, permeability, and permittivity
-- Safety validation for diamagnetic materials
-
-## Dependencies
-
-- **streamlit**: Web interface framework
-- **numpy**: Numerical calculations
-- **pandas**: Data manipulation
-- **plotly**: Interactive visualizations
-
-## License
-
-This project is for educational and research purposes.
+Weighted material-property estimates and simplified electromagnetic assumptions need independent
+validation for the material, frequency range and geometry of interest. Displayed ratings are
+software outputs, not a material certification or experimental shielding result.

@@ -1,0 +1,42 @@
+Benchmark entries per category (total / not usable for single-layer prediction):
+  Pure metals       35 / 0
+  Composites        24 / 0
+  Multilayer         7 / 7
+  Temperature       11 / 0
+  Microstructure    15 / 0
+  Frequency bands   14 / 1
+  All              106 / 8   usable = 98
+
+Regime A: n=21  MAE=21.2  RMSE=27.2  median|err|=12.4  bias=+1.6  max|err|=53.1  R2=-0.35
+Regime B: n=12  MAE=43.4  RMSE=48.3  median|err|=49.8  bias=+31.6  max|err|=66.7  R2=-2.02
+Regime C: n=65  MAE=6205.1  RMSE=11240.4  median|err|=2292.5  bias=+6205.1  max|err|=42688.2  R2=-52056.61
+
+Regime A by category:
+  Pure metals      n=4  MAE=45.8  RMSE=46.0  median|err|=43.7  bias=+45.8  max|err|=53.1  R2=-13.60
+  Composites       n=14  MAE=14.2  RMSE=19.9  median|err|=11.1  bias=-10.9  max|err|=47.4  R2=-0.19
+  Frequency bands  n=3  MAE=20.8  RMSE=22.2  median|err|=20.5  bias=+0.6  max|err|=30.3  R2=-2.16
+  Non-mag. metals  n=4  MAE=45.8  RMSE=46.0  median|err|=43.7  bias=+45.8  max|err|=53.1  R2=-13.60
+
+Regime A entries:
+  material                                       f (Hz)   t (mm)  t/delta     exp    pred     err
+  CFRP (unidirectional, 60 vol% fiber)          1.0e+09   1.0000     0.63    15.0    26.0   +11.0
+  Graphene foam / PDMS composite                8.2e+09   1.0000     0.40    30.0     5.8   -24.2
+  MWCNT / PMMA (0.5 wt%)                        8.2e+09   1.0000     0.00     2.0     0.0    -2.0
+  MWCNT / PMMA (10 wt%)                         8.2e+09   1.0000     1.80    30.0    27.9    -2.1
+  MWCNT / PMMA (2 wt%)                          8.2e+09   1.0000     0.13    12.0     0.8   -11.2
+  MWCNT / PMMA (5 wt%)                          8.2e+09   1.0000     0.57    22.0     9.3   -12.7
+  MWCNT / PVDF (7 wt%)                          1.2e+10   1.8000     2.77    36.0    32.0    -4.0
+  Reduced graphene oxide (rGO) film             8.2e+09   0.0085     0.24    20.0    32.3   +12.3
+  Short carbon fiber / epoxy (15 wt%)           1.0e+09   2.0000     0.40    22.0    13.6    -8.4
+  Short carbon fiber / epoxy (25 wt%)           1.0e+09   2.0000     1.26    35.0    32.3    -2.7
+  Short carbon fiber / epoxy (5 wt%)            1.0e+09   2.0000     0.04     5.0     0.3    -4.7
+  Silver nanowire / PVA (5 wt%)                 8.2e+09   0.1000     0.25    26.0    13.6   -12.4
+  Ti3C2Tx / cellulose nanofiber composite       8.2e+09   0.0470     0.36    72.0    24.6   -47.4
+  Ti3C2Tx MXene / SA nacre-like film            8.2e+09   0.0080     0.07    57.0    13.6   -43.4
+  Conductive paint (Cu/Ag particles) at 2.4 GH  2.4e+09   0.0500     1.54    40.0    60.5   +20.5
+  ITO coated glass at 28 GHz                    2.8e+10   0.0002     0.07    20.0    31.7   +11.7
+  MXene film (10 um) at 28 GHz                  2.8e+10   0.0100     0.23    50.0    19.7   -30.3
+  Aluminum (pure, 1100 series)                  1.0e+06   0.1000     1.22    74.0   117.4   +43.4
+  Copper (pure, annealed)                       1.0e+06   0.1000     1.53    78.0   122.0   +44.0
+  Silver (pure)                                 1.0e+06   0.1000     1.58    80.0   122.6   +42.6
+  Stainless Steel 304 (austenitic)              1.0e+06   0.5000     1.21    50.0   103.1   +53.1

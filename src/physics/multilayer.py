@@ -127,15 +127,17 @@ class MultilayerShield:
         alpha_d = gd.real  # real part drives the overflow
 
         if alpha_d > _OVERFLOW_THRESHOLD:
-            # Work with E*cosh(gd) and E*sinh(gd) where E = exp(-alpha_d).
-            # exp(gd) = exp(alpha_d + j*imag_d).
-            # E * exp(gd) = exp(j*imag_d)  (magnitude 1).
-            # E * exp(-gd) = exp(-j*imag_d) (magnitude 1).
-            # E * cosh(gd) = (exp(j*beta_d) + exp(-j*beta_d)) / 2 = cos(beta_d)
-            # E * sinh(gd) = (exp(j*beta_d) - exp(-j*beta_d)) / 2 = j*sin(beta_d)
+            # Factor exp(alpha_d) out of the matrix exactly. With
+            # gd = alpha_d + j*beta_d and E = exp(-alpha_d):
+            #   E * cosh(gd) = (exp(j*beta_d) + exp(-2*alpha_d) * exp(-j*beta_d)) / 2
+            #   E * sinh(gd) = (exp(j*beta_d) - exp(-2*alpha_d) * exp(-j*beta_d)) / 2
+            # The second term is below 1e-173 here but is kept so the
+            # expression stays exact. All entries remain O(1).
             beta_d = gd.imag
-            scaled_cosh = np.cos(beta_d)          # E * cosh(gd)
-            scaled_sinh = 1j * np.sin(beta_d)     # E * sinh(gd)
+            forward = np.exp(1j * beta_d)
+            backward = np.exp(-2.0 * alpha_d) * np.exp(-1j * beta_d)
+            scaled_cosh = 0.5 * (forward + backward)   # E * cosh(gd)
+            scaled_sinh = 0.5 * (forward - backward)   # E * sinh(gd)
 
             # The true matrix is (1/E) * M_scaled.  We record the log of the
             # scale factor on the instance so _cascade_matrices can apply it.

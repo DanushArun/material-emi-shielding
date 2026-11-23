@@ -15,6 +15,9 @@ from src.physics.advanced_microstructure import (
     AdvancedMicrostructure, MicrostructureParams, ProcessingParams
 )
 
+# Exact neper-to-decibel conversion, 20 / ln(10)
+NEPER_TO_DB = 20.0 / np.log(10.0)
+
 # Placeholder classes for mechanical coupling (not implemented yet)
 class MechanicalState:
     def __init__(self, **kwargs):
@@ -134,87 +137,71 @@ class EMICalculator:
     
     def calculate_reflection_loss(self, intrinsic_impedance: complex) -> float:
         """
-        Calculate reflection loss at the air-material interface.
-        
+        Calculate the reflection loss of a slab in free space (Schelkunoff R term).
+
+        Accounts for the impedance mismatch at BOTH faces of the shield
+        (air-to-shield and shield-to-air):
+
+            R = 20 log10( |Z_0 + eta|^2 / (4 Z_0 |eta|) )
+
         Args:
             intrinsic_impedance: Complex intrinsic impedance of material (Ω)
-            
+
         Returns:
             Reflection loss (dB)
         """
-        # Reflection coefficient at air-material interface
-        gamma_1 = (intrinsic_impedance - Z_0) / (intrinsic_impedance + Z_0)
-        
-        # Reflection coefficient at material-air interface
-        gamma_2 = (Z_0 - intrinsic_impedance) / (Z_0 + intrinsic_impedance)
-        
-        # Power reflection coefficient
-        R = abs(gamma_1) ** 2
-        
-        # Reflection loss in dB
-        if R < 1:
-            reflection_loss = -10 * np.log10(1 - R)
-        else:
-            reflection_loss = 0
-        
-        return reflection_loss
-    
-    def calculate_absorption_loss(self, thickness: float, 
+        eta = complex(intrinsic_impedance)
+        if abs(eta) == 0:
+            return float('inf')
+        return float(20 * np.log10(abs(Z_0 + eta) ** 2 / (4 * Z_0 * abs(eta))))
+
+    def calculate_absorption_loss(self, thickness: float,
                                 propagation_constant: complex) -> float:
         """
-        Calculate absorption loss through the material.
-        
+        Calculate absorption loss through the material (Schelkunoff A term).
+
+            A = 20 log10 |exp(gamma t)| = 8.686 * Re(gamma) * t
+
         Args:
             thickness: Material thickness (m)
             propagation_constant: Complex propagation constant (1/m)
-            
+
         Returns:
             Absorption loss (dB)
         """
         validate_thickness(thickness)
-        
-        # Attenuation constant (real part of propagation constant)
+
         alpha = propagation_constant.real
-        
-        # Absorption loss in dB
-        absorption_loss = 8.686 * alpha * thickness
-        
-        return absorption_loss
-    
+        return float(NEPER_TO_DB * alpha * thickness)
+
     def calculate_multiple_reflection_loss(self, intrinsic_impedance: complex,
                                          thickness: float,
                                          propagation_constant: complex) -> float:
         """
-        Calculate multiple reflection loss.
-        
+        Calculate the multiple-reflection correction (Schelkunoff B term).
+
+            B = 20 log10 | 1 - q^2 exp(-2 gamma t) |,   q = (Z_0 - eta) / (Z_0 + eta)
+
+        B is negative for electrically thin shields and tends to zero once the
+        absorption loss exceeds roughly 15 dB. With this term the sum R + A + B
+        equals the exact plane-wave transmission loss of a homogeneous slab.
+
         Args:
             intrinsic_impedance: Complex intrinsic impedance (Ω)
             thickness: Material thickness (m)
             propagation_constant: Complex propagation constant (1/m)
-            
+
         Returns:
-            Multiple reflection loss (dB)
+            Multiple reflection correction (dB)
         """
-        # Reflection coefficients
-        gamma_1 = (intrinsic_impedance - Z_0) / (intrinsic_impedance + Z_0)
-        gamma_2 = (Z_0 - intrinsic_impedance) / (Z_0 + intrinsic_impedance)
-        
-        # Transmission through material
+        eta = complex(intrinsic_impedance)
+        q = (Z_0 - eta) / (Z_0 + eta)
         exp_term = np.exp(-2 * propagation_constant * thickness)
-        
-        # Multiple reflection factor
-        K = (1 - gamma_1 * gamma_2 * exp_term) / (1 + gamma_1 * gamma_2 * exp_term)
-        
-        # Multiple reflection loss in dB
-        multiple_reflection_loss = -20 * np.log10(abs(K))
-        
-        # Only significant for thin materials or low absorption
-        absorption_loss = self.calculate_absorption_loss(thickness, propagation_constant)
-        if absorption_loss > 15:
-            multiple_reflection_loss = 0
-        
-        return multiple_reflection_loss
-    
+        factor = abs(1 - q * q * exp_term)
+        if factor <= 0:
+            return float('-inf')
+        return float(20 * np.log10(factor))
+
     def calculate_grain_size_effect(self, bulk_conductivity: float, 
                                   grain_size: float,
                                   electron_mean_free_path: float = 40e-9) -> float:

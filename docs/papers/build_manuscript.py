@@ -62,6 +62,9 @@ DENSE_X = stats([b for b in DENSE if not b["id"].startswith("wang2026")])
 DENSE_PAPERS = len({b["citation"] for b in DENSE if not b["id"].startswith("wang2026")})
 POS = int(sum(b["gain"] > 10 for b in bench))
 NEG = int(sum(b["gain"] < -10 for b in bench))
+NUMW = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+ABOVE90 = int(sum(b["meas"] > 90 for b in bench))
+LOW_AERO = int(sum(b["sig"] < 1.0 and b["grp"] == 5 for b in bench))
 NEG_W = {8: "Eight", 9: "Nine", 10: "Ten", 11: "Eleven", 12: "Twelve"}.get(NEG, str(NEG))
 POROUS_POS = [b["gain"] for b in bench if b["grp"] in (3, 5) and b["gain"] > 10]
 
@@ -91,17 +94,61 @@ FOUND = {
     "sobol": "I.M. Sobol, Global sensitivity indices for nonlinear mathematical models and their Monte Carlo estimates, Math. Comput. Simul. 55 (2001) 271–280.",
     "saltelli": "A. Saltelli, Making best use of model evaluations to compute sensitivity indices, Comput. Phys. Commun. 145 (2002) 280–297.",
 }
-REFS, REFNUM = [], {}
-for k, v in FOUND.items():
-    REFS.append(v); REFNUM[k] = len(REFS)
+import html
+import json
+
+CROSSREF = json.loads((HERE / "references_crossref.json").read_text())
+
+
+TITLE_FIX = {
+    "Ti 3 CNT x (MXene)": "Ti_{3}CNT_{x} (MXene)",
+    "Ti 3 C 2 T x MXene-MWCNT@MoS 2 Film": "Ti_{3}C_{2}T_{x} MXene-MWCNT@MoS_{2} Film",
+    "Ti3C2T x : MXenes": "Ti_{3}C_{2}T_{x}: MXenes",
+    "Ti 3 C 2 T x /(Aramid": "Ti_{3}C_{2}T_{x}/(Aramid",
+}
+
+
+def _clean(text):
+    out = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", "", text or ""))).strip()
+    for bad, good in TITLE_FIX.items():
+        out = out.replace(bad, good)
+    return out
+
+
+def _author(a):
+    initials = "".join(part[0] + "." for part in re.split(r"[\s\-]+", a.get("given", "")) if part)
+    return f"{initials} {a.get('family', a.get('name', ''))}".strip()
+
+
+def format_crossref(doi):
+    m = CROSSREF[doi]
+    authors = ", ".join(_author(a) for a in m["author"])
+    year = m["published"]["date-parts"][0][0]
+    pages = (m.get("page") or m.get("article-number") or "").replace("-", "\u2013")
+    if doi == "10.34133/2022/9780290":
+        pages = "9780290"
+    ref = f"{authors}, {_clean(m['title'][0])}, {_clean(m['container-title'][0])} {m.get('volume')} ({year}) {pages}. https://doi.org/{doi}"
+    if doi == "10.1007/s10853-020-05518-1":
+        ref += " (values taken from the preprint, arXiv:2005.04875)"
+    return ref
+
+
+REFTEXT = dict(FOUND)
 for b in bench:
-    if b["citation"] not in REFNUM:
-        REFS.append(f"{b['citation']}. https://doi.org/{b['doi']}"); REFNUM[b["citation"]] = len(REFS)
+    REFTEXT.setdefault(b["citation"], format_crossref(b["doi"]))
+REFNUM = {}
+
+
+def num(key):
+    key = BY[key]["citation"] if key in BY else key
+    if key not in REFNUM:
+        REFNUM[key] = len(REFNUM) + 1
+    return REFNUM[key]
 
 
 def c(*keys):
-    nums = sorted(REFNUM[BY[k]["citation"]] if k in BY else REFNUM[k] for k in keys)
-    return "[" + ",".join(str(n) for n in dict.fromkeys(nums)) + "]"
+    nums = [num(k) for k in keys]
+    return "[" + ",".join(str(n) for n in sorted(dict.fromkeys(nums))) + "]"
 
 
 def g(i):
@@ -241,8 +288,7 @@ P(f"Comparisons between slab or transfer-matrix calculations and measurement exi
   f"highly conductive MXene films and under-predicts films below about 100 S cm^{{−1}}, and Iqbal et al. "
   f"{c('iqbal2020_ti3cn_350')} reported absorption in annealed Ti_{{3}}CNT_{{x}} well above what its conductivity "
   f"suggests. What is missing is a comparison across material classes that uses one exact model and data whose "
-  f"provenance can be checked. Data-driven studies of shielding materials face the same gap, because their "
-  f"training sets are small and are often not released.")
+  f"provenance can be checked. Data-driven studies of shielding materials would benefit from the same resource.")
 P(f"This paper makes three contributions. First, a benchmark of {N} measured SE values from {NP} primary papers, "
   f"in which each value, thickness, frequency and conductivity is traceable to a quoted location in its source. "
   f"Second, an openly tested implementation in which the Schelkunoff decomposition, a transfer-matrix solver and "
@@ -341,8 +387,9 @@ H("3.2 Coverage", 2)
 P(f"The benchmark holds {N} entries from {NP} papers published between 2009 and 2026 (Table 1; the full list is "
   f"in Appendix A). Measured SE ranges from 9.7 to 116 dB, thickness from 13 nm to 5 mm, and reported "
   f"conductivity from 2.5 × 10^{{−3}} to 1.2 × 10^{{7}} S m^{{−1}}. Most measurements are waveguide or coaxial "
-  f"measurements in the X band (8.2–12.4 GHz); the remainder extend from 10 MHz to 40 GHz. No measured value "
-  f"exceeds the dynamic range of standard fixtures, which is a precondition for a meaningful comparison: the slab "
+  f"measurements in the X band (8.2–12.4 GHz); the remainder extend from 10 MHz to 40 GHz. All measured values are "
+  f"at or below 116 dB and all but {NUMW.get(ABOVE90, ABOVE90)} are below 90 dB, within the range that standard "
+  f"fixtures resolve. This is a precondition for a meaningful comparison: the slab "
   f"model returns hundreds or thousands of decibels for thick metal sheets, and such predictions cannot be tested.")
 TABLE(["Group", "*n*", "Median gain (dB)", "Range (dB)", "Within ±10 dB"],
       [[GROUPS[i][0], G[i]["n"], sg(G[i]["med"]), f"{sg(G[i]['lo'])} to {sg(G[i]['hi'])}", f"{G[i]['within']} of {G[i]['n']}"]
@@ -355,7 +402,7 @@ P("Table 1. Composition of the benchmark and architecture gain by material group
 H("4. Results")
 H("4.1 Overall agreement", 2)
 P(f"Figure 1a compares measured SE with the slab prediction for all {N} entries, and Fig. 1b shows the gain "
-  f"against reported conductivity. {ALL['within']} entries lie within ±10 dB of the prediction, {POS} lie more than "
+  f"against reported conductivity. Of these, {ALL['within']} lie within ±10 dB of the prediction, {POS} lie more than "
   f"10 dB above it and {NEG} more than 10 dB below. Agreement depends strongly on conductivity. Above "
   f"10^{{4}} S m^{{−1}} (n = {HIGH['n']}) the median gain is {sg(HIGH['med'])} dB and {HIGH['within']} entries are within "
   f"±10 dB. Below 1 S m^{{−1}} (n = {LOW['n']}) every entry lies above the prediction, with a median gain of "
@@ -416,10 +463,11 @@ P(f"The same sign and a similar magnitude appear in bulk porous and segregated m
   f"walls whose local conductivity is far higher and with many internal interfaces.")
 
 H("4.4 Low reported conductivity under-predicts shielding", 2)
-P(f"All {LOW['n']} entries with reported conductivity below 1 S m^{{−1}} shield more than the slab model allows, by "
+P(f"All {NUMW.get(LOW['n'], LOW['n'])} entries with reported conductivity below 1 S m^{{−1}} shield more than the slab model allows, by "
   f"{LOW['lo']:.0f} to {LOW['hi']:.0f} dB. Carbon-black-filled EPDM {c('rahaman2023_epdm_cb_40phr')} with DC "
-  f"conductivity of 2.5 × 10^{{−3}} to 6.3 × 10^{{−2}} S m^{{−1}} is predicted to be transparent at 10 GHz and "
-  f"measures 26.5 to 49.9 dB. Carbon-fibre-filled PA11/PLA {c('durmaz2023_pa11pla_cf30')} behaves the same way. "
+  f"conductivity of 2.5 × 10^{{−3}} to 6.3 × 10^{{−2}} S m^{{−1}} is predicted to shield less than 0.1 dB at 10 GHz "
+  f"and measures 26.5 to 49.9 dB. Carbon-fibre-filled PA11/PLA {c('durmaz2023_pa11pla_cf30')} behaves the same way, "
+  f"and {NUMW.get(LOW_AERO, LOW_AERO)} of the graphitic aerogels of Section 4.3 also fall in this conductivity range. "
   f"In contrast, composites whose reported conductivity is 20 S m^{{−1}} or more "
   f"{c('lencar2022_mwcnt3_5min', 'madinehei2021_polyester_gnp25', 'li2022_cnt_wpu_50')} lie within about 7 dB of "
   f"the prediction.")
@@ -470,9 +518,14 @@ P(f"Figure 4 compares linear mixing with Eq. (7) for *σ*_{{f}} = 10^{{5}} S m^{
   f"of the order of 100 dB at 2 mm and 8.2 GHz where Eq. (7) correctly gives none. This comparison is between models. "
   f"Section 4.4 shows that a measured composite near threshold shields more than its network conductivity "
   f"predicts, so Eq. (7) should be read as a model of DC transport and as a lower bound on microwave shielding.")
+def sci(v):
+    m, e = f"{v:.1e}".split("e")
+    return f"{m} \u00d7 10^{{{int(e)}}}".replace("-", "\u2212")
+
+
 TABLE(["*f* (vol.)", "Linear mixing (S m^{−1})", "Eq. (7) (S m^{−1})", "Ratio"],
-      [[f"{x:.3f}", f"{x * sf + (1 - x) * sm:.1e}", f"{mclachlan_gem(x, sm, sf, fc, 2.0):.1e}",
-        f"{mclachlan_gem(x, sm, sf, fc, 2.0) / (x * sf + (1 - x) * sm):.1e}"] for x in (0.005, 0.010, 0.012, 0.020, 0.050, 0.100)],
+      [[f"{x:.3f}", sci(x * sf + (1 - x) * sm), sci(mclachlan_gem(x, sm, sf, fc, 2.0)),
+        sci(mclachlan_gem(x, sm, sf, fc, 2.0) / (x * sf + (1 - x) * sm))] for x in (0.005, 0.010, 0.012, 0.020, 0.050, 0.100)],
       widths=[1.0, 1.7, 1.7, 1.2])
 P("Table 2. Effective conductivity from linear mixing and from the general effective media equation.", size=10.5)
 FIG("fig3_percolation.png",
@@ -525,7 +578,7 @@ P(f"The benchmark is small for some classes: {G[0]['n']} continuous metal films,
 H("6. Conclusions")
 P(f"A benchmark of {N} source-verified shielding measurements from {NP} papers shows that the exact "
   f"homogeneous-slab model predicts the shielding of dense conductors, from 13 nm transparent films to 45 µm "
-  f"MXene laminates, with a median error below 1 dB and about three quarters of entries within ±10 dB. Porous "
+  f"MXene laminates, with a median difference below 1 dB and about three quarters of entries within ±10 dB. Porous "
   f"films, foams, aerogels and segregated networks exceed the model by {min(POROUS_POS):.0f} to "
   f"{max(POROUS_POS):.0f} dB, and this architecture gain is a direct measure of what their structure contributes. "
   f"Samples of low reported conductivity shield far more than that conductivity implies, so DC conductivity "
@@ -545,12 +598,7 @@ H("Declarations")
 P("*Funding:* The authors received no external funding for this work.\n"
   "*Competing interests:* The authors declare no competing interests.\n"
   "*Data and code availability:* The code, automated tests, benchmark file and the scripts that generate every "
-  "number and figure in this paper are available at https://github.com/DanushArun/material-emi-shielding.")
-
-H("References")
-for i, ref in enumerate(REFS, 1):
-    par = P(f"[{i}] {ref}", size=10.5)
-    par.paragraph_format.space_after, par.paragraph_format.line_spacing = Pt(3), 1.15
+  "number and figure in this paper are available at https://github.com/DanushArun/material-emi-shielding (branch fix/slab-reflection-physics).")
 
 H("Appendix A. Benchmark entries")
 P("Table A1. All benchmark entries. *t*: thickness; *σ*: conductivity as used (converted to S m^{−1}; for "
@@ -570,8 +618,13 @@ def ff(b):
 
 TABLE(["Material", "*t*", "Frequency", "*σ* (S m^{−1})", "SE (dB)", "Slab (dB)", "*G* (dB)", "Ref."],
       [[b["material"], ft(float(b["thickness_m"])), ff(b), f"{b['sig']:.3g}", f"{b['meas']:.1f}", f"{b['slab']:.1f}",
-        sg(b["gain"]), f"[{REFNUM[b['citation']]}]"] for b in sorted(bench, key=lambda b: (b["grp"], b["citation"], b["id"]))],
+        sg(b["gain"]), f"[{num(b['id'])}]"] for b in sorted(bench, key=lambda b: (b["grp"], b["citation"], b["id"]))],
       widths=[2.4, 0.7, 0.9, 0.8, 0.55, 0.55, 0.55, 0.45], size=8)
 
+H("References")
+for key, i in sorted(REFNUM.items(), key=lambda kv: kv[1]):
+    par = P(f"[{i}] {REFTEXT[key]}", size=10.5)
+    par.paragraph_format.space_after, par.paragraph_format.line_spacing = Pt(3), 1.15
+
 doc.save(OUT)
-print(f"Saved {OUT}  ({N} entries, {NP} papers, {len(REFS)} references, {EQN[0]} equations)")
+print(f"Saved {OUT}  ({N} entries, {NP} papers, {len(REFNUM)} references, {EQN[0]} equations)")

@@ -353,8 +353,7 @@ title = doc.add_paragraph(); title.alignment = CENTER
 title.paragraph_format.line_spacing = Pt(19)
 title.paragraph_format.space_before, title.paragraph_format.space_after = Pt(14), Pt(26)
 _border(title, "top", 32); _border(title, "bottom", 8)
-for _i, _line in enumerate(("Predict Before You Build:", "testing electromagnetic shielding theory",
-                            "against 76 verified measurements")):
+for _i, _line in enumerate(("Predict Before You Build:", "A Benchmark for Electromagnetic Shielding")):
     if _i:
         title.add_run().add_break()
     runs(title, _line, bold=True, size=17)

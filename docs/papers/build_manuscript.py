@@ -156,17 +156,47 @@ def g(i):
 
 
 # ---------------------------------------------------------------- docx helpers
+# Layout follows the NeurIPS proceedings style: US Letter, 5.5 in x 9 in text block,
+# 10 pt Times on 11 pt leading, ruled title, centred abstract, booktabs tables.
+from docx.enum.section import WD_SECTION  # noqa: E402,F401
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT  # noqa: E402
+from docx.oxml import OxmlElement  # noqa: E402
+from docx.oxml.ns import qn  # noqa: E402
+
+FONT, MONO, TEXT_W = "Times New Roman", "Courier New", 5.5
 doc = Document()
 st = doc.styles["Normal"]
-st.font.name, st.font.size = "Times New Roman", Pt(12)
-st.paragraph_format.space_after, st.paragraph_format.line_spacing = Pt(8), 1.5
+st.font.name, st.font.size = FONT, Pt(10)
+st.element.rPr.rFonts.set(qn("w:eastAsia"), FONT)
+st.paragraph_format.space_after, st.paragraph_format.space_before = Pt(5.5), Pt(0)
+st.paragraph_format.line_spacing = Pt(11)
 for sec in doc.sections:
-    sec.left_margin = sec.right_margin = sec.top_margin = sec.bottom_margin = Inches(1)
+    sec.page_width, sec.page_height = Inches(8.5), Inches(11)
+    sec.left_margin = sec.right_margin = Inches(1.5)
+    sec.top_margin, sec.bottom_margin = Inches(1.0), Inches(1.0)
+    sec.footer_distance = Inches(0.5)
+    fp = sec.footer.paragraphs[0]; fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    for kind, text in (("begin", None), (None, "PAGE"), ("end", None)):
+        r = fp.add_run(); r.font.size = Pt(10)
+        if kind:
+            el = OxmlElement("w:fldChar"); el.set(qn("w:fldCharType"), kind)
+        else:
+            el = OxmlElement("w:instrText"); el.set(qn("xml:space"), "preserve"); el.text = text
+        r._r.append(el)
+# open in normal (not compatibility) mode in current Word
+_compat = doc.settings.element.find(qn("w:compat"))
+if _compat is None:
+    _compat = OxmlElement("w:compat"); doc.settings.element.append(_compat)
+_cs = OxmlElement("w:compatSetting")
+for k, v in (("name", "compatibilityMode"), ("uri", "http://schemas.microsoft.com/office/word"), ("val", "15")):
+    _cs.set(qn(f"w:{k}"), v)
+_compat.append(_cs)
 
 TOKEN = re.compile(r"(_\{[^}]*\}|\^\{[^}]*\}|\*[^*]+\*)")
+JUST, CENTER, LEFT = WD_ALIGN_PARAGRAPH.JUSTIFY, WD_ALIGN_PARAGRAPH.CENTER, WD_ALIGN_PARAGRAPH.LEFT
 
 
-def runs(par, text, bold=False, size=None):
+def runs(par, text, bold=False, size=None, font=None):
     for part in TOKEN.split(text):
         if not part:
             continue
@@ -179,79 +209,182 @@ def runs(par, text, bold=False, size=None):
         else:
             r = par.add_run(part)
         r.bold = bold or None
-        r.font.name = "Times New Roman"
+        r.font.name = font or FONT
         if size:
             r.font.size = Pt(size)
     return par
 
 
-def P(text, align=None, **kw):
+def P(text, align=JUST, **kw):
     par = doc.add_paragraph()
-    if align:
-        par.alignment = align
+    par.alignment = align
     return runs(par, text, **kw)
 
 
 def H(text, level=1):
-    par = doc.add_paragraph()
-    par.paragraph_format.space_before, par.paragraph_format.keep_with_next = Pt(12 if level == 1 else 6), True
-    r = par.add_run(text); r.bold = True; r.italic = level > 1 or None
-    r.font.size, r.font.name = Pt(13 if level == 1 else 12), "Times New Roman"
+    """Section heads: 12 pt bold flush left; subsection heads: 10 pt bold. Number, then an em space."""
+    text = re.sub(r"^(\d+)\.\s+", "\\1\u2003", text) if level == 1 else re.sub(r"^(\d+\.\d+)\s+", "\\1\u2003", text)
+    par = doc.add_paragraph(); par.alignment = LEFT
+    pf = par.paragraph_format
+    pf.space_before, pf.space_after, pf.keep_with_next = (Pt(12), Pt(7), True) if level == 1 else (Pt(8), Pt(5), True)
+    pf.line_spacing = Pt(14 if level == 1 else 11)
+    r = par.add_run(text); r.bold = True
+    r.font.size, r.font.name = Pt(12 if level == 1 else 10), FONT
+
+
+def _border(par, side, sz):
+    pPr = par._p.get_or_add_pPr()
+    bdr = pPr.find(qn("w:pBdr"))
+    if bdr is None:
+        bdr = OxmlElement("w:pBdr"); pPr.append(bdr)
+    el = OxmlElement(f"w:{side}")
+    for k, v in (("val", "single"), ("sz", str(sz)), ("space", "12"), ("color", "000000")):
+        el.set(qn(f"w:{k}"), v)
+    bdr.append(el)
+
+
+def _cell_borders(cell, **sides):
+    tcPr = cell._tc.get_or_add_tcPr()
+    bdr = tcPr.find(qn("w:tcBorders"))
+    if bdr is None:
+        bdr = OxmlElement("w:tcBorders"); tcPr.append(bdr)
+    for side, sz in sides.items():
+        el = OxmlElement(f"w:{side}")
+        for k, v in (("val", "single"), ("sz", str(sz)), ("space", "0"), ("color", "000000")):
+            el.set(qn(f"w:{k}"), v)
+        bdr.append(el)
+
+
+def _plain_table(ncols, widths):
+    t = doc.add_table(rows=1, cols=ncols); t.alignment = WD_TABLE_ALIGNMENT.CENTER; t.autofit = False
+    tblPr = t._tbl.tblPr
+    lay = OxmlElement("w:tblLayout"); lay.set(qn("w:type"), "fixed"); tblPr.append(lay)
+    return t
+
+
+def _set_widths(t, widths):
+    for row in t.rows:
+        for cell, w in zip(row.cells, widths):
+            cell.width = Inches(w)
+
+
+def _repeat_header(row):
+    trPr = row._tr.get_or_add_trPr()
+    el = OxmlElement("w:tblHeader"); el.set(qn("w:val"), "true"); trPr.append(el)
+    cs = OxmlElement("w:cantSplit"); cs.set(qn("w:val"), "true"); trPr.append(cs)
 
 
 EQN = [0]
 
 
-def EQ(tex, width=None):
+def EQ(tex):
+    """Display equation: centred, number flush right, vertically centred on the equation."""
     EQN[0] += 1
     path = EQ_DIR / f"eq{EQN[0]}.png"
     fig = plt.figure(figsize=(0.1, 0.1))
-    fig.text(0, 0, f"${tex}$", fontsize=13, math_fontfamily="stix")
-    fig.savefig(path, dpi=400, bbox_inches="tight", pad_inches=0.03, transparent=False, facecolor="white")
+    fig.text(0, 0, "$" + tex.replace(r"\frac", r"\dfrac") + "$", fontsize=10, math_fontfamily="stix")
+    fig.savefig(path, dpi=600, bbox_inches="tight", pad_inches=0.02, transparent=False, facecolor="white")
     plt.close(fig)
     from PIL import Image
-    w, h = Image.open(path).size
-    par = doc.add_paragraph(); par.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    par.add_run().add_picture(str(path), width=Inches(width or min(5.6, w / 400)))
-    par.add_run(f"\t({EQN[0]})").font.name = "Times New Roman"
+    w, _ = Image.open(path).size
+    widths = [0.45, TEXT_W - 0.9, 0.45]
+    t = _plain_table(3, widths); _set_widths(t, widths)
+    for cell in t.rows[0].cells:
+        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        cell.paragraphs[0].paragraph_format.space_after = Pt(0)
+        cell.paragraphs[0].paragraph_format.line_spacing = 1.0
+    mid, right = t.rows[0].cells[1].paragraphs[0], t.rows[0].cells[2].paragraphs[0]
+    mid.alignment = CENTER
+    mid.add_run().add_picture(str(path), width=Inches(min(TEXT_W - 1.0, w / 600)))
+    right.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    right.add_run(f"({EQN[0]})").font.name = FONT
+    gap = doc.add_paragraph(); gap.paragraph_format.space_after = Pt(0); gap.paragraph_format.line_spacing = Pt(5)
 
 
-def FIG(name, caption, width=6.3):
-    par = doc.add_paragraph(); par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+def _caption(text, after=5.5, before=0):
+    """'Figure 1:' / 'Table 1:' captions, centred when short and justified when long."""
+    text = re.sub(r"^((?:Figure|Table) [A-Z]?\d+)\.", r"\1:", text)
+    par = doc.add_paragraph()
+    par.alignment = CENTER if len(text) < 95 else JUST
+    par.paragraph_format.space_after, par.paragraph_format.space_before = Pt(after), Pt(before)
+    return runs(par, text)
+
+
+def FIG(name, caption, width=TEXT_W):
+    par = doc.add_paragraph(); par.alignment = CENTER
     par.paragraph_format.keep_with_next = True
-    par.add_run().add_picture(str(HERE / name), width=Inches(width))
-    runs(doc.add_paragraph(), caption, size=10.5)
+    par.paragraph_format.line_spacing = 1.0
+    par.paragraph_format.space_before, par.paragraph_format.space_after = Pt(6), Pt(4)
+    par.add_run().add_picture(str(HERE / name), width=Inches(min(width, TEXT_W)))
+    _caption(caption, after=11)
 
 
-def TABLE(header, rows, widths=None, size=9.5):
-    t = doc.add_table(rows=1, cols=len(header)); t.style = "Table Grid"; t.alignment = WD_TABLE_ALIGNMENT.CENTER
+def TABLE(caption, header, rows, widths, size=9, align=None):
+    """Booktabs table: caption above, rules at top, under the header and at the bottom only."""
+    cap = _caption(caption, after=4, before=6); cap.paragraph_format.keep_with_next = True
+    scale = min(1.0, TEXT_W / sum(widths)); widths = [w * scale for w in widths]
+    t = _plain_table(len(header), widths)
+    align = align or ["l"] + ["c"] * (len(header) - 1)
     for cell, text in zip(t.rows[0].cells, header):
         cell.text = ""; runs(cell.paragraphs[0], text, bold=True, size=size)
     for row in rows:
         for cell, text in zip(t.add_row().cells, row):
             cell.text = ""; runs(cell.paragraphs[0], str(text), size=size)
-    for row in t.rows:
-        for i, cell in enumerate(row.cells):
-            cell.paragraphs[0].paragraph_format.space_after = Pt(1)
-            cell.paragraphs[0].paragraph_format.line_spacing = 1.0
-            if widths:
-                cell.width = Inches(widths[i])
-    doc.add_paragraph()
+    _set_widths(t, widths); _repeat_header(t.rows[0])
+    last = len(t.rows) - 1
+    for i, row in enumerate(t.rows):
+        for j, cell in enumerate(row.cells):
+            par = cell.paragraphs[0]
+            par.alignment = LEFT if align[j] == "l" else CENTER
+            par.paragraph_format.space_after = par.paragraph_format.space_before = Pt(1.5)
+            par.paragraph_format.line_spacing = Pt(size + 1.5)
+            sides = {}
+            if i == 0:
+                sides.update(top=8, bottom=4)
+            if i == last:
+                sides["bottom"] = 8
+            if sides:
+                _cell_borders(cell, **sides)
+    gap = doc.add_paragraph(); gap.paragraph_format.space_after = Pt(4)
 
 
 # ---------------------------------------------------------------- title block
-P("A source-verified benchmark for electromagnetic interference shielding: where the "
-  "homogeneous-slab model holds and where material architecture takes over", bold=True, size=15)
-P("Danush Arun^{1,\u2217}, Prasad S. Godavarti^{2,\u2217}, Prabhakar Sastri^{3}, Srikanth Prabhu^{4,\u2217}")
-P("^{1} Department of Electrical and Electronics Engineering, Manipal Institute of Technology, Manipal 576104, Karnataka, India\n"
-  "^{2} International Visiting Faculty Member, Manipal Institute of Technology, Manipal Academy of Higher Education, Manipal 576104, Karnataka, India\n"
-  "^{3} School of Computer Engineering, Manipal Institute of Technology, Manipal 576104, Karnataka, India\n"
-  "^{4} School of Computer Engineering, Manipal Institute of Technology, MAHE, Manipal 576104, Karnataka, India", size=10.5)
-P("^{\u2217} Corresponding authors: danusharun999@gmail.com (D. Arun); pgodavarti@gmail.com (P.S. Godavarti); "
-  "srikanth.prabhu@manipal.edu (S. Prabhu)", size=10.5)
+title = doc.add_paragraph(); title.alignment = CENTER
+title.paragraph_format.line_spacing = Pt(19)
+title.paragraph_format.space_before, title.paragraph_format.space_after = Pt(14), Pt(26)
+_border(title, "top", 32); _border(title, "bottom", 8)
+for _i, _line in enumerate(("A source-verified benchmark for", "electromagnetic interference shielding: where the",
+                            "homogeneous-slab model holds and where", "material architecture takes over")):
+    if _i:
+        title.add_run().add_break()
+    runs(title, _line, bold=True, size=17)
 
-H("Abstract")
-P(f"Plane-wave theory gives the shielding effectiveness (SE) of a homogeneous conducting slab exactly, yet it is "
+AUTHORS = [
+    ("Danush Arun^{\u2217}", ["Electrical and Electronics Engineering", "Manipal Institute of Technology",
+                              "Manipal 576104, Karnataka, India"], "danusharun999@gmail.com"),
+    ("Prasad S. Godavarti^{\u2217}", ["International Visiting Faculty Member", "Manipal Institute of Technology, MAHE",
+                                      "Manipal 576104, Karnataka, India"], "pgodavarti@gmail.com"),
+    ("Prabhakar Sastri", ["School of Computer Engineering", "Manipal Institute of Technology",
+                          "Manipal 576104, Karnataka, India"], None),
+    ("Srikanth Prabhu^{\u2217}", ["School of Computer Engineering", "Manipal Institute of Technology, MAHE",
+                                  "Manipal 576104, Karnataka, India"], "srikanth.prabhu@manipal.edu"),
+]
+grid = _plain_table(2, [TEXT_W / 2] * 2); grid.add_row(); _set_widths(grid, [TEXT_W / 2] * 2)
+for cell, (name, affil, mail) in zip([c_ for row in grid.rows for c_ in row.cells], AUTHORS):
+    par = cell.paragraphs[0]; par.alignment = CENTER
+    par.paragraph_format.space_after, par.paragraph_format.line_spacing = Pt(8), Pt(11)
+    runs(par, name, bold=True)
+    for line in affil:
+        par.add_run().add_break(); runs(par, line)
+    if mail:
+        par.add_run().add_break(); runs(par, mail, font=MONO, size=9)
+note = P("^{\u2217}Corresponding authors.", align=CENTER, size=9)
+note.paragraph_format.space_after = Pt(16)
+
+abs_head = doc.add_paragraph(); abs_head.alignment = CENTER
+abs_head.paragraph_format.space_after = Pt(8)
+runs(abs_head, "Abstract", bold=True, size=12)
+_abs = P(f"Plane-wave theory gives the shielding effectiveness (SE) of a homogeneous conducting slab exactly, yet it is "
   f"rarely tested against measurements whose inputs can be traced to their source. We assemble a benchmark of {N} "
   f"measured SE values from {NP} primary papers, covering metal films and meshes, MXene and graphene films, "
   f"carbon–polymer composites, foams and aerogels (10 MHz to 40 GHz, 13 nm to 5 mm, 10^{{−3}} to 10^{{7}} S m^{{−1}}). "
@@ -266,8 +399,12 @@ P(f"Plane-wave theory gives the shielding effectiveness (SE) of a homogeneous co
   f"the measured sample. The slab model is therefore a quantitative baseline for dense conductors and a consistency "
   f"check on reported data, and the gain separates what conductivity explains from what structure adds. The code, "
   f"tests and benchmark are openly available.")
-P("*Keywords:* electromagnetic interference shielding; shielding effectiveness; benchmark dataset; transfer matrix "
+_kw = P("*Keywords:* electromagnetic interference shielding; shielding effectiveness; benchmark dataset; transfer matrix "
   "method; MXene; polymer composites; porous materials")
+
+for _p in (_abs, _kw):
+    _p.paragraph_format.left_indent = _p.paragraph_format.right_indent = Inches(0.5)
+_kw.paragraph_format.space_after = Pt(10)
 
 # ---------------------------------------------------------------- 1
 H("1. Introduction")
@@ -391,12 +528,12 @@ P(f"The benchmark holds {N} entries from {NP} papers published between 2009 and 
   f"at or below 116 dB and all but {NUMW.get(ABOVE90, ABOVE90)} are below 90 dB, within the range that standard "
   f"fixtures resolve. This is a precondition for a meaningful comparison: the slab "
   f"model returns hundreds or thousands of decibels for thick metal sheets, and such predictions cannot be tested.")
-TABLE(["Group", "*n*", "Median gain (dB)", "Range (dB)", "Within ±10 dB"],
+TABLE("Table 1. Composition of the benchmark and architecture gain by material group.",
+      ["Group", "*n*", "Median gain (dB)", "Range (dB)", "Within ±10 dB"],
       [[GROUPS[i][0], G[i]["n"], sg(G[i]["med"]), f"{sg(G[i]['lo'])} to {sg(G[i]['hi'])}", f"{G[i]['within']} of {G[i]['n']}"]
        for i in range(len(GROUPS))] +
       [["All entries", ALL["n"], sg(ALL["med"]), f"{sg(ALL['lo'])} to {sg(ALL['hi'])}", f"{ALL['within']} of {ALL['n']}"]],
       widths=[2.9, 0.5, 1.1, 1.4, 1.0])
-P("Table 1. Composition of the benchmark and architecture gain by material group.", size=10.5)
 
 # ---------------------------------------------------------------- 4
 H("4. Results")
@@ -508,7 +645,7 @@ P(f"The transfer matrix method reproduces a known property of spaced double shie
   f"per-layer properties sufficient to test them.")
 FIG("fig4_multilayer.png",
     "Figure 3. Shielding effectiveness of a Cu(0.5 µm)/PET/Cu(0.5 µm) sandwich against spacer thickness, from the "
-    "transfer matrix method. Dashed lines: a single 1.0 µm copper layer at the same frequency.", width=3.6)
+    "transfer matrix method. Dashed lines: a single 1.0 µm copper layer at the same frequency.", width=3.4)
 
 H("4.7 Percolation and its effect on predicted shielding", 2)
 sf, sm, fc = 1e5, 1e-10, 0.01
@@ -523,11 +660,11 @@ def sci(v):
     return f"{m} \u00d7 10^{{{int(e)}}}".replace("-", "\u2212")
 
 
-TABLE(["*f* (vol.)", "Linear mixing (S m^{−1})", "Eq. (7) (S m^{−1})", "Ratio"],
+TABLE("Table 2. Effective conductivity from linear mixing and from the general effective media equation.",
+      ["*f* (vol.)", "Linear mixing (S m^{−1})", "Eq. (7) (S m^{−1})", "Ratio"],
       [[f"{x:.3f}", sci(x * sf + (1 - x) * sm), sci(mclachlan_gem(x, sm, sf, fc, 2.0)),
         sci(mclachlan_gem(x, sm, sf, fc, 2.0) / (x * sf + (1 - x) * sm))] for x in (0.005, 0.010, 0.012, 0.020, 0.050, 0.100)],
       widths=[1.0, 1.7, 1.7, 1.2])
-P("Table 2. Effective conductivity from linear mixing and from the general effective media equation.", size=10.5)
 FIG("fig3_percolation.png",
     "Figure 4. (a) Effective conductivity from linear mixing and from the general effective media equation. "
     "(b) Corresponding slab shielding effectiveness for a 2 mm sheet at 8.2 GHz.")
@@ -595,15 +732,13 @@ P("The benchmark will be extended to metal foils, ferromagnets, characterised mu
   "acts through structure directly.")
 
 H("Declarations")
-P("*Funding:* The authors received no external funding for this work.\n"
-  "*Competing interests:* The authors declare no competing interests.\n"
-  "*Data and code availability:* The code, automated tests, benchmark file and the scripts that generate every "
-  "number and figure in this paper are available at https://github.com/DanushArun/material-emi-shielding (branch fix/slab-reflection-physics).")
+P("*Funding:* The authors received no external funding for this work.")
+P("*Competing interests:* The authors declare no competing interests.")
+P("*Data and code availability:* The code, automated tests, benchmark file and the scripts that generate every "
+  "number and figure in this paper are available at https://github.com/DanushArun/material-emi-shielding "
+  "(branch fix/slab-reflection-physics).")
 
 H("Appendix A. Benchmark entries")
-P("Table A1. All benchmark entries. *t*: thickness; *σ*: conductivity as used (converted to S m^{−1}; for "
-  "entries reported as sheet resistance, 1/(*R*_{s}*t*)); SE: measured; Slab: prediction; *G*: gain.", size=10.5)
-
 
 def ft(x):
     return f"{x * 1e9:.3g} nm" if x < 1e-6 else (f"{x * 1e6:.3g} µm" if x < 1e-3 else f"{x * 1e3:.3g} mm")
@@ -616,15 +751,36 @@ def ff(b):
     return f"{u(lo)} {unit}" if lo == hi else f"{u(lo)}–{u(hi)} {unit}"
 
 
-TABLE(["Material", "*t*", "Frequency", "*σ* (S m^{−1})", "SE (dB)", "Slab (dB)", "*G* (dB)", "Ref."],
-      [[b["material"], ft(float(b["thickness_m"])), ff(b), f"{b['sig']:.3g}", f"{b['meas']:.1f}", f"{b['slab']:.1f}",
+CHEM = [("Ti3C1.94O0.06Tz", "Ti_{3}C_{1.94}O_{0.06}T_{z}"), ("Ti3C2Tx", "Ti_{3}C_{2}T_{x}"), ("Ti3CNTx", "Ti_{3}CNT_{x}"),
+        ("In2O3", "In_{2}O_{3}"), ("BaSnO3", "BaSnO_{3}"), ("MoS2", "MoS_{2}")]
+
+
+def chem(name):
+    for plain, marked in CHEM:
+        name = name.replace(plain, marked)
+    return name.replace("*", "\u2217")
+
+
+def fsig(v):
+    if 0.01 <= v < 1e3:
+        return f"{v:.3g}"
+    m, e = f"{v:.2e}".split("e")
+    return f"{m} \u00d7 10^{{{int(e)}}}".replace("-", "\u2212")
+
+
+TABLE("Table A1. All benchmark entries. *t*: thickness; *σ*: conductivity as used (converted to S m^{−1}; for "
+  "entries reported as sheet resistance, 1/(*R*_{s}*t*)); SE: measured; Slab: prediction; *G*: gain.",
+      ["Material", "*t*", "Frequency", "*σ* (S m^{−1})", "SE (dB)", "Slab (dB)", "*G* (dB)", "Ref."],
+      [[chem(b["material"]), ft(float(b["thickness_m"])), ff(b), fsig(b["sig"]), f"{b['meas']:.1f}", f"{b['slab']:.1f}",
         sg(b["gain"]), f"[{num(b['id'])}]"] for b in sorted(bench, key=lambda b: (b["grp"], b["citation"], b["id"]))],
-      widths=[2.4, 0.7, 0.9, 0.8, 0.55, 0.55, 0.55, 0.45], size=8)
+      widths=[1.72, 0.5, 0.92, 0.76, 0.42, 0.42, 0.42, 0.34], size=7.5)
 
 H("References")
 for key, i in sorted(REFNUM.items(), key=lambda kv: kv[1]):
-    par = P(f"[{i}] {REFTEXT[key]}", size=10.5)
-    par.paragraph_format.space_after, par.paragraph_format.line_spacing = Pt(3), 1.15
+    par = P(f"[{i}]\t{REFTEXT[key]}", align=LEFT)
+    pf = par.paragraph_format
+    pf.left_indent, pf.first_line_indent, pf.space_after = Inches(0.3), Inches(-0.3), Pt(4)
+    pf.tab_stops.add_tab_stop(Inches(0.3))
 
 doc.save(OUT)
 print(f"Saved {OUT}  ({N} entries, {NP} papers, {len(REFNUM)} references, {EQN[0]} equations)")

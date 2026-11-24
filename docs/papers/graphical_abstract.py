@@ -45,7 +45,7 @@ P2x, P2w = 452, 420
 P3x, P3w = 922, 376
 TY = 50
 for x, w, t in ((P1x, P1w, "Shield microstructure"), (P2x, P2w, "Homogeneous-slab model"),
-                (P3x, P3w, "Architecture gain")):
+                (P3x, P3w, "Measured against predicted")):
     text(x + w/2, TY, t, 25, "bold", "middle")
 
 def arrow(x0, x1, y):
@@ -137,15 +137,14 @@ text(P2x + P2w - 8, cy + 82, "Transmitted", 21, anchor="end")
 text(P2x + P2w/2, 446, '<tspan font-style="italic">SE</tspan> = <tspan font-style="italic">R</tspan> + <tspan font-style="italic">A</tspan> + <tspan font-style="italic">B</tspan>', 25, family=SERIF, anchor="middle")
 text(P2x + P2w/2, 478, "exact prediction from conductivity and thickness", 19, fill=GREY, anchor="middle")
 
-# ---------- panel 3: architecture gain by material group ----------
+# ---------- panel 3: residual by material group ----------
 import csv
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from make_figures import GROUPS  # noqa: E402
-bench = {r["id"]: r for r in csv.DictReader((HERE.parents[1] / "data_collection" / "verified_benchmark.csv").open())}
-rows = list(csv.DictReader((HERE / "architecture_gain.csv").open()))
-npapers = len({b["citation"] for b in bench.values()})
+from benchmark_analysis import load  # noqa: E402
+rows = load()
+npapers = len({r["paper"] for r in rows})
 short = ["Metal films", "Metal meshes", "Dense 2D films", "Porous 2D films", "Solid composites", "Foams, aerogels"]
 ax0, ax1, ay0, ay1 = P3x + 150, P3x + P3w - 8, 96, 400
 gmin, gmax = -60, 60
@@ -161,12 +160,20 @@ jit = random.Random(11)
 for i, lab in enumerate(short):
     y = ay0 + (i + 0.5) * (ay1 - ay0) / len(short)
     text(ax0 - 12, y + 7, lab, 20, anchor="end")
-    members = GROUPS[i][3]
-    colour = RED if i in (3, 5) else (BLUE if i in (0, 2) else GREY)
     for r in rows:
-        if bench[r["id"]]["material_class"] in members:
-            v = max(gmin, min(gmax, float(r["gain_db"])))
-            add(f'<circle cx="{GX(v):.1f}" cy="{y + jit.uniform(-9, 9):.1f}" r="4.6" fill="{colour}" fill-opacity="0.85"/>')
+        if r["group"] == i:
+            colour = BLUE if r["sigma"] >= 1e4 else RED
+            v = max(gmin, min(gmax, r["res"]))
+            cx, cy = GX(v), y + jit.uniform(-9, 9)
+            if r["quality"] == "C":
+                add(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.9" fill="white" stroke="{colour}" stroke-width="1.6"/>')
+            else:
+                add(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="4.6" fill="{colour}" fill-opacity="0.85"/>')
+lx = P3x + 30
+add(f'<circle cx="{lx}" cy="72" r="4.6" fill="{BLUE}"/>')
+text(lx + 10, 78, "above 10⁴ S/m", 17, fill=GREY)
+add(f'<circle cx="{lx + 170}" cy="72" r="4.6" fill="{RED}"/>')
+text(lx + 180, 78, "below 10⁴ S/m", 17, fill=GREY)
 
 # ---------- footer ----------
 text(W/2, H - 14, f"{len(rows)} source-verified measurements from {npapers} papers, 10 MHz – 40 GHz", 19, fill=GREY, anchor="middle")

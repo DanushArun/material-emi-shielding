@@ -1,10 +1,12 @@
-"""Build the revised manuscript (.docx) from the verified benchmark and committed figures.
+"""Build the manuscript (.docx) from the graded benchmark and the committed analysis.
 
 Run from the repository root:  python docs/papers/build_manuscript.py [output.docx]
-Every number in the text is read from the benchmark and analysis files, so the
-manuscript cannot drift from the data.
+Every number in the text is computed here from data_collection/verified_benchmark.csv
+through docs/papers/benchmark_analysis.py, so the manuscript cannot drift from the data.
 """
-import csv
+import html
+import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -19,65 +21,71 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
 
 HERE = Path(__file__).parent
-ROOT = HERE.parents[1]
-sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(HERE))
-from make_figures import GROUPS  # noqa: E402
-from recompute_manuscript_numbers import se, sobol_total, tmm  # noqa: E402
-from src.physics.composite_models import mclachlan_gem  # noqa: E402
-from src.physics.material_models import freq_dependent_permeability, snoek_resonance_frequency  # noqa: E402
+from benchmark_analysis import GROUPS, cutoff, load, predict, regression, slab_se, summary  # noqa: E402
 
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "EMI_Shielding_paper_revised.docx"
 EQ_DIR = HERE / "_equations"
 EQ_DIR.mkdir(exist_ok=True)
 
 # ---------------------------------------------------------------- data
-bench = list(csv.DictReader((ROOT / "data_collection" / "verified_benchmark.csv").open()))
-gain = {r["id"]: r for r in csv.DictReader((HERE / "architecture_gain.csv").open())}
-for b in bench:
-    g = gain[b["id"]]
-    b["gain"], b["slab"], b["meas"] = float(g["gain_db"]), float(g["se_slab_db"]), float(g["se_measured_db"])
-    b["td"], b["sig"] = float(g["t_over_delta"]), float(b["sigma_s_per_m"])
-    b["grp"] = next(i for i, grp in enumerate(GROUPS) if b["material_class"] in grp[3])
+bench = load()
 BY = {b["id"]: b for b in bench}
-N, NP = len(bench), len({b["citation"] for b in bench})
+PRIM = [b for b in bench if b["quality"] != "C"]
+GRADE_C = [b for b in bench if b["quality"] == "C"]
+N, NP = len(bench), len({b["paper"] for b in bench})
+NPRIM, NPPRIM = len(PRIM), len({b["paper"] for b in PRIM})
 
 
-def stats(rows):
-    g = np.array([r["gain"] for r in rows])
-    return dict(n=len(g), med=float(np.median(g)), lo=float(g.min()), hi=float(g.max()),
-                within=int((np.abs(g) <= 10).sum()))
+def sg(x, nd=1):  # signed value with a true minus sign
+    return f"{x:+.{nd}f}".replace("-", "−")
 
 
-def sg(x):  # signed gain with a true minus sign
-    return f"{x:+.1f}".replace("-", "−")
+def ci(s):
+    return f"{sg(s['ci_lo'])} to {sg(s['ci_hi'])}"
 
 
-G = [stats([b for b in bench if b["grp"] == i]) for i in range(len(GROUPS))]
-ALL = stats(bench)
-HIGH = stats([b for b in bench if b["sig"] >= 1e4])
-LOW = stats([b for b in bench if b["sig"] < 1.0])
-DENSE = [b for b in bench if b["grp"] == 2]
-DENSE_X = stats([b for b in DENSE if not b["id"].startswith("wang2026")])
-DENSE_PAPERS = len({b["citation"] for b in DENSE if not b["id"].startswith("wang2026")})
-POS = int(sum(b["gain"] > 10 for b in bench))
-NEG = int(sum(b["gain"] < -10 for b in bench))
-NUMW = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
-ABOVE90 = int(sum(b["meas"] > 90 for b in bench))
-LOW_AERO = int(sum(b["sig"] < 1.0 and b["grp"] == 5 for b in bench))
-NEG_W = {8: "Eight", 9: "Nine", 10: "Ten", 11: "Eleven", 12: "Twelve"}.get(NEG, str(NEG))
-POROUS_POS = [b["gain"] for b in bench if b["grp"] in (3, 5) and b["gain"] > 10]
+def dres(i):
+    return sg(BY[i]["res"])
 
-CU = 5.96e7
-single = se(CU, 1.0, 0.5e-6, 1e9)["total_se"]
-one_um = se(CU, 1.0, 1.0e-6, 1e9)["total_se"]
-sand = tmm([(CU, 1.0, 0.5e-6), (0.0, 3.0, 100e-6), (CU, 1.0, 0.5e-6)], 1e9)["total_se"]
-fr_mu = snoek_resonance_frequency(1e5, 8.6e5)
-mu_1g = abs(freq_dependent_permeability(1e5, 1e9, M_s=8.6e5))
-SOB = [sobol_total(n, c) for n, c in (
-    (dict(sigma=CU, mu=1.0, t=10e-6, f=1e9), dict(sigma=0.05, mu=1e-4, t=0.02, f=0.001)),
-    (dict(sigma=6.99e6, mu=300.0, t=1e-3, f=1e6), dict(sigma=0.08, mu=0.20, t=0.02, f=0.001)),
-    (dict(sigma=10.0, mu=1.0, t=2e-3, f=8.2e9), dict(sigma=0.30, mu=1e-4, t=0.05, f=0.001)))]
+
+S_ALL, S_PRIM = summary(bench), summary(PRIM)
+HIGH = [b for b in PRIM if b["sigma"] >= 1e4]
+MID = [b for b in PRIM if 1 <= b["sigma"] < 1e4]
+LOW = [b for b in PRIM if b["sigma"] < 1]
+S_HIGH, S_MID, S_LOW = summary(HIGH), summary(MID), summary(LOW)
+S_HIGH_FREE, S_HIGH_WG = summary(HIGH, "res_free"), summary(HIGH, "res_all_wg")
+S_HIGH_ALL = summary([b for b in bench if b["sigma"] >= 1e4])
+S_HIGH_A = summary([b for b in bench if b["sigma"] >= 1e4 and b["quality"] == "A"])
+G = [summary([b for b in PRIM if b["group"] == i]) for i in range(len(GROUPS))]
+REG = regression(PRIM)
+HIGH_PAPERS = sorted({b["paper"] for b in HIGH})
+PM = [float(np.median([b["res"] for b in HIGH if b["paper"] == p])) for p in HIGH_PAPERS]
+WG = [b for b in bench if b["fixture"] == "waveguide"]
+WG_SHIFT = [b["slab"] - b["slab_free"] for b in WG]
+FIX = {k: sum(b["fixture"] == k for b in bench) for k in ("waveguide", "coaxial", "unspecified")}
+OUTL = [b for b in PRIM if abs(b["res"]) > 10]
+OUT_POS, OUT_NEG = [b for b in OUTL if b["res"] > 0], [b for b in OUTL if b["res"] < 0]
+NUMW = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten",
+        11: "eleven", 12: "twelve", 13: "thirteen"}
+QUAL = {q: sum(b["quality"] == q for b in bench) for q in "ABC"}
+SE90 = sum(b["se"] >= 90 for b in bench)
+YEARS = None  # filled after references are formatted
+
+
+def z_te(f):
+    """TE10 wave impedance of the standard waveguide at f, ohm."""
+    return 376.730 / math.sqrt(1 - (cutoff(f) / f) ** 2)
+
+
+def fsig2(v):
+    return f"{v:.3g}" if 0.01 <= v < 1e3 else sci(v)
+
+
+def sci(v, nd=1):
+    m, e = f"{v:.{nd}e}".split("e")
+    return f"{m} × 10^{{{int(e)}}}".replace("-", "−")
+
 
 # ---------------------------------------------------------------- references
 FOUND = {
@@ -85,18 +93,17 @@ FOUND = {
     "schulz": "R.B. Schulz, V.C. Plantz, D.R. Brush, Shielding theory and practice, IEEE Trans. Electromagn. Compat. 30 (1988) 187–201. https://doi.org/10.1109/15.3297",
     "ott": "H.W. Ott, Electromagnetic Compatibility Engineering, Wiley, Hoboken, 2009. https://doi.org/10.1002/9780470508510",
     "celozzi": "S. Celozzi, R. Araneo, G. Lovat, Electromagnetic Shielding, Wiley, Hoboken, 2008. https://doi.org/10.1002/9780470268483",
-    "yeh": "P. Yeh, Optical Waves in Layered Media, Wiley, New York, 1988.",
-    "peng": "M. Peng, F. Qin, Clarification of basic concepts for electromagnetic interference shielding effectiveness, arXiv:2112.03272 (2021).",
-    "mclachlan": "D.S. McLachlan, M. Blaszkiewicz, R.E. Newnham, Electrical resistivity of composites, J. Am. Ceram. Soc. 73 (1990) 2187–2203. https://doi.org/10.1111/j.1151-2916.1990.tb07576.x",
-    "kirkpatrick": "S. Kirkpatrick, Percolation and conduction, Rev. Mod. Phys. 45 (1973) 574–588. https://doi.org/10.1103/RevModPhys.45.574",
-    "bauhofer": "W. Bauhofer, J.Z. Kovacs, A review and analysis of electrical percolation in carbon nanotube polymer composites, Compos. Sci. Technol. 69 (2009) 1486–1498. https://doi.org/10.1016/j.compscitech.2008.06.018",
-    "snoek": "J.L. Snoek, Dispersion and absorption in magnetic ferrites at frequencies above one Mc/s, Physica 14 (1948) 207–217. https://doi.org/10.1016/0031-8914(48)90038-X",
-    "sobol": "I.M. Sobol, Global sensitivity indices for nonlinear mathematical models and their Monte Carlo estimates, Math. Comput. Simul. 55 (2001) 271–280.",
-    "saltelli": "A. Saltelli, Making best use of model evaluations to compute sensitivity indices, Comput. Phys. Commun. 145 (2002) 280–297.",
+    "astm": "ASTM D4935-18, Standard test method for measuring the electromagnetic shielding effectiveness of planar materials, ASTM International, West Conshohocken, PA, 2018.",
 }
-import html
-import json
-
+DOI_KEYS = {
+    "simon": "10.1080/03602558108067695", "colaneri": "10.1109/19.137363", "joo": "10.1063/1.112717",
+    "alsaleh": "10.1016/j.carbon.2009.02.030", "yun": "10.1002/adma.201906769", "iqbalrev": "10.1002/adfm.202000883",
+    "chung": "10.1016/j.matchemphys.2020.123587", "peng": "10.1063/5.0075019", "moucka": "10.3390/polym11101603",
+    "wilson": "10.1109/15.3302", "ieee2715": "10.1109/MEMC.2023.10201434", "casey": "10.1109/15.3309",
+    "bergman": "10.1103/PhysRevLett.39.1222", "clerc": "10.1080/00018739000101501", "mclachlan98": "10.1103/PhysRevB.58.13558",
+}
+# Crossref "published" is the online date; these volumes carry the following year.
+YEAR_FIX = {"10.3390/nano15010006": 2025, "10.1007/s40820-024-01583-2": 2025, "10.1007/s40820-021-00759-4": 2022}
 CROSSREF = json.loads((HERE / "references_crossref.json").read_text())
 
 
@@ -105,6 +112,7 @@ TITLE_FIX = {
     "Ti 3 C 2 T x MXene-MWCNT@MoS 2 Film": "Ti_{3}C_{2}T_{x} MXene-MWCNT@MoS_{2} Film",
     "Ti3C2T x : MXenes": "Ti_{3}C_{2}T_{x}: MXenes",
     "Ti 3 C 2 T x /(Aramid": "Ti_{3}C_{2}T_{x}/(Aramid",
+    "Emi Shielding Through Conductive Plastics": "EMI shielding through conductive plastics",
 }
 
 
@@ -123,19 +131,28 @@ def _author(a):
 def format_crossref(doi):
     m = CROSSREF[doi]
     authors = ", ".join(_author(a) for a in m["author"])
-    year = m["published"]["date-parts"][0][0]
-    pages = (m.get("page") or m.get("article-number") or "").replace("-", "\u2013")
+    year = YEAR_FIX.get(doi, m["published"]["date-parts"][0][0])
+    pages = (m.get("page") or m.get("article-number") or "").replace("-", "–")
     if doi == "10.34133/2022/9780290":
         pages = "9780290"
-    ref = f"{authors}, {_clean(m['title'][0])}, {_clean(m['container-title'][0])} {m.get('volume')} ({year}) {pages}. https://doi.org/{doi}"
+    vol = m.get("volume")
+    if doi == "10.1109/MEMC.2023.10201434":
+        vol = "12(2)"
+    ref = f"{authors}, {_clean(m['title'][0])}, {_clean(m['container-title'][0])} {vol} ({year}) {pages}. https://doi.org/{doi}"
     if doi == "10.1007/s10853-020-05518-1":
-        ref += " (values taken from the preprint, arXiv:2005.04875)"
-    return ref
+        ref += " (values read from the preprint, arXiv:2005.04875)"
+    return ref, year
 
 
 REFTEXT = dict(FOUND)
+for _k, _d in DOI_KEYS.items():
+    REFTEXT[_k] = format_crossref(_d)[0]
+_years = []
 for b in bench:
-    REFTEXT.setdefault(b["citation"], format_crossref(b["doi"]))
+    text, year = format_crossref(b["paper"])
+    REFTEXT.setdefault(b["citation"], text)
+    _years.append(year)
+YEARS = (min(_years), max(_years))
 REFNUM = {}
 
 
@@ -147,12 +164,15 @@ def num(key):
 
 
 def c(*keys):
-    nums = [num(k) for k in keys]
-    return "[" + ",".join(str(n) for n in sorted(dict.fromkeys(nums))) + "]"
-
-
-def g(i):
-    return sg(BY[i]["gain"])
+    nums = sorted(dict.fromkeys(num(k) for k in keys))
+    out, i = [], 0
+    while i < len(nums):
+        j = i
+        while j + 1 < len(nums) and nums[j + 1] == nums[j] + 1:
+            j += 1
+        out.append(str(nums[i]) if j == i else (f"{nums[i]},{nums[j]}" if j == i + 1 else f"{nums[i]}–{nums[j]}"))
+        i = j + 1
+    return "[" + ",".join(out) + "]"
 
 
 # ---------------------------------------------------------------- docx helpers
@@ -228,8 +248,7 @@ def H(text, level=1):
     pf = par.paragraph_format
     pf.space_before, pf.space_after, pf.keep_with_next = (Pt(12), Pt(7), True) if level == 1 else (Pt(8), Pt(5), True)
     pf.line_spacing = Pt(14 if level == 1 else 11)
-    r = par.add_run(text); r.bold = True
-    r.font.size, r.font.name = Pt(12 if level == 1 else 10), FONT
+    runs(par, text, bold=True, size=12 if level == 1 else 10)
 
 
 def _border(par, side, sz):
@@ -324,6 +343,10 @@ def TABLE(caption, header, rows, widths, size=9, align=None):
     cap = _caption(caption, after=4, before=6); cap.paragraph_format.keep_with_next = True
     scale = min(1.0, TEXT_W / sum(widths)); widths = [w * scale for w in widths]
     t = _plain_table(len(header), widths)
+    mar = OxmlElement("w:tblCellMar")
+    for side in ("left", "right"):
+        el = OxmlElement(f"w:{side}"); el.set(qn("w:w"), "45"); el.set(qn("w:type"), "dxa"); mar.append(el)
+    t._tbl.tblPr.append(mar)
     align = align or ["l"] + ["c"] * (len(header) - 1)
     for cell, text in zip(t.rows[0].cells, header):
         cell.text = ""; runs(cell.paragraphs[0], text, bold=True, size=size)
@@ -383,368 +406,459 @@ note.paragraph_format.space_after = Pt(16)
 abs_head = doc.add_paragraph(); abs_head.alignment = CENTER
 abs_head.paragraph_format.space_after = Pt(8)
 runs(abs_head, "Abstract", bold=True, size=12)
-_abs = P(f"Plane-wave theory gives the shielding effectiveness (SE) of a homogeneous conducting slab exactly, yet it is "
-  f"rarely tested against measurements whose inputs can be traced to their source. We assemble a benchmark of {N} "
-  f"measured SE values from {NP} primary papers, covering metal films and meshes, MXene and graphene films, "
-  f"carbon–polymer composites, foams and aerogels (10 MHz to 40 GHz, 13 nm to 5 mm, 10^{{−3}} to 10^{{7}} S m^{{−1}}). "
-  f"Every value is tied to a quoted sentence, table or caption. For each entry we compute the exact slab prediction "
-  f"from the reported conductivity and thickness, and define the architecture gain as measured minus predicted SE. "
-  f"For conductors above 10^{{4}} S m^{{−1}} (n = {HIGH['n']}) the median gain is {sg(HIGH['med'])} dB and "
-  f"{HIGH['within']} entries lie within ±10 dB; continuous metal films and dense MXene films from 29 nm to 45 µm "
-  f"follow the model. Three departures are systematic. Porous films, foams, aerogels and segregated networks exceed "
-  f"the prediction by {min(POROUS_POS):.0f} to {max(POROUS_POS):.0f} dB. Samples with reported conductivity below "
-  f"1 S m^{{−1}} shield {LOW['lo']:.0f} to {LOW['hi']:.0f} dB more than that conductivity implies. {NEG_W} entries fall "
-  f"more than 10 dB below the prediction, which flags a reported conductivity or thickness that does not describe "
-  f"the measured sample. The slab model is therefore a quantitative baseline for dense conductors and a consistency "
-  f"check on reported data, and the gain separates what conductivity explains from what structure adds. The code, "
-  f"tests and benchmark are openly available.")
-_kw = P("*Keywords:* electromagnetic interference shielding; shielding effectiveness; benchmark dataset; transfer matrix "
-  "method; MXene; polymer composites; porous materials")
 
+
+def rng(ids, key="res"):
+    v = [BY[i][key] for i in ids]
+    return f"{sg(min(v))} to {sg(max(v))}"
+
+
+def ids(prefix, pool=None):
+    return [b["id"] for b in (pool or bench) if b["id"].startswith(prefix)]
+
+
+LOW_EFF = [b["sigma_eff"] for b in LOW]
+DERIVED = [b for b in bench if b["sigma_basis"].startswith("derived")]
+THIN_ERR = max(abs(slab_se(b["sigma"], b["t"], 0.5 * (b["f_lo"] + b["f_hi"]))
+                   - 20 * math.log10(1 + 376.730 * b["sigma"] * b["t"] / 2)) for b in DERIVED)
+GRADE_C_REASON = {b["paper"]: b["quality_note"] for b in GRADE_C}
+BULK_LOW = [b for b in PRIM if b["group"] in (4, 5) and b["sigma"] < 1e3]
+HIGH_F3 = sum(abs(b["log_ratio"]) <= math.log10(3) for b in HIGH)
+T_NEED = next(t for t in np.arange(40e-6, 400e-6, 1e-6) if slab_se(BY["iqbal2020_ti3cn_350"]["sigma"], t, 8.2e9) >= 116.0)
+BIG_POS_HIGH = max((b for b in OUT_POS if b["sigma"] >= 1e4 and not b["id"].startswith("iqbal2020_ti3cn")), key=lambda b: b["res"])
+DENSE = G[2]
+A_N = QUAL["A"]
+
+_abs = P(
+    f"Whether the shielding effectiveness (SE) of a planned material can be estimated from its conductivity and "
+    f"thickness alone is a practical question that is seldom tested on data whose origin can be checked. We compile "
+    f"{N} measured SE values from {NP} primary papers on metal films and meshes, MXene and graphene films, "
+    f"carbon–polymer composites, foams and aerogels (10 MHz to 40 GHz, 13 nm to 5 mm, 10^{{−3}} to 10^{{7}} S m^{{−1}}). "
+    f"Each value is tied to a quoted sentence, table or caption, and each entry is graded by how completely its source "
+    f"documents it. Every entry is compared with the exact homogeneous-slab prediction for the stated fixture, "
+    f"including the TE_{{10}} wave impedance for waveguide measurements, which changes the prediction by up to "
+    f"{max(WG_SHIFT):.1f} dB. For the {NPRIM} entries that meet the documentation criteria, sheets with reported "
+    f"conductivity above 10^{{4}} S m^{{−1}} (n = {S_HIGH['n']}, {S_HIGH['papers']} papers) have a median residual of "
+    f"{sg(S_HIGH['median'])} dB (95% interval {ci(S_HIGH)} dB, resampling papers) and a root-mean-square residual of "
+    f"{S_HIGH['rmse']:.0f} dB; for dense MXene and graphene films it is {DENSE['rmse']:.0f} dB. Below 10^{{4}} S m^{{−1}} "
+    f"the reported conductivity does not predict SE: the root-mean-square residual is {S_MID['rmse']:.0f} dB, and "
+    f"samples reported below 1 S m^{{−1}} shield as homogeneous sheets of {min(LOW_EFF):.0f} to {max(LOW_EFF):.0f} "
+    f"S m^{{−1}} would. Controlled comparisons within single studies do not show a consistent contribution from "
+    f"porosity, with one exception. The benchmark, code and tests are openly available.")
+_kw = P("*Keywords:* electromagnetic interference shielding; shielding effectiveness; benchmark dataset; waveguide "
+        "measurement; MXene; polymer composites; effective conductivity")
 for _p in (_abs, _kw):
     _p.paragraph_format.left_indent = _p.paragraph_format.right_indent = Inches(0.5)
 _kw.paragraph_format.space_after = Pt(10)
 
 # ---------------------------------------------------------------- 1
 H("1. Introduction")
-P(f"The shielding effectiveness of a planar barrier is the ratio of incident to transmitted power, expressed in "
-  f"decibels. For a single homogeneous layer at normal incidence, Schelkunoff’s transmission-line analogy "
-  f"{c('schelkunoff')} gives it in closed form from four quantities: conductivity, permeability, thickness and "
-  f"frequency {c('schulz', 'ott', 'celozzi')}. The calculation takes microseconds and is the usual first estimate "
-  f"in electromagnetic compatibility design.")
-P(f"Most shielding materials reported today are not homogeneous slabs. They are laminated MXene and graphene films, "
-  f"percolating carbon networks in polymers, foams, aerogels and metal meshes. Their papers report a measured SE "
-  f"together with a conductivity and a thickness, and frequently attribute the result to the material’s "
-  f"structure. Whether structure contributed anything beyond what the conductivity already implies is seldom "
-  f"quantified, although the slab calculation that would answer the question is elementary. The literature also "
-  f"contains recurring misunderstandings of how SE and its reflection and absorption parts should be interpreted "
-  f"{c('peng')}.")
-P(f"Comparisons between slab or transfer-matrix calculations and measurement exist for individual material "
-  f"families. Han et al. {c('han2020_ti3c2_5um')} showed that a transfer-matrix model follows the measured SE of "
-  f"highly conductive MXene films and under-predicts films below about 100 S cm^{{−1}}, and Iqbal et al. "
-  f"{c('iqbal2020_ti3cn_350')} reported absorption in annealed Ti_{{3}}CNT_{{x}} well above what its conductivity "
-  f"suggests. What is missing is a comparison across material classes that uses one exact model and data whose "
-  f"provenance can be checked. Data-driven studies of shielding materials would benefit from the same resource.")
-P(f"This paper makes three contributions. First, a benchmark of {N} measured SE values from {NP} primary papers, "
-  f"in which each value, thickness, frequency and conductivity is traceable to a quoted location in its source. "
-  f"Second, an openly tested implementation in which the Schelkunoff decomposition, a transfer-matrix solver and "
-  f"an independent exact slab formula agree to within 10^{{−6}} dB. Third, an analysis of the architecture gain, "
-  f"the difference between measured SE and the slab prediction, which identifies where the homogeneous model is "
-  f"sufficient, where structure adds shielding, and where reported values are mutually inconsistent.")
+P(f"A shield is usually specified before it exists. The designer chooses a material and a thickness, and the two "
+  f"numbers available at that stage are a conductivity and a dimension. For a homogeneous conducting sheet, "
+  f"Schelkunoff’s transmission-line analysis {c('schelkunoff')} turns those two numbers into a shielding "
+  f"effectiveness (SE) in closed form {c('schulz', 'ott', 'celozzi')}. How far that estimate can be trusted for the "
+  f"materials now being developed is the subject of this paper.")
+P(f"The comparison between sheet theory and measurement is not new. Simon’s empirical expression "
+  f"{c('simon')} has been used for four decades to relate SE to conductivity, thickness and frequency. Colaneri and "
+  f"Shacklette {c('colaneri')} and Joo and Epstein {c('joo')} tested thin- and thick-sheet expressions on conducting "
+  f"polymers, and Al-Saleh and Sundararaj {c('alsaleh')} examined the mechanisms in carbon nanotube composites. For "
+  f"MXenes, Yun et al. {c('yun')} and Han et al. {c('han2020_ti3c2_5um')} compared the measured SE of highly "
+  f"conductive films, from assemblies of monolayers to micrometre thickness, with sheet and transfer-matrix "
+  f"calculations and found close agreement, while "
+  f"Iqbal et al. {c('iqbal2020_ti3cn_350')} reported absorption in annealed Ti_{{3}}CNT_{{x}} far above what its "
+  f"conductivity suggests. Reviews tabulate SE with conductivity and thickness across material classes "
+  f"{c('iqbalrev', 'chung')}, and common misreadings of SE and of its reflection and absorption parts have been "
+  f"documented {c('peng')}.")
+P(f"What these sources do not provide is a single, uniformly applied comparison across material classes in which "
+  f"every input can be traced to the place where it was printed, and in which the measurement fixture is taken into "
+  f"account. Most reported SE values are measured in a rectangular waveguide, where the wave impedance differs from "
+  f"that of free space {c('moucka', 'wilson')}; the difference is a few decibels, which is the size of the agreement "
+  f"usually claimed. Tabulated values also mix band averages with maxima, and conductivities measured on the specimen "
+  f"with values quoted for the material in general.")
+P(f"This paper contributes three things. The first is a benchmark of {N} measured SE values from {NP} papers in "
+  f"which each value, thickness, frequency and conductivity is linked to a quotation, and each entry carries a "
+  f"quality grade that depends only on what its source prints. The second is a fixture-aware comparison with the "
+  f"exact slab model, with statistics that treat papers, not individual samples, as independent. The third is an "
+  f"answer to the practical question: for sheets above 10^{{4}} S m^{{−1}} the estimate is good to about "
+  f"{S_HIGH['rmse']:.0f} dB root mean square, and below that conductivity it is not usable.")
 
 # ---------------------------------------------------------------- 2
 H("2. Model")
-H("2.1 Exact shielding effectiveness of a homogeneous slab", 2)
-P("A slab of thickness *t*, conductivity *σ*, permeability *µ* = *µ*_{r}*µ*_{0} and permittivity "
-  "*ε* = *ε*_{r}*ε*_{0} separates two half-spaces of free space with impedance *Z*_{0} = 376.73 Ω. At "
-  "angular frequency *ω* the propagation constant and intrinsic impedance of the slab are")
+H("2.1 Homogeneous slab in free space", 2)
+P("A slab of thickness *t*, conductivity *σ*, permeability *µ* and permittivity *ε* separates two half-spaces of "
+  "free space with impedance *Z*_{0} = 376.73 Ω. At angular frequency *ω* its propagation constant and intrinsic "
+  "impedance are")
 EQ(r"\gamma = j\omega\sqrt{\mu\,\varepsilon_c},\qquad \eta=\sqrt{\mu/\varepsilon_c},\qquad \varepsilon_c=\varepsilon-j\sigma/\omega")
 P("and the shielding effectiveness is the sum of a reflection term, an absorption term and a multiple-reflection "
   "correction,")
 EQ(r"SE = R + A + B")
 EQ(r"R = 20\log_{10}\frac{|Z_0+\eta|^{2}}{4\,Z_0\,|\eta|},\qquad A = 20\log_{10}\left|e^{\gamma t}\right| = 8.686\,\mathrm{Re}(\gamma)\,t")
 EQ(r"B = 20\log_{10}\left|1-q^{2}e^{-2\gamma t}\right|,\qquad q=\frac{Z_0-\eta}{Z_0+\eta}")
-P(f"The reflection term accounts for the impedance mismatch at both faces of the slab. With the correction *B* "
-  f"included, the sum is algebraically identical to the exact plane-wave transmission loss, so Eqs. (2)–(4) involve "
-  f"no approximation beyond homogeneity and normal incidence. *B* is negative for electrically thin shields and "
-  f"vanishes once *A* exceeds about 15 dB. In a good conductor the skin depth is *δ* = (2/*ωµσ*)^{{1/2}} and "
-  f"*A* = 8.686 *t*/*δ*.")
-P("When the slab is much thinner than the skin depth, the three terms combine into a result that depends only on "
-  "the sheet resistance *R*_{s} = 1/(*σt*):")
+P("With *B* included, the sum is algebraically identical to the exact transmission loss of the slab. The "
+  "assumptions are a laterally infinite, homogeneous, isotropic and linear sheet, a plane wave at normal incidence, "
+  "and no substrate. For a good conductor (|*η*| ≪ *Z*_{0}) the correction *B* is negative and becomes negligible "
+  "once *A* exceeds about 10 dB; the skin depth is *δ* = (2/*ωµσ*)^{1/2} and *A* = 8.686 *t*/*δ*.")
+P("When the sheet is much thinner than the skin depth the three terms reduce to a result that depends only on the "
+  "sheet resistance *R*_{s} = 1/(*σt*):")
 EQ(r"SE \approx 20\log_{10}\left(1+\frac{Z_0}{2R_s}\right)")
-P("Equation (5) is the form used below for metal films, meshes and transparent conductors, for which sheet "
-  "resistance is the quantity actually measured.")
+P(f"For the {len(DERIVED)} entries below whose conductivity is derived from a printed sheet resistance, Eq. (5) "
+  f"agrees with Eqs. (2)–(4) to within {THIN_ERR:.1f} dB, so the nominal thickness has almost no influence on those "
+  f"predictions.")
 
-H("2.2 Transfer matrix method for layered shields", 2)
-P(f"For a stack of *N* layers, each layer *i* of thickness *d*_{{i}} is described by a 2×2 matrix with elements "
-  f"*A*_{{i}} = *D*_{{i}} = cosh(*γ*_{{i}}*d*_{{i}}), *B*_{{i}} = *η*_{{i}} sinh(*γ*_{{i}}*d*_{{i}}) and "
-  f"*C*_{{i}} = sinh(*γ*_{{i}}*d*_{{i}})/*η*_{{i}} {c('yeh', 'celozzi')}. The stack matrix is the ordered product of the "
-  f"layer matrices, and with free space on both sides")
-EQ(r"S_{21}=\frac{2}{A+B/Z_0+C\,Z_0+D},\qquad SE=-20\log_{10}|S_{21}|")
-P("For thick conductors Re(*γd*) exceeds the range of double-precision hyperbolic functions. The implementation "
-  "factors exp(Re(*γd*)) out of each such layer exactly and carries it as a logarithmic scale, so the result stays "
-  "finite and continuous across the switch. For a single layer the method reproduces Eqs. (2)–(4): the two "
-  "implementations and an independent evaluation of the exact slab formula agree to within 10^{−6} dB over "
-  "conductivities from 10^{−3} to 6 × 10^{7} S m^{−1}, including ferromagnetic and weakly conducting cases. "
-  "These identities are enforced by automated tests in the repository.")
+H("2.2 Measurement fixture", 2)
+P(f"Equations (1)–(5) describe a transverse electromagnetic wave, which is what a coaxial cell {c('astm')} "
+  f"launches. In a rectangular waveguide the sample is illuminated by the TE_{{10}} mode. The field is still "
+  f"tangential to the sheet, but the wave impedance and propagation constant in each medium become")
+EQ(r"Z_{\mathrm{TE}}=\frac{j\omega\mu}{\gamma_{\mathrm{TE}}},\qquad \gamma_{\mathrm{TE}}=\sqrt{k_c^{2}-\omega^{2}\mu\,\varepsilon_c},\qquad k_c=\frac{2\pi f_c}{c}")
+P(f"where *f*_{{c}} is the cutoff frequency (6.557 GHz for WR-90, 9.488 GHz for WR-62). Equations (2)–(4) hold with "
+  f"*Z*_{{0}} and *η* replaced by the TE_{{10}} impedances of air and of the sheet. In air *Z*_{{TE}} = "
+  f"*Z*_{{0}}/[1 − (*f*_{{c}}/*f*)^{{2}}]^{{1/2}}, which is {z_te(8.2e9):.0f} Ω at 8.2 GHz, {z_te(10e9):.0f} Ω at "
+  f"10 GHz and {z_te(12.4e9):.0f} Ω at 12.4 GHz. For a reflecting sheet the waveguide therefore reads "
+  f"{20 * math.log10(z_te(8.2e9) / 376.73):.1f}, {20 * math.log10(z_te(10e9) / 376.73):.1f} and "
+  f"{20 * math.log10(z_te(12.4e9) / 376.73):.1f} dB above the free-space value at those frequencies "
+  f"{c('moucka')}. Each benchmark entry is predicted with the model of the fixture its source states: TE_{{10}} "
+  f"for waveguide measurements, and Eqs. (1)–(4) for coaxial cells and for sources that do not name the fixture. "
+  f"The sensitivity of the results to this assignment is reported in Section 4.1.")
 
-H("2.3 Percolation conductivity of composites", 2)
-P(f"The conductivity of a composite of conducting filler (volume fraction *f*, conductivity *σ*_{{f}}) in an "
-  f"insulating matrix (*σ*_{{m}}) changes by many orders of magnitude at the percolation threshold *f*_{{c}} "
-  f"{c('kirkpatrick', 'bauhofer')}. The general effective media equation of McLachlan et al. {c('mclachlan')} "
-  f"describes the transition in one implicit relation,")
-EQ(r"\frac{(1-f)\left(\sigma_m^{1/s}-\sigma_e^{1/s}\right)}{\sigma_m^{1/s}+K\sigma_e^{1/s}}+"
-   r"\frac{f\left(\sigma_f^{1/s}-\sigma_e^{1/s}\right)}{\sigma_f^{1/s}+K\sigma_e^{1/s}}=0,\qquad K=\frac{1-f_c}{f_c}")
-P("where *σ*_{e} is the effective conductivity and *s* ≈ 2 is the critical exponent for three-dimensional networks. "
-  "It is solved numerically by a bracketing root finder.")
+H("2.3 Residual and effective conductivity", 2)
+P("For a sample with reported conductivity *σ*, thickness *t* and measurement frequency *f*, the residual is")
+EQ(r"\Delta SE = SE_{\mathrm{measured}} - SE_{\mathrm{slab}}(\sigma,\,t,\,f)")
+P("with *µ*_{r} = 1 and *ε*_{r} = 1. When a source reports a value for a band, the prediction is the arithmetic "
+  "mean of the predicted SE in decibels at 41 frequencies across that band. A residual has a different meaning in "
+  "different regimes: when the predicted SE is close to zero the residual is close to the measured SE and cannot be "
+  "appreciably negative, and a given residual corresponds to a different change in conductivity for a thin sheet than for one "
+  "thicker than the skin depth. We therefore also report the effective conductivity *σ*_{eff}, defined as the "
+  "conductivity of the homogeneous sheet that gives the measured SE in the same fixture,")
+EQ(r"SE_{\mathrm{slab}}(\sigma_{\mathrm{eff}},\,t,\,f)=SE_{\mathrm{measured}}")
+P("and the ratio *σ*_{eff}/*σ*. The residual and the ratio are descriptive. Neither identifies a cause: a ratio "
+  "above one can arise from loss that the DC conductivity does not capture, from a conductivity measured on a "
+  "different specimen or in a different direction, or from a thickness that is larger than the stated one; a "
+  "ratio below one can arise from leakage at the sample edge, cracks, a conductivity that overstates that of the "
+  "measured sheet, or a thickness that is smaller.")
 
-H("2.4 Frequency-dependent permeability", 2)
-P(f"For ferromagnets the product of static susceptibility and resonance frequency is bounded by Snoek’s limit "
-  f"{c('snoek')}, (*µ*_{{s}} − 1) *f*_{{r}} = (2/3) *γ*_{{g}} *µ*_{{0}} *M*_{{s}}, with *γ*_{{g}} = 28 GHz T^{{−1}}, and "
-  f"the permeability above resonance is modelled by a single Debye relaxation, *µ*_{{r}}(*f*) = 1 + (*µ*_{{s}} − 1)/"
-  f"(1 + j*f*/*f*_{{r}}). For mu-metal (*µ*_{{s}} = 10^{{5}}, *M*_{{s}} = 860 kA m^{{−1}}) this gives *f*_{{r}} = "
-  f"{fr_mu / 1e6:.2f} MHz and |*µ*_{{r}}| = {mu_1g:.0f} at 1 GHz. The benchmark below contains no bulk ferromagnetic "
-  f"samples, so this component is not validated here.")
-
-H("2.5 Architecture gain", 2)
-P("For a sample with reported conductivity *σ*, thickness *t* and measurement frequency *f*, the architecture "
-  "gain is")
-EQ(r"G = SE_{\mathrm{measured}} - SE_{\mathrm{slab}}(\sigma,\,t,\,f)")
-P("with *SE*_{slab} from Eqs. (2)–(4), *µ*_{r} = 1 and *ε*_{r} = 1. When a source reports a band average, the "
-  "prediction is averaged over the same band. A gain near zero means the sample shields as a homogeneous conductor "
-  "of that conductivity would. A large positive gain means it shields more than its reported conductivity "
-  "explains. A large negative gain means the reported conductivity, thickness and SE cannot all describe the same "
-  "homogeneous sample.")
-
-H("2.6 Global sensitivity analysis", 2)
-P(f"Sensitivity of the prediction to input uncertainty is quantified by total-order Sobol indices {c('sobol')} "
-  f"with the Saltelli estimator {c('saltelli')}, using 4096 base samples from a scrambled Sobol sequence and "
-  f"normally distributed inputs. The coefficients of variation are chosen per material class: 10^{{−4}} for the "
-  f"permeability of non-magnetic materials and 0.20 for ferromagnets; 0.05, 0.08 and 0.30 for the conductivity of "
-  f"copper, steel and a composite near percolation; 0.02 to 0.05 for thickness; 0.001 for frequency.")
+H("2.4 Implementation", 2)
+P("The analysis code evaluates Eqs. (1)–(6) directly. An independent implementation of the Schelkunoff "
+  "decomposition and a transfer-matrix solver in the same repository agree with it to within 10^{−6} dB over "
+  "conductivities from 10^{−3} to 6 × 10^{7} S m^{−1}; these identities, and the limit in which the TE_{10} result "
+  "reduces to the free-space result, are enforced by automated tests.")
 
 # ---------------------------------------------------------------- 3
-H("3. Benchmark construction")
-H("3.1 Inclusion criteria and provenance", 2)
-P("A measurement entered the benchmark only if its primary source states, for the same sample, all of: the "
-  "measured total SE in decibels; the sample or conductive-layer thickness; the frequency or band; and the "
-  "electrical conductivity or sheet resistance. Values had to be printed in the text, a table or a caption. "
-  "Values read from plots, values a paper quotes from other work, and calculated SE were excluded. Conductivity "
-  "units were recorded exactly as printed and converted once, since confusion between S cm^{−1} and S m^{−1} "
-  "changes a prediction by tens of decibels.")
-P(f"Each entry stores the citation and DOI, the values as printed, a short verbatim quotation that locates them, "
-  f"the measurement method where stated, and any caveat. Sources were open-access full texts or author "
-  f"manuscripts; one entry {c('shahzad2016_ti3c2_45um')} relies on the abstract of the original report and is "
-  f"marked accordingly. Where a source gives sheet resistance, the conductivity used is 1/(*R*_{{s}}*t*), and by "
-  f"Eq. (5) the prediction is then insensitive to the nominal thickness. Papers whose values are given only as "
-  f"approximate ranges, that contradict themselves between tables, or whose conductivity unit is ambiguous were "
-  f"left out; three entries whose source prints an approximate value are retained and flagged.")
+H("3. Benchmark")
+H("3.1 Inclusion and grading", 2)
+P("A measurement was recorded if its primary source prints the measured total SE in decibels, the thickness of the "
+  "sample or of its conductive layer, the frequency or band, and the electrical conductivity or sheet resistance. "
+  "Values read from plots, values a paper quotes from other work, and calculated SE were not recorded. Conductivity "
+  "units were kept as printed and converted once. Where a source gives sheet resistance, the conductivity is "
+  "1/(*R*_{s}*t*). Each entry stores the citation, the values as printed, a verbatim quotation that locates them, "
+  "the measurement method and any caveat. Every entry was checked against the source text a second time after "
+  "extraction; no value was found to differ from its source.")
+nC_papers = len({b["paper"] for b in GRADE_C})
+P(f"Sources do not document their samples equally, so each entry carries a grade that depends only on what the "
+  f"source prints and not on the size or sign of the residual. Grade A ({QUAL['A']} entries): SE, thickness and "
+  f"conductivity are stated for the same specimen without qualification. Grade B ({QUAL['B']} entries): one "
+  f"documented caveat, such as a conductivity quoted for the film type and not measured on the specimen, a "
+  f"thickness measured before a processing step, a two-probe conductivity, an SE printed as approximate, or a "
+  f"fixture described only in supplementary material. Grade C ({QUAL['C']} entries from {nC_papers} papers): the "
+  f"source is internally inconsistent or incomplete for that sample; Table 3 lists the reason for each. Grades A "
+  f"and B form the primary set of {NPRIM} entries from {NPPRIM} papers. Grade C entries are shown in the figures "
+  f"with open symbols and are excluded from the statistics unless stated.")
+
 H("3.2 Coverage", 2)
-P(f"The benchmark holds {N} entries from {NP} papers published between 2009 and 2026 (Table 1; the full list is "
-  f"in Appendix A). Measured SE ranges from 9.7 to 116 dB, thickness from 13 nm to 5 mm, and reported "
-  f"conductivity from 2.5 × 10^{{−3}} to 1.2 × 10^{{7}} S m^{{−1}}. Most measurements are waveguide or coaxial "
-  f"measurements in the X band (8.2–12.4 GHz); the remainder extend from 10 MHz to 40 GHz. All measured values are "
-  f"at or below 116 dB and all but {NUMW.get(ABOVE90, ABOVE90)} are below 90 dB, within the range that standard "
-  f"fixtures resolve. This is a precondition for a meaningful comparison: the slab "
-  f"model returns hundreds or thousands of decibels for thick metal sheets, and such predictions cannot be tested.")
-TABLE("Table 1. Composition of the benchmark and architecture gain by material group.",
-      ["Group", "*n*", "Median gain (dB)", "Range (dB)", "Within ±10 dB"],
-      [[GROUPS[i][0], G[i]["n"], sg(G[i]["med"]), f"{sg(G[i]['lo'])} to {sg(G[i]['hi'])}", f"{G[i]['within']} of {G[i]['n']}"]
-       for i in range(len(GROUPS))] +
-      [["All entries", ALL["n"], sg(ALL["med"]), f"{sg(ALL['lo'])} to {sg(ALL['hi'])}", f"{ALL['within']} of {ALL['n']}"]],
-      widths=[2.9, 0.5, 1.1, 1.4, 1.0])
+se_all = [b["se"] for b in bench]
+P(f"The {N} entries come from {NP} papers published between {YEARS[0]} and {YEARS[1]} (Appendix A). Measured SE "
+  f"ranges from {min(se_all):.1f} to {max(se_all):.0f} dB, thickness from 13 nm to 5 mm, and reported conductivity "
+  f"from 2.5 × 10^{{−3}} to 1.2 × 10^{{7}} S m^{{−1}}. The fixture is a rectangular waveguide for {FIX['waveguide']} "
+  f"entries and a coaxial cell for {FIX['coaxial']}; for {FIX['unspecified']} the source gives only the band or a "
+  f"network analyser. Most measurements are in the X band (8.2–12.4 GHz); the others extend from 10 MHz to 40 GHz. "
+  f"The entries are a mixture of band averages, single-frequency values and values printed without qualification, "
+  f"as the sources give them; the qualifier is recorded for each. {NUMW.get(SE90, SE90).capitalize()} measured "
+  f"values are at or above 90 dB, where the dynamic range of the fixture, which most sources do not state, becomes "
+  f"a concern.")
+P("The sources were restricted to papers whose full text could be read, which favours open-access journals, and "
+  "to samples whose values appear in the text, a table or a caption. Published shielding materials are also "
+  "selected for shielding well: a composite with low conductivity and negligible SE is rarely reported. This "
+  "matters for the interpretation of positive residuals at low conductivity in Section 4.3.")
 
 # ---------------------------------------------------------------- 4
 H("4. Results")
-H("4.1 Overall agreement", 2)
-P(f"Figure 1a compares measured SE with the slab prediction for all {N} entries, and Fig. 1b shows the gain "
-  f"against reported conductivity. Of these, {ALL['within']} lie within ±10 dB of the prediction, {POS} lie more than "
-  f"10 dB above it and {NEG} more than 10 dB below. Agreement depends strongly on conductivity. Above "
-  f"10^{{4}} S m^{{−1}} (n = {HIGH['n']}) the median gain is {sg(HIGH['med'])} dB and {HIGH['within']} entries are within "
-  f"±10 dB. Below 1 S m^{{−1}} (n = {LOW['n']}) every entry lies above the prediction, with a median gain of "
-  f"{sg(LOW['med'])} dB. Figure 2 shows the same data grouped by material class.")
+H("4.1 Overall comparison", 2)
+P(f"Figure 1 compares measured and predicted SE, and Table 1 summarises the residuals. Over the primary set the "
+  f"median residual is {sg(S_PRIM['median'])} dB (95% interval {ci(S_PRIM)} dB) and the root-mean-square (RMS) "
+  f"residual is {S_PRIM['rmse']:.0f} dB; {S_PRIM['w10']} of {NPRIM} entries lie within ±10 dB and {S_PRIM['w5']} "
+  f"within ±5 dB. Intervals are obtained by resampling papers with replacement, because samples from one paper share "
+  f"a fixture, a conductivity method and an author. The shaded ±10 dB band in the figures is a visual guide and "
+  f"corresponds to a factor of ten in transmitted power.")
+P(f"The agreement depends on the reported conductivity (Fig. 1b). Above 10^{{4}} S m^{{−1}} (n = {S_HIGH['n']}, "
+  f"{S_HIGH['papers']} papers) the median residual is {sg(S_HIGH['median'])} dB ({ci(S_HIGH)} dB), the RMS residual "
+  f"is {S_HIGH['rmse']:.1f} dB, and {S_HIGH['w10']} entries are within ±10 dB, {S_HIGH['w5']} within ±5 dB and "
+  f"{S_HIGH['w3']} within ±3 dB. Taking one median per paper, {sum(abs(x) <= 10 for x in PM)} of {len(PM)} papers "
+  f"are within ±10 dB. Between 1 and 10^{{4}} S m^{{−1}} (n = {S_MID['n']}) the RMS residual is {S_MID['rmse']:.0f} dB "
+  f"and only {S_MID['w10']} entries are within ±10 dB. Below 1 S m^{{−1}} (n = {S_LOW['n']}, {S_LOW['papers']} papers) "
+  f"the predicted SE is at most {max(b['slab'] for b in LOW):.0f} dB, so any sample that shields appreciably has a "
+  f"positive residual; all {S_LOW['n']} lie between {sg(S_LOW['min'])} and {sg(S_LOW['max'])} dB.")
+P(f"Three checks bound the dependence of these numbers on choices made here. If every entry is predicted with the "
+  f"free-space model, the median residual above 10^{{4}} S m^{{−1}} becomes {sg(S_HIGH_FREE['median'])} dB (RMS "
+  f"{S_HIGH_FREE['rmse']:.1f} dB); if every X- and Ku-band entry without a stated coaxial cell is treated as a "
+  f"waveguide measurement, it becomes {sg(S_HIGH_WG['median'])} dB (RMS {S_HIGH_WG['rmse']:.1f} dB). The fixture "
+  f"model shifts the centre of the distribution by {abs(S_HIGH_FREE['median'] - S_HIGH_WG['median']):.1f} dB and "
+  f"leaves its width unchanged. Restricting to grade A gives n = {S_HIGH_A['n']} from {S_HIGH_A['papers']} papers, "
+  f"a median of {sg(S_HIGH_A['median'])} dB and an RMS residual of {S_HIGH_A['rmse']:.1f} dB. Including the grade C "
+  f"entries gives n = {S_HIGH_ALL['n']}, a median of {sg(S_HIGH_ALL['median'])} dB and an RMS residual of "
+  f"{S_HIGH_ALL['rmse']:.1f} dB.")
 FIG("fig1_parity.png",
-    f"Figure 1. Measured shielding effectiveness against the homogeneous-slab prediction for the {N} benchmark "
-    f"entries. (a) Parity plot; the band marks ±10 dB. (b) Architecture gain against reported conductivity.")
-FIG("fig2_gain_by_class.png",
-    "Figure 2. Architecture gain by material group. Each point is one benchmark entry; vertical bars mark group "
-    "medians and the band marks ±10 dB.")
+    f"Figure 1. Measured shielding effectiveness and the homogeneous-slab prediction for the {N} benchmark entries. "
+    f"(a) Parity plot. (b) Residual against reported conductivity; the dashed line is the least-squares fit to the "
+    f"primary set. Open symbols are grade C entries. The band marks ±10 dB.")
+TABLE("Table 1. Residuals of the primary set by material group and by reported conductivity. Median with 95% "
+      "interval from resampling papers; IQR: interquartile range; RMS: root mean square.",
+      ["Subset", "*n*", "Papers", "Median (dB)", "95% interval", "IQR (dB)", "RMS (dB)", "Within ±10 dB"],
+      [[GROUPS[i][0], G[i]["n"], G[i]["papers"], sg(G[i]["median"]),
+        ci(G[i]) if G[i]["papers"] > 2 else "–", f"{sg(G[i]['q1'])} to {sg(G[i]['q3'])}", f"{G[i]['rmse']:.1f}",
+        f"{G[i]['w10']} of {G[i]['n']}"] for i in range(len(GROUPS))] +
+      [[label, s["n"], s["papers"], sg(s["median"]), ci(s) if s["papers"] > 2 else "–",
+        f"{sg(s['q1'])} to {sg(s['q3'])}", f"{s['rmse']:.1f}", f"{s['w10']} of {s['n']}"]
+       for label, s in (("*σ* ≥ 10^{4} S m^{−1}", S_HIGH), ("1 ≤ *σ* < 10^{4} S m^{−1}", S_MID),
+                        ("*σ* < 1 S m^{−1}", S_LOW), ("Primary set", S_PRIM), (f"All {N} entries", S_ALL))],
+      widths=[1.72, 0.28, 0.48, 0.55, 0.9, 0.9, 0.42, 0.62], size=7.5)
+FIG("fig2_residual_by_group.png",
+    "Figure 2. Residuals by material group. Each symbol is one entry (open: grade C). The bar spans the "
+    "interquartile range of the primary set and the tick marks its median.")
 
-H("4.2 Continuous conductors follow the slab model", 2)
-P(f"Continuous metal films and transparent conductors agree with Eq. (5) to within a few decibels. An "
-  f"In_{{2}}O_{{3}}/Ag/In_{{2}}O_{{3}} film with a 13 nm silver layer {c('voronin2025_iai3')} and a 440 nm La-doped "
-  f"BaSnO_{{3}} film {c('jeon2023_blso')} have gains of {g('voronin2025_iai3')} and {g('jeon2023_blso')} dB, and a "
-  f"sintered silver film on paper {c('liu2020_ag_film')} {g('liu2020_ag_film')} dB. Silver films loaded with nickel "
-  f"particles from the same study exceed the prediction by 6 to 10 dB, consistent with a magnetic contribution "
-  f"that the calculation, which assumes *µ*_{{r}} = 1, does not include.")
-P(f"Dense MXene and graphene films behave the same way over three orders of magnitude in thickness. Spray-coated "
-  f"Ti_{{3}}C_{{2}}T_{{x}} films of about 40 nm and 137 nm {c('han2020_ti3c2_40nm')} have gains of "
-  f"{g('han2020_ti3c2_40nm')} and {g('han2020_ti3c2_137nm')} dB, a 29 nm oxygen-substituted film "
-  f"{c('park2026_mxene_29nm')} {g('park2026_mxene_29nm')} dB, micrometre-thick films "
-  f"{c('wan2022_mxene_lm', 'huang2025_mxene_mx80', 'han2020_ti3c2_5um')} between "
-  f"{g('huang2025_mxene_mx80')} and {g('wan2022_mxene_sdm')} dB, and 40 to 45 µm films "
-  f"{c('iqbal2020_ti3c2_asis', 'shahzad2016_ti3c2_45um')} between {g('shahzad2016_ti3c2_45um')} and "
-  f"{g('iqbal2020_ti3c2_350')} dB. Excluding one study discussed in Section 4.5, the {DENSE_X['n']} dense-film "
-  f"entries have a median gain of {sg(DENSE_X['med'])} dB and {DENSE_X['within']} are within ±10 dB. This extends, "
-  f"with independent data from {DENSE_PAPERS} papers, the agreement that Han et al. {c('han2020_ti3c2_5um')} reported "
-  f"for their own films: for a dense laminate of high conductivity, the measured SE is what a homogeneous "
-  f"conductor of that conductivity and thickness delivers. The laminated structure does not, by itself, add "
-  f"shielding.")
-P(f"Metal meshes are less uniform. Electroplated copper meshes measured at 10 MHz {c('voronin2022_cumesh_LCM30')} "
-  f"follow Eq. (5) closely (gains of {g('voronin2022_cumesh_LCM180')} to {g('voronin2022_cumesh_SCM180')} dB). At "
-  f"8–18 GHz, silver meshes embedded in glass {c('li2023_agmesh_W1P25t0.5')} lie up to "
-  f"{BY['li2023_agmesh_W1P25t0.8']['gain']:.0f} dB above the prediction and silver meshes in PET "
-  f"{c('zarei2024_agmesh_1')} 5 to 10 dB below it. A mesh is a periodic structure, not a sheet; once the "
-  f"wavelength is no longer very large compared with the mesh pitch, sheet resistance alone does not determine "
-  f"its transmission.")
+H("4.2 Sheets above 10^{4} S m^{−1}", 2)
+films = ["voronin2025_iai3", "jeon2023_blso", "liu2020_ag_film"]
+P(f"Continuous metal and oxide films follow the model within a few decibels. An In_{{2}}O_{{3}}/Ag/In_{{2}}O_{{3}} "
+  f"stack with a 13 nm silver layer {c('voronin2025_iai3')}, a 440 nm La-doped BaSnO_{{3}} film {c('jeon2023_blso')} "
+  f"and a sintered silver film on paper {c('liu2020_ag_film')} have residuals of {dres('voronin2025_iai3')}, "
+  f"{dres('jeon2023_blso')} and {dres('liu2020_ag_film')} dB. Two silver films loaded with nickel particles from the last "
+  f"study lie {dres('liu2020_agni560_2to1')} and {dres('liu2020_agni560_1to2')} dB above the prediction; the source does "
+  f"not give the permeability of these films, and we do not assign a cause.")
+dense_prim = [b for b in PRIM if b["group"] == 2]
+han = ids("han2020_")
+P(f"Dense MXene and graphene films behave in the same way over three orders of magnitude in thickness "
+  f"(n = {DENSE['n']} from {DENSE['papers']} papers; median {sg(DENSE['median'])} dB, RMS {DENSE['rmse']:.1f} dB, "
+  f"{DENSE['w10']} within ±10 dB). Sprayed Ti_{{3}}C_{{2}}T_{{x}} films of about 40 and 137 nm and a 5 µm filtered "
+  f"film {c('han2020_ti3c2_5um')} have residuals of {dres('han2020_ti3c2_40nm')}, {dres('han2020_ti3c2_137nm')} and "
+  f"{dres('han2020_ti3c2_5um')} dB, a 29 nm oxygen-substituted film {c('park2026_mxene_29nm')} {dres('park2026_mxene_29nm')} "
+  f"dB, micrometre-thick films {c('wan2022_mxene_lm', 'huang2025_mxene_mx80')} between "
+  f"{rng(ids('wan2022_') + ['huang2025_mxene_mx80']).replace(' to ', ' and ')} dB, and 10 to 40 µm films "
+  f"{c('iqbal2020_ti3c2_asis', 'hassan2024_al_mxene')} between "
+  f"{rng(['iqbal2020_ti3c2_asis', 'iqbal2020_ti3c2_350', 'iqbal2020_ti3cn_asis'] + ids('hassan2024_')).replace(' to ', ' and ')} "
+  f"dB. The largest departure in this group is a 12 µm film {c('ahmed2023_ti3c2_12um')} at "
+  f"{dres('ahmed2023_ti3c2_12um')} dB. This confirms on data from {DENSE['papers'] - 1} further papers what Han et al. "
+  f"{c('han2020_ti3c2_5um')} and Yun et al. {c('yun')} found for their own films: within a scatter of about "
+  f"{DENSE['rmse']:.0f} dB, a dense laminate of high conductivity shields as a homogeneous sheet of that "
+  f"conductivity and thickness does, and no additional contribution from the laminated structure is detectable at "
+  f"that resolution.")
+mesh = G[1]
+P(f"Metal meshes and coated fabrics are less uniform (n = {mesh['n']} from {mesh['papers']} papers, RMS "
+  f"{mesh['rmse']:.1f} dB). Electroplated copper meshes measured at 10 MHz in a coaxial cell "
+  f"{c('voronin2022_cumesh_LCM30')} lie between {rng(ids('voronin2022_')).replace(' to ', ' and ')} dB. In waveguide "
+  f"measurements at 8–18 GHz, silver meshes embedded in glass {c('li2023_agmesh_W1P25t0.5')} lie between "
+  f"{rng(ids('li2023_agmesh')).replace(' to ', ' and ')} dB and silver meshes in PET {c('zarei2024_agmesh_1')} between "
+  f"{rng(ids('zarei2024_')).replace(' to ', ' and ')} dB. The mesh pitches are far smaller than the wavelength, so "
+  f"the departures are not explained by the mesh geometry in the quasi-static picture {c('casey')}; the substrates, "
+  f"which the model omits, and the way the sheet resistance was measured are possible contributors that the sources "
+  f"do not allow us to separate.")
 
-H("4.3 Porosity and segregated networks add shielding", 2)
-P(f"The largest positive gains among conductors belong to porous structures. For 40 µm Ti_{{3}}CNT_{{x}} films "
-  f"{c('iqbal2020_ti3cn_350')} the gain is {g('iqbal2020_ti3cn_asis')} dB as made, {g('iqbal2020_ti3cn_250')} dB "
-  f"after annealing at 250 °C and {g('iqbal2020_ti3cn_350')} dB after annealing at 350 °C, although the "
-  f"conductivity at 350 °C is lower than at 250 °C. Ti_{{3}}C_{{2}}T_{{x}} films annealed in the same study, which "
-  f"develop little porosity, stay within 6 dB of the prediction. The authors attribute the difference to "
-  f"absorption in the porous layered structure; the gain expresses that attribution as a number that can be "
-  f"compared across materials. The predictions here use the initial film thickness, because the thickness after "
-  f"annealing is not given in the text; a thicker porous film would raise the prediction somewhat and lower the "
-  f"gain.")
-P(f"The same sign and a similar magnitude appear in bulk porous and segregated materials. Six graphitic "
-  f"aerogels {c('wani2026_graphitic_aerogel_900_5')} have gains of {g('wani2026_graphitic_aerogel_900_35')} to "
-  f"{g('wani2026_graphitic_aerogel_800_5')} dB, a printed MXene/CNT/polyimide aerogel frame "
-  f"{c('xue2023_mxene_cnt_pi_aerogel')} {g('xue2023_mxene_cnt_pi_aerogel')} dB, and segregated carbon-nanotube "
-  f"networks in polysulfone and polyurethane {c('xie2020_psu_cnt_solid', 'wang2021_cnt_go_wpu_10')} "
-  f"{g('xie2020_psu_cnt_solid')} to {g('wang2021_cnt_go_wpu_10')} dB. Ten of the twelve entries in this group lie "
-  f"between +13 and +25 dB and none lies within ±10 dB. A bulk conductivity measured across such a sample "
-  f"averages over conducting walls and voids or insulating domains, whereas the incident wave interacts with "
-  f"walls whose local conductivity is far higher and with many internal interfaces.")
+H("4.3 Reported conductivity below 10^{4} S m^{−1}", 2)
+P(f"Below 10^{{4}} S m^{{−1}} the reported conductivity loses its predictive value. The residuals of the "
+  f"{S_MID['n'] + S_LOW['n']} primary entries in this range span {sg(min(b['res'] for b in MID + LOW))} to "
+  f"{sg(max(b['res'] for b in MID + LOW))} dB. Over the whole primary set the residual decreases with reported "
+  f"conductivity (Spearman *ρ* = {sg(REG['spearman'], 2)}), and a least-squares fit gives {sg(REG['slope'], 1)} dB per "
+  f"decade, although the interval obtained by resampling papers, {sg(REG['slope_ci'][0], 1)} to "
+  f"{sg(REG['slope_ci'][1], 1)} dB per decade, includes zero.")
+epdm, wani = ids("rahaman2023_"), ids("wani2026_")
+P(f"Figure 3 shows the same data as effective conductivity. Above 10^{{4}} S m^{{−1}} the effective and reported "
+  f"values agree within a factor of three for {HIGH_F3} of the {len(HIGH)} primary entries. At the low end they "
+  f"separate completely. "
+  f"Carbon-black-filled EPDM sheets 1 mm thick {c('rahaman2023_epdm_cb_20phr')} with DC conductivities of "
+  f"2.5 × 10^{{−3}} to 6.3 × 10^{{−2}} S m^{{−1}} are reported to shield {min(BY[i]['se'] for i in epdm):.1f} to "
+  f"{max(BY[i]['se'] for i in epdm):.1f} dB at 10 GHz, which corresponds to effective conductivities of "
+  f"{min(BY[i]['sigma_eff'] for i in epdm):.0f} to {max(BY[i]['sigma_eff'] for i in epdm):.0f} S m^{{−1}}, four orders "
+  f"of magnitude above the DC values; the same source prints 1 kHz conductivities 50 to 200 times the DC values. "
+  f"Six graphitic aerogels {c('wani2026_graphitic_aerogel_700_5')} with two-probe conductivities of 0.11 to 2.9 "
+  f"S m^{{−1}} correspond to {min(BY[i]['sigma_eff'] for i in wani):.0f} to "
+  f"{max(BY[i]['sigma_eff'] for i in wani):.0f} S m^{{−1}}. For the {len(BULK_LOW)} composites, foams and aerogels with "
+  f"reported conductivities below 10^{{3}} S m^{{−1}}, a range of more than five decades, the effective conductivity "
+  f"stays between {min(b['sigma_eff'] for b in BULK_LOW):.0f} and {max(b['sigma_eff'] for b in BULK_LOW):.0f} S m^{{−1}}.")
+P(f"Two readings of this are possible and the benchmark cannot separate them. The first is physical: in a "
+  f"composite near its percolation threshold, conducting clusters that are disconnected at DC are coupled "
+  f"capacitively at microwave frequencies, so the AC conductivity exceeds the DC value and rises with frequency "
+  f"{c('bergman', 'clerc', 'mclachlan98')}. The second is selection and measurement: materials are published "
+  f"because they shield, so samples with low conductivity and low SE are under-represented, and DC conductivities "
+  f"of poorly conducting, porous or contact-limited samples are easily under-estimated. Either way the practical "
+  f"consequence is the same. A DC conductivity below about 10^{{4}} S m^{{−1}} is not an input from which microwave "
+  f"SE can be estimated, and the complex permittivity or sheet impedance at the measurement frequency is needed "
+  f"instead.")
+FIG("fig3_effective_conductivity.png",
+    "Figure 3. Effective conductivity, obtained by inverting the measured shielding effectiveness with the slab "
+    "model, against reported conductivity. The band marks a factor of ten. Symbols as in Fig. 1.", width=3.3)
 
-H("4.4 Low reported conductivity under-predicts shielding", 2)
-P(f"All {NUMW.get(LOW['n'], LOW['n'])} entries with reported conductivity below 1 S m^{{−1}} shield more than the slab model allows, by "
-  f"{LOW['lo']:.0f} to {LOW['hi']:.0f} dB. Carbon-black-filled EPDM {c('rahaman2023_epdm_cb_40phr')} with DC "
-  f"conductivity of 2.5 × 10^{{−3}} to 6.3 × 10^{{−2}} S m^{{−1}} is predicted to shield less than 0.1 dB at 10 GHz "
-  f"and measures 26.5 to 49.9 dB. Carbon-fibre-filled PA11/PLA {c('durmaz2023_pa11pla_cf30')} behaves the same way, "
-  f"and {NUMW.get(LOW_AERO, LOW_AERO)} of the graphitic aerogels of Section 4.3 also fall in this conductivity range. "
-  f"In contrast, composites whose reported conductivity is 20 S m^{{−1}} or more "
-  f"{c('lencar2022_mwcnt3_5min', 'madinehei2021_polyester_gnp25', 'li2022_cnt_wpu_50')} lie within about 7 dB of "
-  f"the prediction.")
-P(f"A DC or low-frequency conductivity is a property of the connected network. At microwave frequencies, filler "
-  f"clusters that are isolated at DC are coupled capacitively and dissipate, so the effective conductivity is "
-  f"higher, and dielectric polarisation adds loss that Eq. (1) with *ε*_{{r}} = 1 omits. Han et al. "
-  f"{c('han2020_ti3c2_5um')} made the same observation for low-conductivity MXenes. The practical consequence is "
-  f"that near and below the percolation threshold a DC conductivity is not a usable input for predicting "
-  f"microwave SE, however the conductivity is obtained, including from Eq. (7).")
+H("4.4 Does porosity add shielding?", 2)
+porous_prim = [b for b in PRIM if b["porous"]]
+P(f"Porous films, foams and aerogels are often described as shielding better than their conductivity implies, "
+  f"through internal reflection and absorption in the pore structure. In the primary set the "
+  f"{len(porous_prim)} porous entries do lie higher on average, but the difference is not resolved: with reported "
+  f"conductivity in the same regression, the porosity term is {sg(REG['porous'], 0)} dB with a 95% interval of "
+  f"{sg(REG['porous_ci'][0], 0)} to {sg(REG['porous_ci'][1], 0)} dB. Porous samples also tend to have low reported "
+  f"conductivity, so the two variables are confounded across studies.")
+P(f"Comparisons within a single study are more informative, because fixture, method and authors are the same "
+  f"(Table 2, Fig. 4). A segregated polysulfone/nanotube composite {c('xie2020_psu_cnt_solid')} has a residual of "
+  f"{dres('xie2020_psu_cnt_solid')} dB as a solid and {dres('xie2020_psu_cnt_foam')} dB after foaming. A graphene film "
+  f"{c('lin2019_graphene_lg4')} has {dres('lin2019_graphene_lg4')} dB when compressed and {dres('lin2019_graphene_plg')} dB "
+  f"in its porous state. In both cases foaming or expansion lowers the conductivity and the SE together, as the "
+  f"slab model expects, and the residual is unchanged within a few decibels. The exception is annealed "
+  f"Ti_{{3}}CNT_{{x}} {c('iqbal2020_ti3cn_350')}: the residual rises from {dres('iqbal2020_ti3cn_asis')} dB as made to "
+  f"{dres('iqbal2020_ti3cn_250')} dB after annealing at 250 °C and {dres('iqbal2020_ti3cn_350')} dB at 350 °C, while "
+  f"Ti_{{3}}C_{{2}}T_{{x}} films annealed in the same study remain at {dres('iqbal2020_ti3c2_asis')} and "
+  f"{dres('iqbal2020_ti3c2_350')} dB. The authors attribute the increase to absorption in a porous layered "
+  f"structure that forms on annealing. Our prediction uses the thickness before annealing, since the thickness "
+  f"afterwards is not printed; a thicker film would raise the prediction, and the film would have to reach about "
+  f"{T_NEED * 1e6:.0f} µm, from 40 µm, to account for the 350 °C result. The measured values of 99 and 116 dB are also the highest "
+  f"in the benchmark. We regard this series as the one case in the benchmark where a structural contribution is "
+  f"supported by a controlled comparison, and the general statement that porosity adds shielding as not "
+  f"established by these data.")
+PAIRS = [("Polysulfone/CNT, segregated", "xie2020_psu_cnt_solid", "solid", "xie2020_psu_cnt_foam", "foamed"),
+         ("Graphene film", "lin2019_graphene_lg4", "compressed", "lin2019_graphene_plg", "porous"),
+         ("Ti_{3}CNT_{x} film", "iqbal2020_ti3cn_asis", "as made", "iqbal2020_ti3cn_250", "250 °C"),
+         ("Ti_{3}CNT_{x} film", "iqbal2020_ti3cn_asis", "as made", "iqbal2020_ti3cn_350", "350 °C"),
+         ("Ti_{3}C_{2}T_{x} film", "iqbal2020_ti3c2_asis", "as made", "iqbal2020_ti3c2_350", "350 °C"),
+         ("Exfoliated graphene film (grade C)", "zhang2023_graphene_egf", "as made", "zhang2023_graphene_mwegf", "expanded")]
+TABLE("Table 2. Within-study comparisons of a dense and a porous or annealed state of the same material. "
+      "*σ*: reported conductivity; ΔSE: residual.",
+      ["Material", "States", "*σ* (S m^{−1})", "SE (dB)", "ΔSE (dB)", "Change (dB)", "Ref."],
+      [[name, f"{la} → {lb}", f"{fsig2(BY[a]['sigma'])} → {fsig2(BY[b_]['sigma'])}", f"{BY[a]['se']:.1f} → {BY[b_]['se']:.1f}",
+        f"{dres(a)} → {dres(b_)}", sg(BY[b_]["res"] - BY[a]["res"]), f"[{num(a)}]"] for name, a, la, b_, lb in PAIRS],
+      widths=[1.25, 0.95, 1.2, 0.75, 0.85, 0.6, 0.4], size=7.5)
+FIG("fig4_paired.png",
+    "Figure 4. Residuals for the within-study comparisons of Table 2. Dashed line and open symbols: grade C.",
+    width=3.6)
 
-H("4.5 Negative gain as a consistency check", 2)
-P(f"{NEG_W} entries lie more than 10 dB below the prediction. A large negative gain is hard to produce "
-  f"physically. It indicates that the reported conductivity and thickness do not describe the measured object, or "
-  f"that the measurement was limited by leakage or dynamic range. In three cases the reason is evident from the "
-  f"source. A filter paper coated with silver nanowires and MXene {c('han2024_agnw_mxene_paper')} "
-  f"({g('han2024_agnw_mxene_paper')} dB) reports the conductivity of the coating and the thickness of the whole "
-  f"sheet. A two-bar stack of MWCNT/PMMA {c('pande2009_mwcnt_pmma_scb2')} ({g('pande2009_mwcnt_pmma_scb2')} dB) "
-  f"reports the conductivity of one bar, and the bars are joined by an insulating adhesive. A 4.5 mm carbon "
-  f"nanofibre aerogel {c('chen2025_cnf_pani_aerogel')} ({g('chen2025_cnf_pani_aerogel')} dB) has a predicted SE of "
-  f"{BY['chen2025_cnf_pani_aerogel']['slab']:.0f} dB, above what a waveguide measurement normally resolves.")
-P(f"In the remaining cases the source offers no explanation. Five cellulose-nanofibre/Ti_{{3}}C_{{2}}T_{{x}} films "
-  f"from one study {c('wang2026_tocnf_mxene_M25')} report conductivities of 2.8 × 10^{{5}} to 1.2 × 10^{{6}} S m^{{−1}} "
-  f"at 4 to 5 µm and SE of 9.7 to 30.7 dB, a uniform 32 to 38 dB below the prediction and below other films of "
-  f"similar conductivity and thickness in the benchmark. A segregated graphene/polypropylene composite "
-  f"{c('alam2017_gnp_pp_10')} ({g('alam2017_gnp_pp_10')} dB) and a 12 µm Ti_{{3}}C_{{2}}T_{{x}} film "
-  f"{c('ahmed2023_ti3c2_12um')} ({g('ahmed2023_ti3c2_12um')} dB) are similar. We draw no conclusion about the "
-  f"cause in any individual paper. The point is that the check costs one line of arithmetic and would let "
-  f"authors and reviewers catch a unit, thickness or calibration problem before publication.")
-
-H("4.6 Layered shields", 2)
-P(f"The transfer matrix method reproduces a known property of spaced double shields. At 1 GHz a single 0.5 µm "
-  f"copper layer gives {single:.1f} dB and a single 1.0 µm layer {one_um:.1f} dB. Splitting the 1.0 µm of copper "
-  f"into two 0.5 µm layers separated by 100 µm of PET (*ε*_{{r}} = 3) gives {sand:.1f} dB, a gain of "
-  f"{sand - one_um:.1f} dB for the same mass of metal. The gain grows with spacer thickness (Fig. 3) until the "
-  f"spacer approaches half a wavelength, where the stack becomes resonant and SE drops sharply; at 10 GHz this "
-  f"occurs near 8.7 mm. The sandwich remains below the {2 * single:.0f} dB that two isolated layers would sum to, "
-  f"because the layers are coupled. These are model results; the benchmark contains no multilayer sample with "
-  f"per-layer properties sufficient to test them.")
-FIG("fig4_multilayer.png",
-    "Figure 3. Shielding effectiveness of a Cu(0.5 µm)/PET/Cu(0.5 µm) sandwich against spacer thickness, from the "
-    "transfer matrix method. Dashed lines: a single 1.0 µm copper layer at the same frequency.", width=3.4)
-
-H("4.7 Percolation and its effect on predicted shielding", 2)
-sf, sm, fc = 1e5, 1e-10, 0.01
-P(f"Figure 4 compares linear mixing with Eq. (7) for *σ*_{{f}} = 10^{{5}} S m^{{−1}}, *σ*_{{m}} = 10^{{−10}} S m^{{−1}}, "
-  f"*f*_{{c}} = 0.01 and *s* = 2, and Table 2 lists values across the transition. Linear mixing assigns a "
-  f"conductivity of hundreds of siemens per metre to a composite below its threshold, and therefore a slab SE "
-  f"of the order of 100 dB at 2 mm and 8.2 GHz where Eq. (7) correctly gives none. This comparison is between models. "
-  f"Section 4.4 shows that a measured composite near threshold shields more than its network conductivity "
-  f"predicts, so Eq. (7) should be read as a model of DC transport and as a lower bound on microwave shielding.")
-def sci(v):
-    m, e = f"{v:.1e}".split("e")
-    return f"{m} \u00d7 10^{{{int(e)}}}".replace("-", "\u2212")
+H("4.5 Unexplained residuals", 2)
+P(f"{len(OUTL)} of the {NPRIM} primary entries have residuals beyond ±10 dB: {len(OUT_POS)} positive and "
+  f"{len(OUT_NEG)} negative. We treat both signs in the same way, as cases in which the reported conductivity, "
+  f"thickness and SE are not mutually consistent with a homogeneous sheet, and list the candidate causes without "
+  f"assigning one. Of the positive residuals, {sum(b['sigma'] < 1e4 for b in OUT_POS)} belong to samples below "
+  f"10^{{4}} S m^{{−1}} and are discussed in Section 4.3. The largest positive residual above that value, apart from "
+  f"annealed Ti_{{3}}CNT_{{x}}, is {sg(BIG_POS_HIGH['res'])} dB, for a silver mesh in glass "
+  f"{c('li2023_agmesh_W1P25t0.5')}. A film of Ti_{{3}}C_{{2}}T_{{x}} "
+  f"in an aramid nanofibre matrix {c('zhang2022_mxene_anf_pva')} is reported at 70 dB for 120 µm and 357 S m^{{−1}} "
+  f"({dres('zhang2022_mxene_anf_pva')} dB), which would require an effective conductivity "
+  f"{BY['zhang2022_mxene_anf_pva']['sigma_eff'] / BY['zhang2022_mxene_anf_pva']['sigma']:.0f} times the stated one.")
+P(f"The largest negative residuals are a segregated graphene/polypropylene composite {c('alam2017_gnp_pp_10')} "
+  f"({dres('alam2017_gnp_pp_10')} dB), a 4.5 mm carbon nanofibre aerogel {c('chen2025_cnf_pani_aerogel')} "
+  f"({dres('chen2025_cnf_pani_aerogel')} dB), whose predicted SE of {BY['chen2025_cnf_pani_aerogel']['slab']:.0f} dB is "
+  f"beyond what a waveguide measurement normally resolves, and a stack of two MWCNT/PMMA bars "
+  f"{c('pande2009_mwcnt_pmma_scb2')} ({dres('pande2009_mwcnt_pmma_scb2')} dB), in which the bars are joined by an "
+  f"insulating adhesive. Candidate causes of a negative residual include leakage around the sample, incomplete "
+  f"contact between a free-standing film and the fixture, cracks and pinholes, a measured SE limited by the dynamic "
+  f"range, and a conductivity measured in the plane of a network that is poorly connected across the specimen.")
+P(f"The grade C entries (Table 3) show why the grading matters. Five cellulose-nanofibre/Ti_{{3}}C_{{2}}T_{{x}} films "
+  f"from one study {c('wang2026_tocnf_mxene_M25')} have residuals of {rng(ids('wang2026_'))} dB. The source prints "
+  f"the conductivity unit in two different ways, and dividing the tabulated conductivities by 100 brings all five "
+  f"predictions to within {max(abs(BY[i]['se'] - predict(BY[i]['sigma'] / 100, BY[i]['t'], BY[i]['f_lo'], BY[i]['f_hi'], False)) for i in ids('wang2026_')):.0f} "
+  f"dB of the measurements. We cannot tell from the paper which reading is correct, which is the reason for the "
+  f"grade. A comparison of each measured SE with the slab value would expose inconsistencies of this kind at the "
+  f"time of writing or review.")
+def tidy(note):
+    for a_, b_ in ((" um", " µm"), ("ohm", "Ω"), ("S cm-1", "S cm^{−1}"), ("'s m-1'", "“s m-1”"),
+                   ("'was calculated according to the Simon formula'", "“was calculated according to the Simon formula”"),
+                   ("factor 5-12", "a factor of 5 to 12")):
+        note = note.replace(a_, b_)
+    return note
 
 
-TABLE("Table 2. Effective conductivity from linear mixing and from the general effective media equation.",
-      ["*f* (vol.)", "Linear mixing (S m^{−1})", "Eq. (7) (S m^{−1})", "Ratio"],
-      [[f"{x:.3f}", sci(x * sf + (1 - x) * sm), sci(mclachlan_gem(x, sm, sf, fc, 2.0)),
-        sci(mclachlan_gem(x, sm, sf, fc, 2.0) / (x * sf + (1 - x) * sm))] for x in (0.005, 0.010, 0.012, 0.020, 0.050, 0.100)],
-      widths=[1.0, 1.7, 1.7, 1.2])
-FIG("fig3_percolation.png",
-    "Figure 4. (a) Effective conductivity from linear mixing and from the general effective media equation. "
-    "(b) Corresponding slab shielding effectiveness for a 2 mm sheet at 8.2 GHz.")
-
-H("4.8 Sensitivity to input uncertainty", 2)
-P(f"Figure 5 gives total-order Sobol indices for three cases. For a 10 µm copper film at 1 GHz, conductivity "
-  f"(*S*_{{T}} = {SOB[0]['sigma']:.2f}) and thickness ({SOB[0]['t']:.2f}) share the variance. For 1 mm mild steel at "
-  f"1 MHz, permeability dominates ({SOB[1]['mu']:.2f}), followed by conductivity ({SOB[1]['sigma']:.2f}). For a "
-  f"2 mm composite at 10 S m^{{−1}} and 8.2 GHz, conductivity accounts for nearly all of it "
-  f"({SOB[2]['sigma']:.2f}). The ranking follows from the class-specific input uncertainties: assigning a "
-  f"non-magnetic metal a 10% permeability uncertainty, as a generic default would, produces a spurious "
-  f"permeability sensitivity. For reporting practice the implication matches Sections 4.3 to 4.5: the prediction "
-  f"for a composite or porous material is only as good as its conductivity, which is also the least reliably "
-  f"reported input.")
-FIG("fig5_sensitivity.png",
-    "Figure 5. Total-order Sobol indices of the slab prediction for (a) copper, (b) mild steel and (c) a carbon "
-    "nanotube composite, with class-specific input uncertainties.")
+c_rows = []
+for paper in dict.fromkeys(b["paper"] for b in GRADE_C):
+    sub = [b for b in GRADE_C if b["paper"] == paper]
+    res = [b["res"] for b in sub]
+    c_rows.append([f"[{num(sub[0]['id'])}]", len(sub), tidy(GRADE_C_REASON[paper]),
+                   sg(res[0]) if len(sub) == 1 else f"{sg(min(res))} to {sg(max(res))}"])
+TABLE("Table 3. Grade C entries: sources that are internally inconsistent or incomplete for the sample. "
+      "These are excluded from the primary statistics.",
+      ["Ref.", "*n*", "Reason for the grade", "ΔSE (dB)"], c_rows,
+      widths=[0.4, 0.3, 3.8, 1.0], size=8, align=["c", "c", "l", "c"])
 
 # ---------------------------------------------------------------- 5
 H("5. Discussion")
-H("5.1 Use in materials design and reporting", 2)
-P("Three uses follow. First, for a dense conductor the slab model is a quantitative design tool: given a target "
-  "SE and a conductivity, Eq. (5) or Eqs. (2)–(4) return the thickness, and the benchmark indicates an "
-  "uncertainty of roughly ±10 dB. In plane-wave terms a few micrometres of any metal exceed 80 dB at 10 GHz, so "
-  "the thickness of practical metal shields is set by handling, seams and apertures, not by the sheet. Second, "
-  "the gain gives a common scale on which structured materials can be compared. A claim that a structure enhances "
-  "shielding can be stated as a gain in decibels over a homogeneous sheet of the same conductivity and thickness, "
-  "which separates the contribution of the architecture from that of simply being more conductive or thicker. "
-  "Third, the same calculation is a consistency check. We suggest that reports of shielding materials state the "
-  "through-thickness conductivity of the measured sample, its thickness as measured, the frequency to which each "
-  "SE value refers, and the slab prediction alongside the measurement.")
-P("For data-driven design, the benchmark and baseline are complementary to learned models. The slab prediction "
-  "is an informative input feature, and the gain is a better learning target than SE itself, because it removes "
-  "the part of the response that elementary physics already explains and leaves the part that depends on "
-  "structure.")
-H("5.2 Limitations", 2)
-P(f"The benchmark is small for some classes: {G[0]['n']} continuous metal films, {G[3]['n']} porous films, and no "
-  f"bulk metal foils, ferromagnets or characterised multilayers. Entries were restricted to sources whose full "
-  f"text could be read, which favours open-access journals, and one entry rests on an abstract. Values were "
-  f"extracted from text, tables and captions, not from supplementary files or plots, so samples documented only "
-  f"there are absent. The gain inherits every uncertainty in the reported conductivity and thickness; for porous "
-  f"samples in particular, the thickness and the direction and method of the conductivity measurement vary "
-  f"between sources. Band-averaged, maximum and single-frequency SE values are mixed, as reported. The model "
-  f"assumes normal incidence, *µ*_{{r}} = 1 and *ε*_{{r}} = 1; magnetic fillers and dielectric loss therefore "
-  f"appear as positive gain. The permeability model of Section 2.4 and the multilayer results of Section 4.6 are "
-  f"not tested against measurement here.")
+H("5.1 What can be predicted before a shield is built", 2)
+P(f"For a continuous sheet whose conductivity is above 10^{{4}} S m^{{−1}}, the slab model with the target "
+  f"conductivity and thickness gives the SE that published samples of that kind were measured to have, with an RMS "
+  f"difference of about {S_HIGH['rmse']:.0f} dB across classes and about {DENSE['rmse']:.0f} dB for dense MXene and "
+  f"graphene films. That is an estimate with a stated uncertainty, obtained from two numbers, and it is sufficient "
+  f"to decide whether a candidate film is in the right range before it is made. It is not a substitute for "
+  f"measurement: {S_HIGH['n'] - S_HIGH['w10']} of the {S_HIGH['n']} entries in this range differ from it by more than "
+  f"10 dB. For a planar sheet in this regime the estimate depends on the sheet resistance alone, Eq. (5), so the "
+  f"quantity to design for is the product of conductivity and thickness.")
+P("For composites, foams and aerogels below 10^{4} S m^{−1}, no estimate of comparable quality can be made from "
+  "the DC conductivity. The SE of these materials has to be predicted from their response at the frequency of "
+  "interest, and a model that supplies only a DC percolation conductivity will under-estimate the shielding of "
+  "the samples that are reported.")
+
+H("5.2 Reporting", 2)
+P(f"The comparison would be sharper if sources reported a small set of quantities consistently. We suggest the "
+  f"following, which add little work to a shielding study: the in-plane conductivity or sheet resistance measured on "
+  f"the specimen used for the SE measurement, with the method; the thickness of that specimen as measured; the "
+  f"fixture and mode (rectangular waveguide and its designation, or coaxial cell, with the standard followed "
+  f"{c('astm', 'ieee2715')}); the frequency of each SE value and whether it is a band average or a maximum; the "
+  f"dynamic range of the set-up; and the slab prediction beside the measured value. At normal incidence, and for "
+  f"the TE_{{10}} mode, the electric field lies in the plane of the sheet, so it is the in-plane conductivity that "
+  f"enters the prediction. Of the {N} entries collected here, {QUAL['A']} meet all of the documentation criteria "
+  f"without qualification.")
+
+H("5.3 Limitations", 2)
+P(f"The benchmark is small. Several groups rest on a few papers (Table 1), and there are no bulk metal foils, "
+  f"ferromagnetic sheets or multilayers with per-layer properties. Intervals from resampling {NPPRIM} papers are "
+  f"wide, and the sub-group statistics should be read as descriptive. Sources were limited to full texts that could "
+  f"be read and to values printed in text, tables or captions, so samples documented only in supplementary files or "
+  f"plots are absent. Band averages, maxima, single-frequency values and unqualified values are pooled as "
+  f"reported; sources that average transmitted power and not decibels would differ from our convention where SE "
+  f"varies across the band. For {FIX['unspecified']} entries the fixture is not stated, which leaves an uncertainty "
+  f"of up to {max(WG_SHIFT):.1f} dB in their predictions. The model takes *µ*_{{r}} = 1 and *ε*_{{r}} = 1 and omits "
+  f"substrates, so magnetic loss, dielectric loss and substrate reflections all appear in the residual. No "
+  f"uncertainty is propagated from the reported conductivity and thickness, because sources rarely state one.")
+P("With a larger and better documented set, the factors that determine shielding could be organised in a "
+  "structural model, with composition, filler geometry, processing and thickness as independent variables, "
+  "conductivity and porosity as mediating variables, and SE as the outcome. The within-study comparisons of "
+  "Section 4.4 indicate the kind of data such a model would need.")
 
 H("6. Conclusions")
-P(f"A benchmark of {N} source-verified shielding measurements from {NP} papers shows that the exact "
-  f"homogeneous-slab model predicts the shielding of dense conductors, from 13 nm transparent films to 45 µm "
-  f"MXene laminates, with a median difference below 1 dB and about three quarters of entries within ±10 dB. Porous "
-  f"films, foams, aerogels and segregated networks exceed the model by {min(POROUS_POS):.0f} to "
-  f"{max(POROUS_POS):.0f} dB, and this architecture gain is a direct measure of what their structure contributes. "
-  f"Samples of low reported conductivity shield far more than that conductivity implies, so DC conductivity "
-  f"should not be used to predict microwave shielding near percolation. Entries well below the model identify "
-  f"reported values that are mutually inconsistent. Stating the slab prediction beside each measured SE would make "
-  f"claims of structural enhancement quantitative and would expose such inconsistencies at the time of reporting.")
+P(f"A benchmark of {N} shielding measurements from {NP} papers, each traceable to its source and graded for "
+  f"documentation, was compared with the exact homogeneous-slab model for the stated measurement fixture. For "
+  f"sheets with reported conductivity above 10^{{4}} S m^{{−1}}, the model reproduces the measurements with a median "
+  f"residual of {sg(S_HIGH['median'])} dB and an RMS residual of {S_HIGH['rmse']:.0f} dB ({S_HIGH['w10']} of "
+  f"{S_HIGH['n']} within ±10 dB), and with {DENSE['rmse']:.0f} dB for dense MXene and graphene films from 29 nm to "
+  f"40 µm. The waveguide wave impedance accounts for up to {max(WG_SHIFT):.1f} dB of the prediction and should be "
+  f"included in any such comparison. Below 10^{{4}} S m^{{−1}} the reported DC conductivity does not predict the "
+  f"measured SE. The data do not establish that porosity in general adds shielding beyond what conductivity and "
+  f"thickness imply; one annealing series supports it. Stating the slab prediction beside each measured SE, with "
+  f"the fixture and the in-plane conductivity of the measured specimen, would make such comparisons routine.")
 
-H("7. Future work")
-P("The benchmark will be extended to metal foils, ferromagnets, characterised multilayers and data from "
-  "supplementary files. With a larger set, the variables that determine shielding can be organised in a structural "
-  "model: composition, filler geometry, processing and thickness as independent variables; conductivity, porosity "
-  "and permeability as mediating variables; and SE and architecture gain as dependent variables. Fitting such a "
-  "model would quantify how much of the effect of processing on shielding passes through conductivity and how much "
-  "acts through structure directly.")
-
-H("Declarations")
-P("*Funding:* The authors received no external funding for this work.")
-P("*Competing interests:* The authors declare no competing interests.")
-P("*Data and code availability:* The code, automated tests, benchmark file and the scripts that generate every "
-  "number and figure in this paper are available at https://github.com/DanushArun/material-emi-shielding "
-  "(branch fix/slab-reflection-physics).")
+H("Declaration of competing interest")
+P("The authors declare that they have no known competing financial interests or personal relationships that could "
+  "have appeared to influence the work reported in this paper.")
+H("Funding")
+P("This research did not receive any specific grant from funding agencies in the public, commercial, or "
+  "not-for-profit sectors.")
+H("Data availability")
+P("The benchmark file with quotations and grades, the analysis code, the automated tests and the scripts that "
+  "generate every number, table and figure in this paper are available at "
+  "https://github.com/DanushArun/material-emi-shielding (release benchmark-v1).")
+H("Declaration of generative AI and AI-assisted technologies in the manuscript preparation process")
+P("During the preparation of this work the authors used Claude (Anthropic) to assist with locating and extracting "
+  "values from the cited sources, writing and testing the analysis code, and drafting and editing the text. The "
+  "authors reviewed and edited the content as needed and take full responsibility for the content of the "
+  "published article.")
 
 H("Appendix A. Benchmark entries")
+
 
 def ft(x):
     return f"{x * 1e9:.3g} nm" if x < 1e-6 else (f"{x * 1e6:.3g} µm" if x < 1e-3 else f"{x * 1e3:.3g} mm")
 
 
 def ff(b):
-    lo, hi = float(b["f_low_hz"]), float(b["f_high_hz"])
+    lo, hi = b["f_lo"], b["f_hi"]
     u = (lambda v: f"{v / 1e9:g}") if hi >= 1e9 else (lambda v: f"{v / 1e6:g}")
     unit = "GHz" if hi >= 1e9 else "MHz"
     return f"{u(lo)} {unit}" if lo == hi else f"{u(lo)}–{u(hi)} {unit}"
@@ -757,22 +871,25 @@ CHEM = [("Ti3C1.94O0.06Tz", "Ti_{3}C_{1.94}O_{0.06}T_{z}"), ("Ti3C2Tx", "Ti_{3}C
 def chem(name):
     for plain, marked in CHEM:
         name = name.replace(plain, marked)
-    return name.replace("*", "\u2217")
+    return name.replace("*", "∗")
 
 
 def fsig(v):
     if 0.01 <= v < 1e3:
         return f"{v:.3g}"
     m, e = f"{v:.2e}".split("e")
-    return f"{m} \u00d7 10^{{{int(e)}}}".replace("-", "\u2212")
+    return f"{m} × 10^{{{int(e)}}}".replace("-", "−")
 
 
-TABLE("Table A1. All benchmark entries. *t*: thickness; *σ*: conductivity as used (converted to S m^{−1}; for "
-  "entries reported as sheet resistance, 1/(*R*_{s}*t*)); SE: measured; Slab: prediction; *G*: gain.",
-      ["Material", "*t*", "Frequency", "*σ* (S m^{−1})", "SE (dB)", "Slab (dB)", "*G* (dB)", "Ref."],
-      [[chem(b["material"]), ft(float(b["thickness_m"])), ff(b), fsig(b["sig"]), f"{b['meas']:.1f}", f"{b['slab']:.1f}",
-        sg(b["gain"]), f"[{num(b['id'])}]"] for b in sorted(bench, key=lambda b: (b["grp"], b["citation"], b["id"]))],
-      widths=[1.72, 0.5, 0.92, 0.76, 0.42, 0.42, 0.42, 0.34], size=7.5)
+TABLE("Table A1. All benchmark entries. *t*: thickness; *σ*: reported conductivity in S m^{−1} (for entries "
+      "reported as sheet resistance, 1/(*R*_{s}*t*)); Fx.: fixture (W waveguide, C coaxial cell, U not stated); "
+      "Gr.: grade; SE: measured; Slab: prediction for the fixture; ΔSE: residual; log *ρ*: "
+      "log_{10}(*σ*_{eff}/*σ*).",
+      ["Material", "*t*", "Frequency", "*σ*", "Fx.", "Gr.", "SE (dB)", "Slab (dB)", "ΔSE (dB)", "log *ρ*", "Ref."],
+      [[chem(b["material"]), ft(b["t"]), ff(b), fsig(b["sigma"]), b["fixture"][0].upper(), b["quality"],
+        f"{b['se']:.1f}", f"{b['slab']:.1f}", sg(b["res"]), sg(b["log_ratio"], 2), f"[{num(b['id'])}]"]
+       for b in sorted(bench, key=lambda b: (b["group"], b["citation"], b["id"]))],
+      widths=[1.3, 0.46, 0.78, 0.64, 0.24, 0.24, 0.36, 0.38, 0.42, 0.38, 0.34], size=7)
 
 H("References")
 for key, i in sorted(REFNUM.items(), key=lambda kv: kv[1]):

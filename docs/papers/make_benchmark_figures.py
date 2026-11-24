@@ -1,8 +1,8 @@
 """Generate the manuscript figures from the benchmark analysis.
 
 Run from the repository root:  python docs/papers/make_benchmark_figures.py
-Writes fig1_parity.png, fig2_residual_by_group.png, fig3_effective_conductivity.png
-and fig4_paired.png next to this script.
+Writes fig1_parity.png, fig2_residual_by_group.png and fig3_effective_conductivity.png
+next to this script.
 """
 import math
 import sys
@@ -15,7 +15,7 @@ import numpy as np
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
-from benchmark_analysis import GROUPS, load, regression  # noqa: E402
+from benchmark_analysis import GROUPS, load  # noqa: E402
 
 plt.rcParams.update({
     "font.family": "sans-serif", "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
@@ -57,9 +57,6 @@ def fig1(rows):
     b.axhspan(-10, 10, color=BAND, lw=0)
     b.axhline(0, color=INK, lw=0.9)
     scatter(b, [dict(r, lg=r["sigma"]) for r in rows], "lg", "res")
-    reg = regression([r for r in rows if r["quality"] != "C"])
-    xs = np.array([1e-3, 2e7])
-    b.plot(xs, reg["intercept"] + reg["slope"] * np.log10(xs), color=GREY, lw=1.0, ls="--", zorder=2)
     b.set_xscale("log")
     b.set(xlim=(1e-3, 3e7), ylim=(-60, 60), xlabel=r"Reported conductivity (S m$^{-1}$)",
           ylabel=r"Residual, measured $-$ predicted (dB)")
@@ -110,37 +107,10 @@ def fig3(rows):
     fig.savefig(HERE / "fig3_effective_conductivity.png"); plt.close(fig)
 
 
-PAIRS = [
-    ("Polysulfone/CNT [solid → foamed]", ["xie2020_psu_cnt_solid", "xie2020_psu_cnt_foam"]),
-    ("Graphene film [compressed → porous]", ["lin2019_graphene_lg4", "lin2019_graphene_plg"]),
-    ("Exfoliated graphene [as made → expanded]", ["zhang2023_graphene_egf", "zhang2023_graphene_mwegf"]),
-    (r"Ti$_3$CNT$_x$ [as made → 250 °C → 350 °C]", ["iqbal2020_ti3cn_asis", "iqbal2020_ti3cn_250", "iqbal2020_ti3cn_350"]),
-    (r"Ti$_3$C$_2$T$_x$ [as made → 350 °C]", ["iqbal2020_ti3c2_asis", "iqbal2020_ti3c2_350"]),
-]
-
-
-def fig4(rows):
-    by = {r["id"]: r for r in rows}
-    fig, ax = plt.subplots(figsize=(4.6, 2.9))
-    ax.axhspan(-10, 10, color=BAND, lw=0)
-    ax.axhline(0, color=INK, lw=0.9)
-    colours = ["#e08a00", "#1f77b4", "#7a7a7a", "#17a2b8", "#4d4d4d"]
-    for (label, ids), colour in zip(PAIRS, colours):
-        ys = [by[i]["res"] for i in ids]
-        xs = np.linspace(0, 1, len(ids))
-        hollow = any(by[i]["quality"] == "C" for i in ids)
-        ax.plot(xs, ys, color=colour, lw=1.3, marker="o", ms=5, mfc="white" if hollow else colour, mec=colour,
-                ls="--" if hollow else "-", label=label)
-    ax.set_xticks([0, 1]); ax.set_xticklabels(["Dense state", "Porous or annealed state"])
-    ax.set(xlim=(-0.15, 1.15), ylim=(-15, 55), ylabel=r"Residual, measured $-$ predicted (dB)")
-    ax.legend(frameon=False, loc="upper left", fontsize=7.2, handlelength=2.2)
-    fig.savefig(HERE / "fig4_paired.png"); plt.close(fig)
-
-
 def main() -> None:
     rows = load()
-    fig1(rows); fig2(rows); fig3(rows); fig4(rows)
-    print("Wrote fig1_parity.png, fig2_residual_by_group.png, fig3_effective_conductivity.png, fig4_paired.png")
+    fig1(rows); fig2(rows); fig3(rows)
+    print("Wrote fig1_parity.png, fig2_residual_by_group.png, fig3_effective_conductivity.png")
 
 
 if __name__ == "__main__":

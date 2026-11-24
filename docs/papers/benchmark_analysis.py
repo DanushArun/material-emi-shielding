@@ -3,9 +3,9 @@
 For every entry of data_collection/verified_benchmark.csv this computes
 
   * the slab prediction in free space (TEM, plane wave at normal incidence),
-  * the slab prediction for the fixture the source states (TE10 mode of the
-    rectangular waveguide covering the measurement frequency, or TEM for
-    coaxial cells and unspecified fixtures),
+  * the slab prediction for the measurement fixture (TE10 mode of a rectangular
+    waveguide where the source states one, or where it states none and every
+    frequency lies in 8-18 GHz; TEM for coaxial cells and broadband entries),
   * the residual  dSE = SE_measured - SE_slab  for both,
   * the effective conductivity sigma_eff that reproduces the measured SE in
     the same fixture model, and  log10(sigma_eff / sigma_reported).
@@ -61,16 +61,19 @@ GROUPS = [
 POROUS_CLASSES = GROUPS[3][1] | {"Foam", "Aerogel"}
 
 
-def cutoff(f: float):
-    """TE10 cutoff of the standard waveguide whose band contains f, or None."""
+def cutoff(f: float, f_lo: float | None = None, f_hi: float | None = None):
+    """TE10 cutoff for a measurement at f. An entry whose band ends by 13 GHz is taken as a
+    single WR-90 run; otherwise the standard waveguide whose band contains f is used."""
+    if f_hi is not None and f_lo is not None and f_lo >= 8.0e9 and f_hi <= 13.0e9:
+        return WAVEGUIDES[0][2]
     for lo, hi, fc in WAVEGUIDES:
         if lo <= f <= hi:
             return fc
     return None
 
 
-def slab_se(sigma: float, t: float, f: float, fc: float | None = None) -> float:
-    """Exact transmission loss (dB) of a homogeneous slab, mu_r = eps_r = 1.
+def slab_se(sigma: float, t: float, f: float, fc: float | None = None, eps_r: float = 1.0) -> float:
+    """Exact transmission loss (dB) of a homogeneous slab with mu_r = 1.
 
     fc = None: plane wave at normal incidence in free space (also the TEM mode
     of a coaxial cell). fc given: TE10 mode of an air-filled rectangular
@@ -78,7 +81,7 @@ def slab_se(sigma: float, t: float, f: float, fc: float | None = None) -> float:
     """
     w = 2 * math.pi * f
     kc2 = (2 * math.pi * fc / C0) ** 2 if fc else 0.0
-    eps_c = EPS0 - 1j * sigma / w
+    eps_c = eps_r * EPS0 - 1j * sigma / w
     g_air = cmath.sqrt(kc2 - w * w * MU0 * EPS0)      # j*beta above cutoff
     g_m = cmath.sqrt(kc2 - w * w * MU0 * eps_c)
     if g_m.real < 0:
@@ -93,25 +96,16 @@ def slab_se(sigma: float, t: float, f: float, fc: float | None = None) -> float:
 def predict(sigma: float, t: float, f_lo: float, f_hi: float, waveguide: bool) -> float:
     """Band-averaged prediction in dB (arithmetic mean of dB values over the band)."""
     freqs = [f_lo] if f_lo == f_hi else np.linspace(f_lo, f_hi, BAND_POINTS)
-    return float(np.mean([slab_se(sigma, t, f, cutoff(f) if waveguide else None) for f in freqs]))
+    return float(np.mean([slab_se(sigma, t, f, cutoff(f, f_lo, f_hi) if waveguide else None) for f in freqs]))
 
 
 def effective_sigma(se: float, t: float, f_lo: float, f_hi: float, waveguide: bool) -> float:
     """Conductivity of the homogeneous slab that gives the measured SE."""
     fn = lambda ls: predict(10.0 ** ls, t, f_lo, f_hi, waveguide) - se  # noqa: E731
     lo, hi = -9.0, 10.0
-    if fn(lo) > 0:
+    if fn(lo) > 0 or fn(hi) < 0:
         return float("nan")
     return 10.0 ** brentq(fn, lo, hi, xtol=1e-10)
-
-
-def fixture_of(method: str) -> str:
-    m = method.lower()
-    if "coaxial" in m:
-        return "coaxial"
-    if "waveguide" in m:
-        return "waveguide"
-    return "unspecified"
 
 
 def load() -> list[dict]:
@@ -119,12 +113,12 @@ def load() -> list[dict]:
     for r in csv.DictReader(DATA.open()):
         sigma, t = float(r["sigma_s_per_m"]), float(r["thickness_m"])
         f_lo, f_hi, se = float(r["f_low_hz"]), float(r["f_high_hz"]), float(r["se_db"])
-        fixture = r.get("fixture") or fixture_of(r["method"])
-        wg = fixture == "waveguide"
+        fixture = r["fixture"]
+        wg = fixture in ("waveguide", "assumed-waveguide")
         f_mid = 0.5 * (f_lo + f_hi)
         free = predict(sigma, t, f_lo, f_hi, False)
         fix = predict(sigma, t, f_lo, f_hi, wg)
-        as_wg = predict(sigma, t, f_lo, f_hi, fixture != "coaxial" and cutoff(f_lo) is not None)
+        as_wg = predict(sigma, t, f_lo, f_hi, fixture == "waveguide")  # assumed fixtures treated as TEM
         s_eff = effective_sigma(se, t, f_lo, f_hi, wg)
         rows.append({
             "id": r["id"], "material": r["material"], "material_class": r["material_class"],
@@ -135,8 +129,9 @@ def load() -> list[dict]:
             "se_qualifier": r["se_qualifier"], "sigma_basis": r["sigma_basis"],
             "sigma": sigma, "t": t, "f_lo": f_lo, "f_hi": f_hi,
             "t_over_delta": t / math.sqrt(2 / (2 * math.pi * f_mid * MU0 * sigma)),
-            "se": se, "slab_free": free, "slab": fix, "slab_all_wg": as_wg,
-            "res_free": se - free, "res": se - fix, "res_all_wg": se - as_wg,
+            "se": se, "slab_free": free, "slab": fix, "slab_stated": as_wg,
+            "res_free": se - free, "res": se - fix, "res_stated": se - as_wg,
+            "band_average": "average" in r["se_qualifier"] or "mean" in r["se_qualifier"],
             "sigma_eff": s_eff, "log_ratio": math.log10(s_eff / sigma) if s_eff == s_eff else float("nan"),
         })
     return rows
@@ -160,15 +155,21 @@ def summary(rows: list[dict], key: str = "res") -> dict:
     q1, med, q3 = np.percentile(v, [25, 50, 75])
     lo, hi = cluster_boot(rows, lambda s: float(np.median([r[key] for r in s]))) if len({r["paper"] for r in rows}) > 2 \
         else (float("nan"), float("nan"))
+    rms = lambda s: float(np.sqrt(np.mean(np.array([r[key] for r in s]) ** 2)))  # noqa: E731
+    rlo, rhi = cluster_boot(rows, rms, n_boot=4000) if len({r["paper"] for r in rows}) > 2 else (float("nan"),) * 2
+    pm = [float(np.median([r[key] for r in rows if r["paper"] == p])) for p in sorted({r["paper"] for r in rows})]
     return {"n": len(v), "papers": len({r["paper"] for r in rows}), "median": float(med), "q1": float(q1),
             "q3": float(q3), "ci_lo": float(lo), "ci_hi": float(hi), "rmse": float(np.sqrt(np.mean(v ** 2))),
+            "rmse_lo": float(rlo), "rmse_hi": float(rhi), "medabs": float(np.median(np.abs(v))),
+            "paper_rms": float(np.sqrt(np.mean(np.array(pm) ** 2))),
             "mae": float(np.mean(np.abs(v))), "min": float(v.min()), "max": float(v.max()),
             "w3": int(np.sum(np.abs(v) <= 3)), "w5": int(np.sum(np.abs(v) <= 5)), "w10": int(np.sum(np.abs(v) <= 10))}
 
 
 def fmt(s: dict) -> str:
     return (f"n={s['n']:>2} papers={s['papers']:>2}  median={s['median']:+6.1f} [{s['ci_lo']:+.1f}, {s['ci_hi']:+.1f}]  "
-            f"IQR={s['q1']:+.1f}..{s['q3']:+.1f}  RMSE={s['rmse']:5.1f}  MAE={s['mae']:5.1f}  "
+            f"IQR={s['q1']:+.1f}..{s['q3']:+.1f}  RMS={s['rmse']:5.1f} [{s['rmse_lo']:.1f}, {s['rmse_hi']:.1f}]  "
+            f"med|r|={s['medabs']:.1f}  paperRMS={s['paper_rms']:.1f}  "
             f"range={s['min']:+.1f}..{s['max']:+.1f}  within 3/5/10 dB: {s['w3']}/{s['w5']}/{s['w10']}")
 
 
@@ -194,7 +195,7 @@ def regression(rows: list[dict]) -> dict:
 def main() -> None:
     rows = load()
     fields = ["id", "material", "material_class", "fixture", "quality", "se_qualifier", "sigma", "t", "f_lo", "f_hi",
-              "t_over_delta", "se", "slab_free", "slab", "res_free", "res", "res_all_wg", "sigma_eff", "log_ratio",
+              "t_over_delta", "se", "slab_free", "slab", "res_free", "res", "res_stated", "sigma_eff", "log_ratio",
               "citation"]
     with OUT_CSV.open("w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=fields, extrasaction="ignore")
@@ -205,10 +206,11 @@ def main() -> None:
     out = []
     say = out.append
     say(f"Entries: {len(rows)}; papers: {len({r['paper'] for r in rows})}")
-    say("Fixtures: " + ", ".join(f"{k} {sum(r['fixture'] == k for r in rows)}" for k in ("waveguide", "coaxial", "unspecified")))
+    say("Fixtures: " + ", ".join(f"{k} {sum(r['fixture'] == k for r in rows)}"
+                                 for k in ("waveguide", "coaxial", "assumed-waveguide", "assumed-tem")))
     if any(r["quality"] for r in rows):
         say("Quality: " + ", ".join(f"{q} {sum(r['quality'] == q for r in rows)}" for q in sorted({r['quality'] for r in rows})))
-    wg = [r for r in rows if r["fixture"] == "waveguide"]
+    wg = [r for r in rows if "waveguide" in r["fixture"]]
     shift = np.array([r["slab"] - r["slab_free"] for r in wg])
     say(f"Waveguide correction (TE10 minus free space) over {len(wg)} entries: "
         f"median {np.median(shift):+.2f} dB, range {shift.min():+.2f} to {shift.max():+.2f} dB")
@@ -221,7 +223,15 @@ def main() -> None:
         say(f"== {label} ==")
         say("  fixture-specific : " + fmt(summary(sub)))
         say("  free space       : " + fmt(summary(sub, "res_free")))
-        say("  all X/Ku as TE10 : " + fmt(summary(sub, "res_all_wg")))
+        say("  assumed -> TEM   : " + fmt(summary(sub, "res_stated")))
+        for cut in (3e3, 1e4, 3e4):
+            s2 = [r for r in sub if r["sigma"] >= cut]
+            say(f"  sigma >= {cut:.0e}    : " + fmt(summary(s2)))
+        s2 = [r for r in sub if r["sigma"] >= 1e4 and not r["id"].startswith(("iqbal2020_ti3cn_250", "iqbal2020_ti3cn_350"))]
+        say("  >=1e4, no annealed Ti3CNTx: " + fmt(summary(s2)))
+        s2 = [r for r in sub if r["sigma"] >= 1e4 and r["band_average"]]
+        if len(s2) > 3:
+            say("  >=1e4, band averages only : " + fmt(summary(s2)))
         for name, cond in (("sigma >= 1e4 S/m", lambda r: r["sigma"] >= 1e4), ("1 <= sigma < 1e4", lambda r: 1 <= r["sigma"] < 1e4),
                            ("sigma < 1 S/m", lambda r: r["sigma"] < 1)):
             s2 = [r for r in sub if cond(r)]

@@ -1,60 +1,73 @@
 Entries: 76; papers: 35
-Fixtures: waveguide 33, coaxial 13, unspecified 30
-Quality: A 20, B 43, C 13
-Waveguide correction (TE10 minus free space) over 33 entries: median +2.42 dB, range +0.05 to +4.42 dB
+Fixtures: waveguide 33, coaxial 13, assumed-waveguide 27, assumed-tem 3
+Quality: A 6, B 57, C 13
+Waveguide correction (TE10 minus free space) over 60 entries: median +2.42 dB, range +0.00 to +4.81 dB
 
 == All entries ==
-  fixture-specific : n=76 papers=35  median=  +0.3 [-3.8, +7.8]  IQR=-6.9..+13.1  RMSE= 20.2  MAE= 14.6  range=-49.0..+50.8  within 3/5/10 dB: 15/23/39
-  free space       : n=76 papers=35  median=  +2.7 [-1.8, +9.2]  IQR=-5.5..+13.4  RMSE= 20.1  MAE= 14.4  range=-49.0..+50.8  within 3/5/10 dB: 17/22/41
-  all X/Ku as TE10 : n=76 papers=35  median=  -0.0 [-5.2, +5.9]  IQR=-7.7..+13.0  RMSE= 20.0  MAE= 14.4  range=-53.4..+49.8  within 3/5/10 dB: 14/22/38
-  sigma >= 1e4 S/m : n=49 papers=19  median=  -1.9 [-7.8, +2.5]  IQR=-7.9..+3.1  RMSE= 16.1  MAE= 10.5  range=-43.4..+45.7  within 3/5/10 dB: 15/21/34
-  1 <= sigma < 1e4 : n=18 papers=14  median= +13.0 [-8.0, +18.8]  IQR=-6.9..+18.6  RMSE= 24.8  MAE= 20.2  range=-49.0..+50.8  within 3/5/10 dB: 0/2/5
-  sigma < 1 S/m    : n= 9 papers= 3  median= +25.2 [+15.0, +40.6]  IQR=+16.2..+26.6  RMSE= 28.5  MAE= 26.1  range=+13.2..+49.8  within 3/5/10 dB: 0/0/0
-  Continuous metal and oxide films      : n= 6 papers= 3  median=  +4.6 [-3.5, +7.8]  IQR=+0.9..+8.5  RMSE=  6.4  MAE=  5.4  range=-3.5..+10.0  within 3/5/10 dB: 2/3/5
-  Metal meshes, coated fabric and paper : n=17 papers= 5  median=  -1.9 [-11.4, +3.1]  IQR=-7.9..+0.2  RMSE= 13.0  MAE=  8.4  range=-43.4..+12.9  within 3/5/10 dB: 6/7/11
-  Dense MXene and graphene films        : n=25 papers=13  median=  -2.5 [-24.8, +4.1]  IQR=-11.9..+2.5  RMSE= 17.5  MAE= 12.0  range=-37.5..+23.1  within 3/5/10 dB: 7/10/17
-  Porous MXene and graphene films       : n= 5 papers= 4  median= +22.6 [-4.1, +50.8]  IQR=+18.9..+45.7  RMSE= 33.3  MAE= 28.4  range=-4.1..+50.8  within 3/5/10 dB: 0/1/1
-  Solid carbon-polymer composites       : n=11 papers= 7  median=  +5.5 [-9.0, +26.6]  IQR=-5.7..+26.6  RMSE= 26.0  MAE= 20.9  range=-34.1..+49.8  within 3/5/10 dB: 0/2/5
-  Segregated composites, foams, aerogels: n=12 papers= 6  median= +14.8 [-41.9, +18.2]  IQR=+13.2..+18.4  RMSE= 24.7  MAE= 22.0  range=-49.0..+25.2  within 3/5/10 dB: 0/0/0
-  per-paper medians, sigma >= 1e4: 19 papers, 15 within 10 dB, 10 within 5 dB
-  residual = +11.7 -3.00*log10(sigma) +10.5*porous;  slope CI [-5.26, +1.30], porous CI [-9.2, +32.4];  Spearman rho = -0.44 (p = 8.5e-05)
-  log10(sigma_eff/sigma_reported): median +0.01, IQR -0.25..+0.47
+  fixture-specific : n=76 papers=35  median=  -0.0 [-5.2, +5.9]  IQR=-7.7..+13.0  RMS= 20.1 [14.5, 25.4]  med|r|=9.9  paperRMS=21.7  range=-57.6..+49.8  within 3/5/10 dB: 14/22/38
+  free space       : n=76 papers=35  median=  +2.7 [-1.8, +9.2]  IQR=-5.5..+13.4  RMS= 20.3 [14.7, 25.4]  med|r|=9.3  paperRMS=21.4  range=-55.2..+50.8  within 3/5/10 dB: 17/22/41
+  assumed -> TEM   : n=76 papers=35  median=  +0.3 [-3.8, +7.8]  IQR=-6.9..+13.1  RMS= 20.4 [14.9, 25.5]  med|r|=9.4  paperRMS=21.7  range=-55.2..+50.8  within 3/5/10 dB: 15/23/39
+  sigma >= 3e+03    : n=50 papers=20  median=  -2.1 [-7.9, +1.6]  IQR=-9.7..+2.9  RMS= 15.8 [7.2, 22.4]  med|r|=6.0  paperRMS=14.5  range=-45.9..+41.3  within 3/5/10 dB: 14/20/33
+  sigma >= 1e+04    : n=49 papers=19  median=  -2.1 [-7.9, +0.3]  IQR=-10.3..+2.5  RMS= 15.9 [6.9, 22.5]  med|r|=5.9  paperRMS=14.6  range=-45.9..+41.3  within 3/5/10 dB: 14/20/33
+  sigma >= 3e+04    : n=48 papers=18  median=  -2.1 [-7.9, +1.3]  IQR=-8.5..+2.6  RMS= 14.6 [5.9, 21.5]  med|r|=5.8  paperRMS=10.4  range=-37.5..+41.3  within 3/5/10 dB: 14/20/33
+  >=1e4, no annealed Ti3CNTx: n=47 papers=19  median=  -2.5 [-8.8, +0.3]  IQR=-10.6..+2.0  RMS= 14.8 [6.2, 22.2]  med|r|=5.6  paperRMS=14.6  range=-45.9..+12.9  within 3/5/10 dB: 14/20/33
+  >=1e4, band averages only : n=16 papers= 5  median=  -1.1 [-7.9, +4.8]  IQR=-7.7..+4.5  RMS=  7.6 [5.2, 9.7]  med|r|=6.7  paperRMS=6.7  range=-11.9..+12.9  within 3/5/10 dB: 3/6/12
+  sigma >= 1e4 S/m : n=49 papers=19  median=  -2.1 [-7.9, +0.3]  IQR=-10.3..+2.5  RMS= 15.9 [6.9, 22.5]  med|r|=5.9  paperRMS=14.6  range=-45.9..+41.3  within 3/5/10 dB: 14/20/33
+  1 <= sigma < 1e4 : n=18 papers=14  median= +13.0 [-7.8, +16.5]  IQR=-6.7..+16.4  RMS= 25.0 [16.3, 33.8]  med|r|=15.1  paperRMS=27.2  range=-57.6..+48.6  within 3/5/10 dB: 0/2/5
+  sigma < 1 S/m    : n= 9 papers= 3  median= +23.9 [+14.2, +40.5]  IQR=+14.9..+26.6  RMS= 28.2 [16.7, 40.1]  med|r|=23.9  paperRMS=28.6  range=+12.0..+49.8  within 3/5/10 dB: 0/0/0
+  Continuous metal and oxide films      : n= 6 papers= 3  median=  +1.0 [-3.5, +3.0]  IQR=-1.5..+3.7  RMS=  3.4 [0.3, 3.7]  med|r|=2.8  paperRMS=2.7  range=-3.5..+5.4  within 3/5/10 dB: 3/5/6
+  Metal meshes, coated fabric and paper : n=17 papers= 5  median=  -1.9 [-11.4, +3.1]  IQR=-7.9..+0.2  RMS= 13.5 [5.9, 27.9]  med|r|=7.7  paperRMS=21.9  range=-45.9..+12.9  within 3/5/10 dB: 6/7/11
+  Dense MXene and graphene films        : n=25 papers=13  median=  -5.2 [-24.8, +4.1]  IQR=-11.9..+2.5  RMS= 17.6 [6.2, 26.0]  med|r|=6.3  paperRMS=13.1  range=-37.5..+20.8  within 3/5/10 dB: 5/7/15
+  Porous MXene and graphene films       : n= 5 papers= 4  median= +18.2 [-4.1, +48.6]  IQR=+16.5..+41.3  RMS= 30.6 [12.0, 42.7]  med|r|=18.2  paperRMS=29.7  range=-4.1..+48.6  within 3/5/10 dB: 0/1/1
+  Solid carbon-polymer composites       : n=11 papers= 7  median=  +5.5 [-9.0, +26.6]  IQR=-5.6..+26.6  RMS= 26.0 [11.7, 34.8]  med|r|=22.8  paperRMS=22.6  range=-34.1..+49.8  within 3/5/10 dB: 0/2/5
+  Segregated composites, foams, aerogels: n=12 papers= 6  median= +14.1 [-41.9, +16.0]  IQR=+12.8..+16.1  RMS= 25.5 [16.1, 42.1]  med|r|=15.4  paperRMS=31.6  range=-57.6..+23.9  within 3/5/10 dB: 0/0/0
+  per-paper medians, sigma >= 1e4: 19 papers, 14 within 10 dB, 9 within 5 dB
+  residual = +11.2 -3.08*log10(sigma) +9.4*porous;  slope CI [-5.32, +1.24], porous CI [-9.5, +31.2];  Spearman rho = -0.42 (p = 1.6e-04)
+  log10(sigma_eff/sigma_reported): median -0.00, IQR -0.26..+0.37
 
 == Primary set (quality A and B) ==
-  fixture-specific : n=63 papers=30  median=  +2.4 [-2.5, +9.6]  IQR=-3.8..+13.0  RMSE= 18.1  MAE= 12.3  range=-49.0..+50.8  within 3/5/10 dB: 15/23/37
-  free space       : n=63 papers=30  median=  +3.0 [-1.0, +10.2]  IQR=-1.8..+13.2  RMSE= 17.9  MAE= 12.1  range=-49.0..+50.8  within 3/5/10 dB: 17/22/38
-  all X/Ku as TE10 : n=63 papers=30  median=  +0.3 [-3.3, +7.8]  IQR=-5.5..+12.9  RMSE= 17.7  MAE= 12.1  range=-53.4..+49.8  within 3/5/10 dB: 13/21/37
-  sigma >= 1e4 S/m : n=40 papers=16  median=  -0.6 [-4.1, +2.7]  IQR=-4.3..+4.5  RMSE= 10.4  MAE=  6.6  range=-18.0..+45.7  within 3/5/10 dB: 15/21/32
-  1 <= sigma < 1e4 : n=16 papers=13  median=  +9.2 [-8.5, +15.7]  IQR=-8.3..+16.4  RMSE= 25.2  MAE= 20.2  range=-49.0..+50.8  within 3/5/10 dB: 0/2/5
-  sigma < 1 S/m    : n= 7 papers= 2  median= +25.2 [+nan, +nan]  IQR=+15.0..+33.5  RMSE= 29.5  MAE= 26.5  range=+13.2..+49.8  within 3/5/10 dB: 0/0/0
-  Continuous metal and oxide films      : n= 5 papers= 3  median=  +2.7 [-3.5, +9.2]  IQR=+0.3..+9.2  RMSE=  6.4  MAE=  5.2  range=-3.5..+10.0  within 3/5/10 dB: 2/3/4
-  Metal meshes, coated fabric and paper : n=16 papers= 4  median=  -1.2 [-9.6, +3.1]  IQR=-7.7..+0.9  RMSE=  7.9  MAE=  6.2  range=-11.9..+12.9  within 3/5/10 dB: 6/7/11
-  Dense MXene and graphene films        : n=17 papers=10  median=  -0.8 [-3.3, +4.8]  IQR=-3.3..+4.1  RMSE=  6.2  MAE=  4.8  range=-18.0..+9.6  within 3/5/10 dB: 7/10/16
-  Porous MXene and graphene films       : n= 4 papers= 3  median= +34.1 [-4.1, +50.8]  IQR=+15.9..+47.0  RMSE= 36.1  MAE= 30.8  range=-4.1..+50.8  within 3/5/10 dB: 0/1/1
-  Solid carbon-polymer composites       : n= 9 papers= 6  median=  +3.2 [-9.0, +33.5]  IQR=-8.0..+26.5  RMSE= 26.2  MAE= 20.0  range=-34.1..+49.8  within 3/5/10 dB: 0/2/5
-  Segregated composites, foams, aerogels: n=12 papers= 6  median= +14.8 [-41.9, +18.2]  IQR=+13.2..+18.4  RMSE= 24.7  MAE= 22.0  range=-49.0..+25.2  within 3/5/10 dB: 0/0/0
-  per-paper medians, sigma >= 1e4: 16 papers, 14 within 10 dB, 10 within 5 dB
-  residual = +10.2 -2.05*log10(sigma) +9.8*porous;  slope CI [-4.35, +2.99], porous CI [-12.8, +35.1];  Spearman rho = -0.39 (p = 1.7e-03)
-  log10(sigma_eff/sigma_reported): median +0.07, IQR -0.15..+0.43
+  fixture-specific : n=63 papers=30  median=  +0.3 [-3.3, +7.8]  IQR=-5.5..+12.9  RMS= 17.9 [12.1, 23.6]  med|r|=7.7  paperRMS=20.2  range=-57.6..+49.8  within 3/5/10 dB: 13/21/37
+  free space       : n=63 papers=30  median=  +3.0 [-1.0, +10.2]  IQR=-1.8..+13.2  RMS= 18.2 [12.3, 23.6]  med|r|=6.9  paperRMS=19.9  range=-55.2..+50.8  within 3/5/10 dB: 17/22/38
+  assumed -> TEM   : n=63 papers=30  median=  +2.4 [-2.5, +9.6]  IQR=-3.8..+13.0  RMS= 18.4 [12.6, 23.9]  med|r|=7.8  paperRMS=20.3  range=-55.2..+50.8  within 3/5/10 dB: 15/23/37
+  sigma >= 3e+03    : n=41 papers=17  median=  -0.8 [-5.2, +3.1]  IQR=-5.9..+4.4  RMS=  9.8 [5.3, 13.8]  med|r|=5.4  paperRMS=7.2  range=-18.0..+41.3  within 3/5/10 dB: 13/19/32
+  sigma >= 1e+04    : n=40 papers=16  median=  -1.1 [-5.9, +2.5]  IQR=-6.0..+4.2  RMS=  9.7 [5.0, 13.9]  med|r|=5.3  paperRMS=6.6  range=-18.0..+41.3  within 3/5/10 dB: 13/19/32
+  sigma >= 3e+04    : n=40 papers=16  median=  -1.1 [-5.9, +2.5]  IQR=-6.0..+4.2  RMS=  9.7 [5.0, 13.9]  med|r|=5.3  paperRMS=6.6  range=-18.0..+41.3  within 3/5/10 dB: 13/19/32
+  >=1e4, no annealed Ti3CNTx: n=38 papers=16  median=  -1.6 [-6.3, +2.5]  IQR=-6.2..+2.9  RMS=  6.7 [4.8, 8.5]  med|r|=4.8  paperRMS=6.7  range=-18.0..+12.9  within 3/5/10 dB: 13/19/32
+  >=1e4, band averages only : n=16 papers= 5  median=  -1.1 [-7.9, +4.8]  IQR=-7.7..+4.5  RMS=  7.6 [5.2, 9.7]  med|r|=6.7  paperRMS=6.7  range=-11.9..+12.9  within 3/5/10 dB: 3/6/12
+  sigma >= 1e4 S/m : n=40 papers=16  median=  -1.1 [-5.9, +2.5]  IQR=-6.0..+4.2  RMS=  9.7 [5.0, 13.9]  med|r|=5.3  paperRMS=6.6  range=-18.0..+41.3  within 3/5/10 dB: 13/19/32
+  1 <= sigma < 1e4 : n=16 papers=13  median=  +9.2 [-8.4, +14.2]  IQR=-8.1..+14.7  RMS= 25.7 [15.7, 35.4]  med|r|=14.1  paperRMS=27.7  range=-57.6..+48.6  within 3/5/10 dB: 0/2/5
+  sigma < 1 S/m    : n= 7 papers= 2  median= +23.9 [+nan, +nan]  IQR=+14.2..+33.5  RMS= 29.1 [nan, nan]  med|r|=23.9  paperRMS=30.4  range=+12.0..+49.8  within 3/5/10 dB: 0/0/0
+  Continuous metal and oxide films      : n= 5 papers= 3  median=  +0.3 [-3.5, +4.4]  IQR=-2.1..+4.4  RMS=  3.6 [0.3, 4.2]  med|r|=3.5  paperRMS=3.3  range=-3.5..+5.4  within 3/5/10 dB: 2/4/5
+  Metal meshes, coated fabric and paper : n=16 papers= 4  median=  -1.2 [-9.6, +3.1]  IQR=-7.7..+0.9  RMS=  7.9 [4.9, 10.8]  med|r|=7.2  paperRMS=8.6  range=-11.9..+12.9  within 3/5/10 dB: 6/7/11
+  Dense MXene and graphene films        : n=17 papers=10  median=  -1.4 [-6.1, +4.8]  IQR=-5.9..+4.1  RMS=  7.0 [4.4, 9.8]  med|r|=5.6  paperRMS=7.5  range=-18.0..+9.6  within 3/5/10 dB: 5/7/15
+  Porous MXene and graphene films       : n= 4 papers= 3  median= +29.7 [-4.1, +48.6]  IQR=+12.6..+43.1  RMS= 33.2 [4.1, 48.6]  med|r|=29.7  paperRMS=33.0  range=-4.1..+48.6  within 3/5/10 dB: 0/1/1
+  Solid carbon-polymer composites       : n= 9 papers= 6  median=  +3.2 [-9.0, +33.5]  IQR=-7.8..+26.5  RMS= 26.2 [5.7, 36.2]  med|r|=9.0  paperRMS=22.3  range=-34.1..+49.8  within 3/5/10 dB: 0/2/5
+  Segregated composites, foams, aerogels: n=12 papers= 6  median= +14.1 [-41.9, +16.0]  IQR=+12.8..+16.1  RMS= 25.5 [16.1, 42.1]  med|r|=15.4  paperRMS=31.6  range=-57.6..+23.9  within 3/5/10 dB: 0/0/0
+  per-paper medians, sigma >= 1e4: 16 papers, 14 within 10 dB, 9 within 5 dB
+  residual = +9.8 -2.13*log10(sigma) +8.8*porous;  slope CI [-4.40, +3.01], porous CI [-12.9, +33.6];  Spearman rho = -0.37 (p = 3.2e-03)
+  log10(sigma_eff/sigma_reported): median +0.02, IQR -0.19..+0.35
 
 == Quality A only ==
-  fixture-specific : n=20 papers=11  median=  -0.1 [-4.1, +7.8]  IQR=-3.5..+8.3  RMSE= 13.5  MAE=  8.5  range=-49.0..+18.8  within 3/5/10 dB: 5/10/15
-  free space       : n=20 papers=11  median=  +2.9 [-1.9, +10.1]  IQR=-1.7..+10.7  RMSE= 13.9  MAE=  9.1  range=-49.0..+18.8  within 3/5/10 dB: 6/9/13
-  all X/Ku as TE10 : n=20 papers=11  median=  -0.1 [-6.3, +7.8]  IQR=-4.6..+8.3  RMSE= 14.4  MAE=  9.2  range=-53.4..+16.6  within 3/5/10 dB: 4/8/14
-  sigma >= 1e4 S/m : n=13 papers= 6  median=  -0.4 [-4.5, +5.6]  IQR=-1.9..+5.6  RMSE=  5.8  MAE=  4.6  range=-5.8..+12.9  within 3/5/10 dB: 5/8/12
-  1 <= sigma < 1e4 : n= 7 papers= 5  median=  +3.2 [-29.0, +16.4]  IQR=-6.2..+13.5  RMSE= 21.5  MAE= 15.8  range=-49.0..+18.8  within 3/5/10 dB: 0/2/3
-  Metal meshes, coated fabric and paper : n= 6 papers= 1  median=  +1.7 [+nan, +nan]  IQR=-0.2..+6.6  RMSE=  6.3  MAE=  4.4  range=-1.9..+12.9  within 3/5/10 dB: 3/4/5
-  Dense MXene and graphene films        : n= 6 papers= 4  median=  -1.6 [-4.8, +5.6]  IQR=-4.1..+3.9  RMSE=  5.6  MAE=  4.8  range=-5.8..+9.6  within 3/5/10 dB: 2/3/6
-  Porous MXene and graphene films       : n= 1 papers= 1  median=  -4.1 [+nan, +nan]  IQR=-4.1..-4.1  RMSE=  4.1  MAE=  4.1  range=-4.1..-4.1  within 3/5/10 dB: 0/1/1
-  Solid carbon-polymer composites       : n= 3 papers= 2  median=  -3.3 [+nan, +nan]  IQR=-6.2..-0.1  RMSE=  5.9  MAE=  5.2  range=-9.0..+3.2  within 3/5/10 dB: 0/2/3
-  Segregated composites, foams, aerogels: n= 4 papers= 3  median= +13.5 [-49.0, +18.8]  IQR=-2.4..+15.1  RMSE= 27.9  MAE= 23.7  range=-49.0..+18.8  within 3/5/10 dB: 0/0/0
-  per-paper medians, sigma >= 1e4: 6 papers, 6 within 10 dB, 5 within 5 dB
-  residual = +0.2 -0.08*log10(sigma) +5.0*porous;  slope CI [-3.61, +6.95], porous CI [-7.0, +28.7];  Spearman rho = -0.13 (p = 5.7e-01)
-  log10(sigma_eff/sigma_reported): median -0.00, IQR -0.11..+0.26
+  fixture-specific : n= 6 papers= 4  median=  +6.4 [-4.1, +13.1]  IQR=-1.7..+12.2  RMS=  9.1 [3.6, 12.6]  med|r|=6.8  paperRMS=8.5  range=-4.1..+13.9  within 3/5/10 dB: 0/3/4
+  free space       : n= 6 papers= 4  median=  +8.5 [-1.6, +13.1]  IQR=+0.3..+12.9  RMS=  9.5 [3.1, 13.1]  med|r|=8.5  paperRMS=9.1  range=-1.6..+13.9  within 3/5/10 dB: 2/3/3
+  assumed -> TEM   : n= 6 papers= 4  median=  +6.4 [-4.1, +13.1]  IQR=-1.7..+12.2  RMS=  9.1 [3.6, 12.6]  med|r|=6.8  paperRMS=8.5  range=-4.1..+13.9  within 3/5/10 dB: 0/3/4
+  sigma >= 3e+03    : n= 2 papers= 2  median=  +2.7 [+nan, +nan]  IQR=-0.7..+6.2  RMS=  7.4 [nan, nan]  med|r|=6.8  paperRMS=7.4  range=-4.1..+9.6  within 3/5/10 dB: 0/1/2
+  sigma >= 1e+04    : n= 2 papers= 2  median=  +2.7 [+nan, +nan]  IQR=-0.7..+6.2  RMS=  7.4 [nan, nan]  med|r|=6.8  paperRMS=7.4  range=-4.1..+9.6  within 3/5/10 dB: 0/1/2
+  sigma >= 3e+04    : n= 2 papers= 2  median=  +2.7 [+nan, +nan]  IQR=-0.7..+6.2  RMS=  7.4 [nan, nan]  med|r|=6.8  paperRMS=7.4  range=-4.1..+9.6  within 3/5/10 dB: 0/1/2
+  >=1e4, no annealed Ti3CNTx: n= 2 papers= 2  median=  +2.7 [+nan, +nan]  IQR=-0.7..+6.2  RMS=  7.4 [nan, nan]  med|r|=6.8  paperRMS=7.4  range=-4.1..+9.6  within 3/5/10 dB: 0/1/2
+  sigma >= 1e4 S/m : n= 2 papers= 2  median=  +2.7 [+nan, +nan]  IQR=-0.7..+6.2  RMS=  7.4 [nan, nan]  med|r|=6.8  paperRMS=7.4  range=-4.1..+9.6  within 3/5/10 dB: 0/1/2
+  1 <= sigma < 1e4 : n= 4 papers= 2  median=  +8.2 [+nan, +nan]  IQR=+1.6..+13.3  RMS=  9.8 [nan, nan]  med|r|=8.2  paperRMS=9.6  range=-3.3..+13.9  within 3/5/10 dB: 0/2/2
+  Dense MXene and graphene films        : n= 1 papers= 1  median=  +9.6 [+nan, +nan]  IQR=+9.6..+9.6  RMS=  9.6 [nan, nan]  med|r|=9.6  paperRMS=9.6  range=+9.6..+9.6  within 3/5/10 dB: 0/0/1
+  Porous MXene and graphene films       : n= 1 papers= 1  median=  -4.1 [+nan, +nan]  IQR=-4.1..-4.1  RMS=  4.1 [nan, nan]  med|r|=4.1  paperRMS=4.1  range=-4.1..-4.1  within 3/5/10 dB: 0/1/1
+  Solid carbon-polymer composites       : n= 2 papers= 1  median=  -0.1 [+nan, +nan]  IQR=-1.7..+1.6  RMS=  3.3 [nan, nan]  med|r|=3.3  paperRMS=0.1  range=-3.3..+3.2  within 3/5/10 dB: 0/2/2
+  Segregated composites, foams, aerogels: n= 2 papers= 1  median= +13.5 [+nan, +nan]  IQR=+13.3..+13.7  RMS= 13.5 [nan, nan]  med|r|=13.5  paperRMS=13.5  range=+13.1..+13.9  within 3/5/10 dB: 0/0/0
+  per-paper medians, sigma >= 1e4: 2 papers, 2 within 10 dB, 1 within 5 dB
+  residual = +8.1 -0.89*log10(sigma) -0.6*porous;  slope CI [-16.16, +1.98], porous CI [-11.6, +42.7];  Spearman rho = -0.54 (p = 2.7e-01)
+  log10(sigma_eff/sigma_reported): median +0.22, IQR -0.04..+0.32
 
 == Entries with |residual| > 10 dB (fixture-specific) ==
-   -49.0 dB  log ratio -1.37  sigma 1.09e+03  t/delta 5.34  unspecified A  Polypropylene / graphene nanoplatelets 10 wt%, seg
-   -43.4 dB  log ratio -1.64  sigma 1.66e+04  t/delta 3.66  unspecified C  Filter paper coated with Ag nanowires / MXene (FMA
+   -57.6 dB  log ratio -1.58  sigma 1.09e+03  t/delta 5.98  assumed-waveguide B  Polypropylene / graphene nanoplatelets 10 wt%, seg
+   -45.9 dB  log ratio -1.76  sigma 1.66e+04  t/delta 3.66  assumed-waveguide C  Filter paper coated with Ag nanowires / MXene (FMA
    -41.9 dB  log ratio -0.37  sigma 199  t/delta 12.8  waveguide   B  Carbon nanofibre / polyaniline aerogel (CP-3@PANI)
    -37.5 dB  log ratio -1.97  sigma 4.76e+05  t/delta 0.601  coaxial     C  Cellulose nanofibre / Ti3C2Tx film (T15M10)
    -37.3 dB  log ratio -2.03  sigma 2.81e+05  t/delta 0.448  coaxial     C  Cellulose nanofibre / Ti3C2Tx film (T20M5)
@@ -67,26 +80,27 @@ Waveguide correction (TE10 minus free space) over 33 entries: median +2.42 dB, r
    -11.9 dB  log ratio -0.60  sigma 2.57e+05  t/delta 0.677  waveguide   B  Ag mesh in PET, sample 4
    -11.9 dB  log ratio -0.59  sigma 3.53e+05  t/delta 0.794  waveguide   B  Ag mesh in PET, sample 1
    -11.4 dB  log ratio -0.57  sigma 3.49e+05  t/delta 0.71  waveguide   B  Ag mesh in PET, sample 2
-   +10.0 dB  log ratio +0.51  sigma 6.15e+04  t/delta 0.0881  unspecified B  Ag/Ni(560 nm) 1:2 film on paper
+   -10.9 dB  log ratio -0.16  sigma 4.6e+05  t/delta 6.15  assumed-waveguide C  Ti3C2Tx film
+   -10.3 dB  log ratio -0.19  sigma 4.5e+05  t/delta 4.83  assumed-waveguide B  Ti3C2Tx film (as-synthesized)
+   +12.0 dB  log ratio +0.68  sigma 0.78  t/delta 0.877  assumed-waveguide B  Albumen-derived graphitic aerogel, 900 C, 35 C/min
    +12.8 dB  log ratio +0.64  sigma 5.47e+03  t/delta 0.495  coaxial     B  Cu/Ni-coated polyester nonwoven, single layer
-   +12.9 dB  log ratio +0.65  sigma 9.4e+05  t/delta 0.176  waveguide   A  Ag mesh in glass, W1P25t0.8
+   +12.9 dB  log ratio +0.65  sigma 9.4e+05  t/delta 0.176  waveguide   B  Ag mesh in glass, W1P25t0.8
    +13.1 dB  log ratio +0.34  sigma 35.4  t/delta 2.4  coaxial     A  Polysulfone / CNT 5 wt%, segregated, solid (s-PC-5
-   +13.2 dB  log ratio +0.76  sigma 0.78  t/delta 0.877  unspecified B  Albumen-derived graphitic aerogel, 900 C, 35 C/min
-   +13.8 dB  log ratio +1.45  sigma 0.11  t/delta 0.329  unspecified B  Albumen-derived graphitic aerogel, 700 C, 5 C/min
+   +13.5 dB  log ratio +1.37  sigma 0.11  t/delta 0.329  assumed-waveguide B  Albumen-derived graphitic aerogel, 700 C, 5 C/min
    +13.9 dB  log ratio +0.69  sigma 5.2  t/delta 0.92  coaxial     A  Polysulfone / CNT 5 wt%, segregated, microcellular
-   +15.7 dB  log ratio +0.71  sigma 1.29  t/delta 1.13  unspecified B  Albumen-derived graphitic aerogel, 900 C, 15 C/min
-   +16.2 dB  log ratio +0.82  sigma 0.91  t/delta 0.948  unspecified B  Albumen-derived graphitic aerogel, 900 C, 25 C/min
-   +18.2 dB  log ratio +0.27  sigma 25.5  t/delta 5.09  unspecified B  MXene/CNT/polyimide aerogel frame, 3D-printed grad
-   +18.8 dB  log ratio +0.41  sigma 52  t/delta 2.91  unspecified A  Waterborne polyurethane / CNT-GO 10 wt%, segregate
-   +18.9 dB  log ratio +0.75  sigma 2.21e+03  t/delta 1.01  unspecified C  Exfoliated-graphene film, microwave-treated (MWEGF
-   +22.6 dB  log ratio +0.41  sigma 2.48e+05  t/delta 3.58  unspecified B  Ti3CNTx film (annealed 250 C)
+   +14.2 dB  log ratio +0.64  sigma 1.29  t/delta 1.13  assumed-waveguide B  Albumen-derived graphitic aerogel, 900 C, 15 C/min
+   +14.9 dB  log ratio +0.75  sigma 0.91  t/delta 0.948  assumed-waveguide B  Albumen-derived graphitic aerogel, 900 C, 25 C/min
+   +16.0 dB  log ratio +0.24  sigma 25.5  t/delta 5.09  assumed-waveguide B  MXene/CNT/polyimide aerogel frame, 3D-printed grad
+   +16.5 dB  log ratio +0.67  sigma 2.21e+03  t/delta 1.01  assumed-waveguide C  Exfoliated-graphene film, microwave-treated (MWEGF
+   +16.6 dB  log ratio +0.37  sigma 52  t/delta 2.91  assumed-waveguide B  Waterborne polyurethane / CNT-GO 10 wt%, segregate
+   +18.2 dB  log ratio +0.34  sigma 2.48e+05  t/delta 3.58  assumed-waveguide B  Ti3CNTx film (annealed 250 C)
+   +20.8 dB  log ratio +1.06  sigma 909  t/delta 0.315  assumed-waveguide C  Exfoliated-graphene film (EGF)
    +22.8 dB  log ratio +2.70  sigma 0.095  t/delta 0.0612  waveguide   C  PA11/PLA (60/40) / carbon fibre, 20 wt%
-   +23.1 dB  log ratio +1.18  sigma 909  t/delta 0.315  unspecified C  Exfoliated-graphene film (EGF)
-   +24.9 dB  log ratio +0.75  sigma 2.87  t/delta 1.68  unspecified B  Albumen-derived graphitic aerogel, 900 C, 5 C/min
-   +25.2 dB  log ratio +1.06  sigma 0.93  t/delta 0.958  unspecified B  Albumen-derived graphitic aerogel, 800 C, 5 C/min
-   +26.5 dB  log ratio +4.52  sigma 0.0025  t/delta 0.00993  unspecified B  EPDM / carbon black, 16.67 wt% (20 phr)
+   +23.0 dB  log ratio +0.70  sigma 2.87  t/delta 1.68  assumed-waveguide B  Albumen-derived graphitic aerogel, 900 C, 5 C/min
+   +23.9 dB  log ratio +1.01  sigma 0.93  t/delta 0.958  assumed-waveguide B  Albumen-derived graphitic aerogel, 800 C, 5 C/min
+   +26.5 dB  log ratio +4.43  sigma 0.0025  t/delta 0.00993  assumed-waveguide B  EPDM / carbon black, 16.67 wt% (20 phr)
    +26.6 dB  log ratio +2.06  sigma 0.68  t/delta 0.164  waveguide   C  PA11/PLA (60/40) / carbon fibre, 30 wt%
-   +40.6 dB  log ratio +3.96  sigma 0.025  t/delta 0.0314  unspecified B  EPDM / carbon black, 23.08 wt% (30 phr)
-   +45.7 dB  log ratio +0.77  sigma 1.79e+05  t/delta 3.04  unspecified B  Ti3CNTx film (annealed 350 C)
-   +49.8 dB  log ratio +3.77  sigma 0.063  t/delta 0.0499  unspecified B  EPDM / carbon black, 28.57 wt% (40 phr)
-   +50.8 dB  log ratio +1.89  sigma 357  t/delta 0.457  unspecified B  Ti3C2Tx / aramid nanofibre-PVA film, 80 wt% Ti3C2T
+   +40.5 dB  log ratio +3.90  sigma 0.025  t/delta 0.0314  assumed-waveguide B  EPDM / carbon black, 23.08 wt% (30 phr)
+   +41.3 dB  log ratio +0.72  sigma 1.79e+05  t/delta 3.04  assumed-waveguide B  Ti3CNTx film (annealed 350 C)
+   +48.6 dB  log ratio +1.84  sigma 357  t/delta 0.457  assumed-waveguide B  Ti3C2Tx / aramid nanofibre-PVA film, 80 wt% Ti3C2T
+   +49.8 dB  log ratio +3.72  sigma 0.063  t/delta 0.0499  assumed-waveguide B  EPDM / carbon black, 28.57 wt% (40 phr)
